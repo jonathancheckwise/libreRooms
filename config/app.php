@@ -132,4 +132,14 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Webcron token
+    |--------------------------------------------------------------------------
+    |
+    | This key protects the webcron route
+    |
+    */
+    'webcron_token' => env('WEBCRON_TOKEN'),
+
 ];

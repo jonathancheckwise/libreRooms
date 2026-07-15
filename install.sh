@@ -14,6 +14,7 @@ if [ -f .env ]; then
 fi
 cp .env.example .env
 php artisan key:generate
+php artisan webcron:token
 php artisan optimize
 php artisan storage:link
 sudo chown -R :www-data .

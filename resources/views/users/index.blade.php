@@ -138,7 +138,7 @@
                                         @csrf
                                         @method('DELETE')
                                     </form>
-                                @endif
+                                @endifa
                             </div>
                         </td>
                     </tr>

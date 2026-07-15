@@ -11,6 +11,7 @@ use App\Http\Controllers\RoomUserController;
 use App\Http\Controllers\UserController;
 use App\Models\Reservation;
 use App\Models\Room;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 // Eager load Room relations for all routes
@@ -53,6 +54,16 @@ Route::controller(\App\Http\Controllers\SetupController::class)
         Route::get('/setup/admin', 'showAdminForm')->name('setup.admin');
         Route::post('/setup/admin', 'createAdmin')->name('setup.admin.store');
     });
+
+// Webcron route
+Route::get('/webcron/schedule-run', function (Request $request) {
+    abort_unless(
+        hash_equals((string) config('app.webcron_token'), (string) $request->query('token')),
+        403
+    );
+    Artisan::call('schedule:run');
+    return response(Artisan::output(), 200)->header('Content-Type', 'text/plain');
+});
 
 // Authentication routes
 Route::middleware('guest')->group(function () {
