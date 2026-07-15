@@ -1,0 +1,96 @@
+{
+  "node_modules/@fortawesome/fontawesome-free/webfonts/fa-brands-400.woff2": {
+    "file": "assets/fa-brands-400-BfBXV7Mm.woff2",
+    "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-brands-400.woff2"
+  },
+  "node_modules/@fortawesome/fontawesome-free/webfonts/fa-regular-400.woff2": {
+    "file": "assets/fa-regular-400-BVHPE7da.woff2",
+    "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-regular-400.woff2"
+  },
+  "node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2": {
+    "file": "assets/fa-solid-900-8GirhLYJ.woff2",
+    "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2"
+  },
+  "node_modules/@fortawesome/fontawesome-free/webfonts/fa-v4compatibility.woff2": {
+    "file": "assets/fa-v4compatibility-DnhYSyY-.woff2",
+    "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-v4compatibility.woff2"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-CleLmegP.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-pQ2G1fLK.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "css": [
+      "assets/app-jWmyelEn.css"
+    ],
+    "assets": [
+      "assets/fa-brands-400-BfBXV7Mm.woff2",
+      "assets/fa-regular-400-BVHPE7da.woff2",
+      "assets/fa-solid-900-8GirhLYJ.woff2",
+      "assets/fa-v4compatibility-DnhYSyY-.woff2"
+    ]
+  },
+  "resources/js/config-test.js": {
+    "file": "assets/config-test-BOCQ_ZJb.js",
+    "name": "config-test",
+    "src": "resources/js/config-test.js",
+    "isEntry": true
+  },
+  "resources/js/contacts/contact-form.js": {
+    "file": "assets/contact-form-D1v3OTjC.js",
+    "name": "contact-form",
+    "src": "resources/js/contacts/contact-form.js",
+    "isEntry": true
+  },
+  "resources/js/custom-fields/custom-field-form.js": {
+    "file": "assets/custom-field-form-BopvVYUY.js",
+    "name": "custom-field-form",
+    "src": "resources/js/custom-fields/custom-field-form.js",
+    "isEntry": true
+  },
+  "resources/js/owners/owner-form.js": {
+    "file": "assets/owner-form-LRJ3dGKD.js",
+    "name": "owner-form",
+    "src": "resources/js/owners/owner-form.js",
+    "isEntry": true,
+    "imports": [
+      "resources/js/config-test.js"
+    ]
+  },
+  "resources/js/reservations/reservation-form.js": {
+    "file": "assets/reservation-form-Bksh7Oxr.js",
+    "name": "reservation-form",
+    "src": "resources/js/reservations/reservation-form.js",
+    "isEntry": true
+  },
+  "resources/js/rooms/geocoding.js": {
+    "file": "assets/geocoding-Bfw2FIgH.js",
+    "name": "geocoding",
+    "src": "resources/js/rooms/geocoding.js",
+    "isEntry": true
+  },
+  "resources/js/rooms/room-form.js": {
+    "file": "assets/room-form-rKoP0OcQ.js",
+    "name": "room-form",
+    "src": "resources/js/rooms/room-form.js",
+    "isEntry": true
+  },
+  "resources/js/system-settings/system-settings-form.js": {
+    "file": "assets/system-settings-form-D08atqsh.js",
+    "name": "system-settings-form",
+    "src": "resources/js/system-settings/system-settings-form.js",
+    "isEntry": true,
+    "imports": [
+      "resources/js/config-test.js"
+    ]
+  }
+}

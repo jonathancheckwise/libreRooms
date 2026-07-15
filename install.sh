@@ -6,8 +6,10 @@ echo "Installing LibreRooms"
 git config core.autocrlf false
 git config core.filemode false
 composer install --no-dev --optimize-autoloader
-npm ci
-npm run build
+if command -v npm >/dev/null 2>&1; then
+  npm ci
+  npm run build
+fi
 if [ -f .env ]; then
   echo ".env already exists - installation cancelled"
   exit 1
@@ -17,10 +19,13 @@ php artisan key:generate
 php artisan webcron:token
 php artisan optimize
 php artisan storage:link
-sudo chown -R :www-data .
-sudo chmod -R 755 .
-sudo chown -R www-data:www-data storage bootstrap/cache .env
-sudo chmod -R 775 storage bootstrap/cache .env
+
+if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+  sudo chown -R :www-data .
+  sudo chmod -R 755 .
+  sudo chown -R www-data:www-data storage bootstrap/cache .env
+  sudo chmod -R 775 storage bootstrap/cache .env
+fi
 
 echo "Installation successfull"
 echo "Next steps:"
