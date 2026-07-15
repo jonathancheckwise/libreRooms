@@ -11,6 +11,7 @@ use App\Http\Controllers\RoomUserController;
 use App\Http\Controllers\UserController;
 use App\Models\Reservation;
 use App\Models\Room;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
