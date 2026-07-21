@@ -1050,5 +1050,6 @@
     "Times are locked to the morning window.": "Les heures sont bloquées sur le créneau du matin.",
     "Times are locked to the afternoon window.": "Les heures sont bloquées sur le créneau de l'après-midi.",
     "Times are locked to the full-day window.": "Les heures sont bloquées sur le créneau de la journée.",
-    "Maximum :h h in hourly mode — pick a half-day or full-day for longer.": "Maximum :h h en mode à l'heure — choisissez une demi-journée ou une journée pour plus."
+    "Maximum :h h in hourly mode — pick a half-day or full-day for longer.": "Maximum :h h en mode à l'heure — choisissez une demi-journée ou une journée pour plus.",
+    "Not configured yet — this section is disabled for now.": "Pas encore configuré — cette section est désactivée pour l'instant."
 }

@@ -309,6 +309,7 @@
                                 type="checkbox"
                                 name="is_public"
                                 value="1"
+                                id="is_public_checkbox"
                                 @checked(old('is_public', $room?->is_public ?? true))
                             >
                             <span>{{ __('Open to all logged-in members') }}</span>
@@ -319,7 +320,7 @@
                         </small>
                     </div>
 
-                    <div class="form-field mt-4">
+                    <div class="form-field mt-4" id="companies-access-block">
                         <label class="block mb-1 font-medium">{{ __('Companies with access (used when not open to all)') }}</label>
                         @php
                             $roomCompanyIds = $room ? $room->companies->pluck('id')->all() : [];
@@ -327,7 +328,7 @@
                         @endphp
                         @forelse($companies as $company)
                             <label class="flex items-center gap-2 mb-2">
-                                <input type="checkbox" name="companies[]" value="{{ $company->id }}"
+                                <input type="checkbox" class="pep-company-checkbox" name="companies[]" value="{{ $company->id }}"
                                     @checked(in_array($company->id, $oldRoomCompanies))>
                                 <span>{{ $company->name }}</span>
                             </label>
@@ -339,6 +340,26 @@
                         @endforelse
                     </div>
                 </fieldset>
+                <script>
+                (function () {
+                    // La Pépite : si la salle est « ouverte à tous », on désactive
+                    // (et grise) le choix des entreprises — inutile dans ce cas.
+                    function syncCompanies() {
+                        const pub = document.getElementById('is_public_checkbox');
+                        const block = document.getElementById('companies-access-block');
+                        if (!pub || !block) return;
+                        const disabled = pub.checked;
+                        block.querySelectorAll('.pep-company-checkbox').forEach(cb => { cb.disabled = disabled; });
+                        block.style.opacity = disabled ? '0.45' : '';
+                        block.style.pointerEvents = disabled ? 'none' : '';
+                    }
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const pub = document.getElementById('is_public_checkbox');
+                        if (pub) pub.addEventListener('change', syncCompanies);
+                        syncCompanies();
+                    });
+                })();
+                </script>
             </div>
 
             <!-- Tarification -->
@@ -678,9 +699,10 @@
                 </fieldset>
             </div>
 
-            <!-- Configuration Calendrier -->
-            <div class="form-group">
+            <!-- Configuration Calendrier (désactivée pour l'instant — La Pépite) -->
+            <div class="form-group" style="opacity:.5;pointer-events:none" aria-disabled="true">
                 <h3 class="form-group-title">{{ __('Calendar configuration') }}</h3>
+                <p class="text-sm text-gray-600 mb-3">🔒 {{ __('Not configured yet — this section is disabled for now.') }}</p>
 
                 <fieldset class="form-element">
                     <div class="form-field">
