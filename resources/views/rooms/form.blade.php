@@ -120,8 +120,7 @@
                             @foreach($locations as $loc)
                                 <option value="{{ $loc->id }}"
                                     data-street="{{ $loc->street }}" data-postal="{{ $loc->postal_code }}"
-                                    data-city="{{ $loc->city }}" data-country="{{ $loc->country }}"
-                                    data-lat="{{ $loc->latitude }}" data-lng="{{ $loc->longitude }}">{{ $loc->name }}</option>
+                                    data-city="{{ $loc->city }}" data-country="{{ $loc->country }}">{{ $loc->name }}</option>
                             @endforeach
                         </select>
                         <small class="text-gray-600 block mt-1">{{ __('Fills the address fields below. You can still edit them.') }}</small>
@@ -138,7 +137,6 @@
                             const set = (id, v) => { const el = document.getElementById(id); if (el) { el.value = v || ''; el.dispatchEvent(new Event('input', {bubbles:true})); } };
                             set('street', o.dataset.street); set('postal_code', o.dataset.postal);
                             set('city', o.dataset.city); set('country', o.dataset.country);
-                            set('latitude', o.dataset.lat); set('longitude', o.dataset.lng);
                         });
                     });
                 })();

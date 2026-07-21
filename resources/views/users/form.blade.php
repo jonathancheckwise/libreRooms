@@ -24,6 +24,18 @@
                 @method('PUT')
             @endif
 
+            {{-- La Pépite : résumé d'erreurs bien visible en haut du formulaire --}}
+            @if($errors->any())
+                <div role="alert" style="background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:14px 16px;margin-bottom:18px;color:#991b1b">
+                    <strong>{{ __('Please fix the following before saving:') }}</strong>
+                    <ul style="margin:8px 0 0 20px;list-style:disc">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             @include('users.partials._basic_fields', [
                 'user' => $user,
                 'showPasswordFields' => true,

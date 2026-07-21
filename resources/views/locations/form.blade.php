@@ -41,19 +41,6 @@
                 <input type="text" id="country" name="country" value="{{ old('country', $location?->country ?? 'Suisse') }}">
             </div>
 
-            <div class="form-element-row">
-                <div class="form-field">
-                    <label for="latitude">{{ __('Latitude') }}</label>
-                    <input type="number" step="any" id="latitude" name="latitude" value="{{ old('latitude', $location?->latitude) }}" placeholder="46.5197">
-                    @error('latitude') <span style="color:#b91c1c" class="text-sm">{{ $message }}</span> @enderror
-                </div>
-                <div class="form-field">
-                    <label for="longitude">{{ __('Longitude') }}</label>
-                    <input type="number" step="any" id="longitude" name="longitude" value="{{ old('longitude', $location?->longitude) }}" placeholder="6.6323">
-                    @error('longitude') <span style="color:#b91c1c" class="text-sm">{{ $message }}</span> @enderror
-                </div>
-            </div>
-
             <div class="btn-group" style="margin-top:1.5rem">
                 <button type="submit" class="btn btn-primary">{{ __('Save') }}</button>
                 <a href="{{ route('locations.index') }}" class="btn btn-secondary">{{ __('Cancel') }}</a>

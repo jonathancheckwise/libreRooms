@@ -1065,5 +1065,6 @@
     "e.g. Pépite Lausanne": "ex. Pépite Lausanne",
     "Prefill from a saved location": "Pré-remplir depuis un lieu enregistré",
     "— Choose a location —": "— Choisir un lieu —",
-    "Fills the address fields below. You can still edit them.": "Remplit les champs d'adresse ci-dessous. Vous pouvez ensuite les modifier."
+    "Fills the address fields below. You can still edit them.": "Remplit les champs d'adresse ci-dessous. Vous pouvez ensuite les modifier.",
+    "Please fix the following before saving:": "Corrigez les points suivants avant d'enregistrer :"
 }
