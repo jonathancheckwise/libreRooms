@@ -111,6 +111,40 @@
             <div class="form-group">
                 <h3 class="form-group-title">{{ __('Address') }}</h3>
 
+                @if($locations->isNotEmpty())
+                <fieldset class="form-element">
+                    <div class="form-field">
+                        <label for="pep-location-select" class="form-element-title">{{ __('Prefill from a saved location') }}</label>
+                        <select id="pep-location-select">
+                            <option value="">{{ __('— Choose a location —') }}</option>
+                            @foreach($locations as $loc)
+                                <option value="{{ $loc->id }}"
+                                    data-street="{{ $loc->street }}" data-postal="{{ $loc->postal_code }}"
+                                    data-city="{{ $loc->city }}" data-country="{{ $loc->country }}"
+                                    data-lat="{{ $loc->latitude }}" data-lng="{{ $loc->longitude }}">{{ $loc->name }}</option>
+                            @endforeach
+                        </select>
+                        <small class="text-gray-600 block mt-1">{{ __('Fills the address fields below. You can still edit them.') }}</small>
+                    </div>
+                </fieldset>
+                <script>
+                (function () {
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const sel = document.getElementById('pep-location-select');
+                        if (!sel) return;
+                        sel.addEventListener('change', function () {
+                            const o = sel.options[sel.selectedIndex];
+                            if (!o.value) return;
+                            const set = (id, v) => { const el = document.getElementById(id); if (el) { el.value = v || ''; el.dispatchEvent(new Event('input', {bubbles:true})); } };
+                            set('street', o.dataset.street); set('postal_code', o.dataset.postal);
+                            set('city', o.dataset.city); set('country', o.dataset.country);
+                            set('latitude', o.dataset.lat); set('longitude', o.dataset.lng);
+                        });
+                    });
+                })();
+                </script>
+                @endif
+
                 <fieldset class="form-element">
                     <div class="form-field">
                         <label for="street" class="form-element-title">{{ __('Street') }} <span class="text-red-500">*</span></label>

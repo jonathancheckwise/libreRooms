@@ -8,6 +8,7 @@ use App\Enums\RoomCurrentStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Concerns\RedirectsBack;
 use App\Models\Company;
+use App\Models\Location;
 use App\Models\Image;
 use App\Models\Owner;
 use App\Models\Room;
@@ -121,6 +122,7 @@ class RoomController extends Controller
             'ownersCaldavValid' => $ownersCaldavValid,
             'systemSettings' => app(SystemSettings::class),
             'companies' => Company::orderBy('name')->get(),
+            'locations' => Location::orderBy('name')->get(),
         ]);
     }
 
@@ -485,6 +487,7 @@ class RoomController extends Controller
             'ownerTimezones' => $ownerTimezones,
             'ownersCaldavValid' => $ownersCaldavValid,
             'companies' => Company::orderBy('name')->get(),
+            'locations' => Location::orderBy('name')->get(),
         ]);
     }
 

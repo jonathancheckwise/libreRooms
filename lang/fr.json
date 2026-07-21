@@ -1051,5 +1051,19 @@
     "Times are locked to the afternoon window.": "Les heures sont bloquées sur le créneau de l'après-midi.",
     "Times are locked to the full-day window.": "Les heures sont bloquées sur le créneau de la journée.",
     "Maximum :h h in hourly mode — pick a half-day or full-day for longer.": "Maximum :h h en mode à l'heure — choisissez une demi-journée ou une journée pour plus.",
-    "Not configured yet — this section is disabled for now.": "Pas encore configuré — cette section est désactivée pour l'instant."
+    "Not configured yet — this section is disabled for now.": "Pas encore configuré — cette section est désactivée pour l'instant.",
+    "Locations": "Lieux",
+    "New location": "Nouveau lieu",
+    "Edit location": "Modifier le lieu",
+    "Location name": "Nom du lieu",
+    "Location created successfully.": "Lieu créé avec succès.",
+    "Location updated successfully.": "Lieu mis à jour avec succès.",
+    "Location deleted successfully.": "Lieu supprimé avec succès.",
+    "Delete this location?": "Supprimer ce lieu ?",
+    "No location yet.": "Aucun lieu pour l'instant.",
+    "Predefined addresses (with GPS) to quickly fill in a room.": "Adresses prédéfinies (avec GPS) pour remplir rapidement une salle.",
+    "e.g. Pépite Lausanne": "ex. Pépite Lausanne",
+    "Prefill from a saved location": "Pré-remplir depuis un lieu enregistré",
+    "— Choose a location —": "— Choisir un lieu —",
+    "Fills the address fields below. You can still edit them.": "Remplit les champs d'adresse ci-dessous. Vous pouvez ensuite les modifier."
 }

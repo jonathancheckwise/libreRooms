@@ -210,6 +210,16 @@ Route::controller(\App\Http\Controllers\CompanyController::class)->middleware(['
     Route::delete('/companies/{company}', 'destroy')->name('companies.destroy');
 });
 
+// Lieux prédéfinis (La Pépite) — admin global uniquement
+Route::controller(\App\Http\Controllers\LocationController::class)->middleware(['auth', 'verified', 'global_admin'])->group(function () {
+    Route::get('/locations', 'index')->name('locations.index');
+    Route::get('/locations/create', 'create')->name('locations.create');
+    Route::post('/locations', 'store')->name('locations.store');
+    Route::get('/locations/{location}/edit', 'edit')->name('locations.edit');
+    Route::put('/locations/{location}', 'update')->name('locations.update');
+    Route::delete('/locations/{location}', 'destroy')->name('locations.destroy');
+});
+
 // System settings (global admin only)
 Route::controller(\App\Http\Controllers\SystemSettingsController::class)->middleware(['auth', 'verified', 'global_admin'])->group(function () {
     Route::get('/system-settings', 'edit')->name('system-settings.edit');
