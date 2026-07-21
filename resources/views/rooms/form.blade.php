@@ -459,6 +459,13 @@
                             value="{{ old('price_full_day', $room?->price_full_day ?? '') }}"
                             required
                         >
+                        <small class="text-gray-600 block mt-1">
+                            @if($room?->day_start_time && $room?->day_end_time)
+                                {{ __('A full day covers the room opening hours:') }} {{ substr($room->day_start_time, 0, 5) }}–{{ substr($room->day_end_time, 0, 5) }}.
+                            @else
+                                {{ __('A full day covers the room opening hours (set them in the Availability section below).') }}
+                            @endif
+                        </small>
                         @error('price_full_day')
                             <span class="text-red-600 text-sm">{{ $message }}</span>
                         @enderror
