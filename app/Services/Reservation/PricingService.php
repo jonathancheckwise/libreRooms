@@ -73,19 +73,29 @@ class PricingService
         $maxHoursShort = $room->max_hours_short;
         $priceShort = $room->price_short;
         $priceFullDay = $room->price_full_day;
+        // Palier demi-journée (La Pépite) : optionnel, entre le court et la journée.
+        $priceHalfDay = $room->price_half_day;
+        $maxHoursHalfDay = $room->max_hours_half_day;
 
         $segments = $this->splitByDay($start, $end, $room);
 
         $nbShort = 0;
+        $nbHalf = 0;
         $nbFull = 0;
 
         foreach ($segments as $segment) {
             $duration = $segment['end'] - $segment['start'];
-            if (($shortBefore && ($segment['end'] <= $shortBefore) ||
-                $shortAfter && ($segment['start'] >= $shortAfter) ||
-                $maxHoursShort && ($duration <= $maxHoursShort))
-                && $priceShort) {
+
+            $isShort = $priceShort && (
+                ($shortBefore && $segment['end'] <= $shortBefore) ||
+                ($shortAfter && $segment['start'] >= $shortAfter) ||
+                ($maxHoursShort && $duration <= $maxHoursShort)
+            );
+
+            if ($isShort) {
                 $nbShort++;
+            } elseif ($priceHalfDay && $maxHoursHalfDay && $duration <= $maxHoursHalfDay) {
+                $nbHalf++;
             } else {
                 $nbFull++;
             }
@@ -97,6 +107,9 @@ class PricingService
             if ($nbShort) {
                 $label .= $nbShort.'x '.__('short booking').', ';
             }
+            if ($nbHalf) {
+                $label .= $nbHalf.'x '.__('half day booking').', ';
+            }
             if ($nbFull) {
                 $label .= $nbFull.'x '.__('full day booking').', ';
             }
@@ -104,12 +117,14 @@ class PricingService
         } else {
             if ($nbShort) {
                 $label .= __('Short booking');
+            } elseif ($nbHalf) {
+                $label .= __('Half day booking');
             } elseif ($nbFull) {
                 $label .= __('Full day booking');
             }
         }
 
-        $price = $nbShort * $priceShort + $nbFull * $priceFullDay;
+        $price = $nbShort * $priceShort + $nbHalf * $priceHalfDay + $nbFull * $priceFullDay;
 
         return [
             'label' => $label,

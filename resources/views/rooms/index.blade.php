@@ -335,6 +335,12 @@
                                                         <span class="text-slate-900 font-medium">{{ currency($room->price_short, $room->owner) }}</span>
                                                     </div>
                                                 @endif
+                                                @if($room->price_half_day && $room->max_hours_half_day)
+                                                    <div class="flex justify-between text-sm">
+                                                        <span class="text-slate-500">{{ __('Half day') }} (≤ {{ $room->max_hours_half_day }}h)</span>
+                                                        <span class="text-slate-900 font-medium">{{ currency($room->price_half_day, $room->owner) }}</span>
+                                                    </div>
+                                                @endif
                                                 <div class="flex justify-between text-sm">
                                                     <span class="text-slate-500">{{ __('Full day') }}</span>
                                                     <span class="text-slate-900 font-medium">{{ currency($room->price_full_day, $room->owner) }}</span>

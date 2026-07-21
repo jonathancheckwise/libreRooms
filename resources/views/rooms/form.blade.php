@@ -410,6 +410,43 @@
                     </div>
                 </fieldset>
 
+                {{-- Tarif demi-journée (La Pépite) : palier optionnel entre court et journée --}}
+                <fieldset class="form-element">
+                    <div class="form-element-row">
+                        <div class="form-field">
+                            <label for="price_half_day" class="form-element-title">{{ __('Half day price') }}</label>
+                            <input
+                                type="number"
+                                id="price_half_day"
+                                name="price_half_day"
+                                step="0.01"
+                                min="0"
+                                value="{{ old('price_half_day', $room?->price_half_day ?? '') }}"
+                            >
+                            <small class="text-gray-600">{{ __('Leave empty to disable') }}</small>
+                            @error('price_half_day')
+                                <span class="text-red-600 text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-field">
+                            <label for="max_hours_half_day" class="form-element-title">{{ __('Max hours for half day') }}</label>
+                            <input
+                                type="number"
+                                id="max_hours_half_day"
+                                name="max_hours_half_day"
+                                min="1"
+                                value="{{ old('max_hours_half_day', $room?->max_hours_half_day) }}"
+                                data-show-when="price_half_day"
+                            >
+                            <small class="text-gray-600">{{ __('Required if half day price is set') }}</small>
+                            @error('max_hours_half_day')
+                                <span class="text-red-600 text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                </fieldset>
+
                 <fieldset class="form-element">
                     <div class="form-field">
                         <label for="price_full_day" class="form-element-title">{{ __('Full day price') }}</label>

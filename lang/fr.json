@@ -1022,5 +1022,11 @@
     "Open to all logged-in members": "Ouverte à tous les membres connectés",
     "If enabled, every logged-in member can see and book this room.": "Si coché, tout membre connecté peut voir et réserver cette salle.",
     "If disabled, only members of the companies selected below (and people with direct access) can see and book it.": "Si décoché, seuls les membres des entreprises sélectionnées ci-dessous (et les personnes ayant un accès direct) peuvent la voir et la réserver.",
-    "Companies with access (used when not open to all)": "Entreprises ayant accès (utilisé quand la salle n'est pas ouverte à tous)"
+    "Companies with access (used when not open to all)": "Entreprises ayant accès (utilisé quand la salle n'est pas ouverte à tous)",
+    "Half day price": "Prix forfaitaire d'une demi-journée",
+    "Max hours for half day": "Durée max comptée comme « demi-journée » (heures)",
+    "Required if half day price is set": "Requis si un prix de demi-journée est défini",
+    "half day booking": "demi-journée",
+    "Half day booking": "Demi-journée (forfait)",
+    "Half day": "Demi-journée"
 }
