@@ -374,79 +374,48 @@
                     </div>
                 </fieldset>
 
-                <fieldset class="form-element">
-                    <div class="form-element-row">
-                        <div class="form-field">
-                            <label for="price_short" class="form-element-title">{{ __('Short reservation price') }}</label>
-                            <input
-                                type="number"
-                                id="price_short"
-                                name="price_short"
-                                step="0.01"
-                                min="0"
-                                value="{{ old('price_short', $room?->price_short ?? '') }}"
-                            >
-                            <small class="text-gray-600">{{ __('Leave empty to disable') }}</small>
-                            @error('price_short')
-                                <span class="text-red-600 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
+                {{-- Prix par salle (La Pépite). Les créneaux/durées sont globaux (réglages système). --}}
+                <p class="text-sm text-gray-600 mb-2">{{ __('Prices are specific to this room. Time windows (hourly max, half-day and full-day slots) are set globally in the system settings.') }}</p>
 
-                        <div class="form-field">
-                            <label for="max_hours_short" class="form-element-title">{{ __('Max hours for short reservation') }}</label>
-                            <input
-                                type="number"
-                                id="max_hours_short"
-                                name="max_hours_short"
-                                min="1"
-                                value="{{ old('max_hours_short', $room?->max_hours_short) }}"
-                                data-show-when="price_short"
-                            >
-                            <small class="text-gray-600">{{ __('Required if short reservation price is set') }}</small>
-                            @error('max_hours_short')
-                                <span class="text-red-600 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
+                {{-- Prix horaire --}}
+                <fieldset class="form-element">
+                    <div class="form-field">
+                        <label for="price_hourly" class="form-element-title">{{ __('Hourly price') }}</label>
+                        <input
+                            type="number"
+                            id="price_hourly"
+                            name="price_hourly"
+                            step="0.01"
+                            min="0"
+                            value="{{ old('price_hourly', $room?->price_hourly ?? '') }}"
+                        >
+                        <small class="text-gray-600 block mt-1">{{ __('Charged per hour × number of hours booked (up to the global hourly max). Leave empty to disable.') }}</small>
+                        @error('price_hourly')
+                            <span class="text-red-600 text-sm">{{ $message }}</span>
+                        @enderror
                     </div>
                 </fieldset>
 
-                {{-- Tarif demi-journée (La Pépite) : palier optionnel entre court et journée --}}
+                {{-- Prix demi-journée --}}
                 <fieldset class="form-element">
-                    <div class="form-element-row">
-                        <div class="form-field">
-                            <label for="price_half_day" class="form-element-title">{{ __('Half day price') }}</label>
-                            <input
-                                type="number"
-                                id="price_half_day"
-                                name="price_half_day"
-                                step="0.01"
-                                min="0"
-                                value="{{ old('price_half_day', $room?->price_half_day ?? '') }}"
-                            >
-                            <small class="text-gray-600">{{ __('Leave empty to disable') }}</small>
-                            @error('price_half_day')
-                                <span class="text-red-600 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="form-field">
-                            <label for="max_hours_half_day" class="form-element-title">{{ __('Max hours for half day') }}</label>
-                            <input
-                                type="number"
-                                id="max_hours_half_day"
-                                name="max_hours_half_day"
-                                min="1"
-                                value="{{ old('max_hours_half_day', $room?->max_hours_half_day) }}"
-                                data-show-when="price_half_day"
-                            >
-                            <small class="text-gray-600">{{ __('Required if half day price is set') }}</small>
-                            @error('max_hours_half_day')
-                                <span class="text-red-600 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
+                    <div class="form-field">
+                        <label for="price_half_day" class="form-element-title">{{ __('Half day price') }}</label>
+                        <input
+                            type="number"
+                            id="price_half_day"
+                            name="price_half_day"
+                            step="0.01"
+                            min="0"
+                            value="{{ old('price_half_day', $room?->price_half_day ?? '') }}"
+                        >
+                        <small class="text-gray-600 block mt-1">{{ __('Flat price. Morning and afternoon windows are set globally. Leave empty to disable.') }}</small>
+                        @error('price_half_day')
+                            <span class="text-red-600 text-sm">{{ $message }}</span>
+                        @enderror
                     </div>
                 </fieldset>
 
+                {{-- Prix journée complète --}}
                 <fieldset class="form-element">
                     <div class="form-field">
                         <label for="price_full_day" class="form-element-title">{{ __('Full day price') }}</label>
@@ -459,52 +428,10 @@
                             value="{{ old('price_full_day', $room?->price_full_day ?? '') }}"
                             required
                         >
-                        <small class="text-gray-600 block mt-1">
-                            @if($room?->day_start_time && $room?->day_end_time)
-                                {{ __('A full day covers the room opening hours:') }} {{ substr($room->day_start_time, 0, 5) }}–{{ substr($room->day_end_time, 0, 5) }}.
-                            @else
-                                {{ __('A full day covers the room opening hours (set them in the Availability section below).') }}
-                            @endif
-                        </small>
+                        <small class="text-gray-600 block mt-1">{{ __('Flat price. The full-day time window is set globally in the system settings.') }}</small>
                         @error('price_full_day')
                             <span class="text-red-600 text-sm">{{ $message }}</span>
                         @enderror
-                    </div>
-                </fieldset>
-
-                <fieldset class="form-element">
-                    <div class="form-element-row">
-                        <div class="form-field">
-                            <label for="always_short_after" class="form-element-title">{{ __('Always short after (hour)') }}</label>
-                            <input
-                                type="number"
-                                id="always_short_after"
-                                name="always_short_after"
-                                min="0"
-                                max="24"
-                                value="{{ old('always_short_after', $room?->always_short_after) }}"
-                            >
-                            <small class="text-gray-600">{{ __('E.g.: reservations after 5pm always get the "short" rate') }}</small>
-                            @error('always_short_after')
-                                <span class="text-red-600 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="form-field">
-                            <label for="always_short_before" class="form-element-title">{{ __('Always short before (hour)') }}</label>
-                            <input
-                                type="number"
-                                id="always_short_before"
-                                name="always_short_before"
-                                min="0"
-                                max="24"
-                                value="{{ old('always_short_before', $room?->always_short_before) }}"
-                            >
-                            <small class="text-gray-600">{{ __('E.g.: reservations ending before 12pm always get the "short" rate') }}</small>
-                            @error('always_short_before')
-                                <span class="text-red-600 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
                     </div>
                 </fieldset>
 

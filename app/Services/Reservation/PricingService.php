@@ -5,6 +5,7 @@ namespace App\Services\Reservation;
 use App\Enums\DiscountTypes;
 use App\Models\Room;
 use App\Models\RoomDiscount;
+use App\Models\SystemSettings;
 use App\Services\Settings\SettingsService;
 use Carbon\Carbon;
 
@@ -68,68 +69,86 @@ class PricingService
      */
     public function calculateEventPrice(Carbon $start, Carbon $end, Room $room): array
     {
-        $shortAfter = $room->always_short_after;
-        $shortBefore = $room->always_short_before;
-        $maxHoursShort = $room->max_hours_short;
-        $priceShort = $room->price_short;
-        $priceFullDay = $room->price_full_day;
-        // Palier demi-journée (La Pépite) : optionnel, entre le court et la journée.
+        // Modèle La Pépite : chaque segment est classé selon les CRÉNEAUX GLOBAUX
+        // (réglages système), et facturé au PRIX DE LA SALLE correspondant.
+        $settings = app(SystemSettings::class);
+        $hourlyMax = (float) $settings->hourly_max_hours;
+        $morningStart = $this->timeToHours($settings->half_day_morning_start);
+        $morningEnd = $this->timeToHours($settings->half_day_morning_end);
+        $afternoonStart = $this->timeToHours($settings->half_day_afternoon_start);
+        $afternoonEnd = $this->timeToHours($settings->half_day_afternoon_end);
+        $fullStart = $this->timeToHours($settings->full_day_start);
+        $fullEnd = $this->timeToHours($settings->full_day_end);
+
+        // Prix propres à la salle
+        $priceHourly = $room->price_hourly;
         $priceHalfDay = $room->price_half_day;
-        $maxHoursHalfDay = $room->max_hours_half_day;
+        $priceFullDay = $room->price_full_day;
 
         $segments = $this->splitByDay($start, $end, $room);
 
-        $nbShort = 0;
-        $nbHalf = 0;
-        $nbFull = 0;
+        $match = fn ($a, $b) => abs($a - $b) < 0.02;
+
+        $price = 0.0;
+        $parts = [];
 
         foreach ($segments as $segment) {
-            $duration = $segment['end'] - $segment['start'];
+            $s = $segment['start'];
+            $e = $segment['end'];
+            $duration = $e - $s;
 
-            $isShort = $priceShort && (
-                ($shortBefore && $segment['end'] <= $shortBefore) ||
-                ($shortAfter && $segment['start'] >= $shortAfter) ||
-                ($maxHoursShort && $duration <= $maxHoursShort)
-            );
-
-            if ($isShort) {
-                $nbShort++;
-            } elseif ($priceHalfDay && $maxHoursHalfDay && $duration <= $maxHoursHalfDay) {
-                $nbHalf++;
-            } else {
-                $nbFull++;
+            if ($priceFullDay !== null && $match($s, $fullStart) && $match($e, $fullEnd)) {
+                $price += $priceFullDay;
+                $parts[] = __('Full day booking');
+            } elseif ($priceHalfDay !== null && $match($s, $morningStart) && $match($e, $morningEnd)) {
+                $price += $priceHalfDay;
+                $parts[] = __('Morning half-day');
+            } elseif ($priceHalfDay !== null && $match($s, $afternoonStart) && $match($e, $afternoonEnd)) {
+                $price += $priceHalfDay;
+                $parts[] = __('Afternoon half-day');
+            } elseif ($priceHourly !== null && $duration <= $hourlyMax + 0.001) {
+                $hours = round($duration, 2);
+                $price += $priceHourly * $hours;
+                $parts[] = __('Hourly booking').' ('.$this->formatHours($hours).'h)';
+            } elseif ($priceFullDay !== null) {
+                // Repli : créneau non reconnu -> tarif journée
+                $price += $priceFullDay;
+                $parts[] = __('Full day booking');
             }
         }
 
-        // Build label
-        $label = '';
-        if (count($segments) > 1) {
-            if ($nbShort) {
-                $label .= $nbShort.'x '.__('short booking').', ';
-            }
-            if ($nbHalf) {
-                $label .= $nbHalf.'x '.__('half day booking').', ';
-            }
-            if ($nbFull) {
-                $label .= $nbFull.'x '.__('full day booking').', ';
-            }
-            $label = substr($label, 0, -2);
-        } else {
-            if ($nbShort) {
-                $label .= __('Short booking');
-            } elseif ($nbHalf) {
-                $label .= __('Half day booking');
-            } elseif ($nbFull) {
-                $label .= __('Full day booking');
-            }
+        // Libellé agrégé (compte par type)
+        $counts = array_count_values($parts);
+        $labelParts = [];
+        foreach ($counts as $name => $n) {
+            $labelParts[] = $n > 1 ? $n.'× '.$name : $name;
         }
-
-        $price = $nbShort * $priceShort + $nbHalf * $priceHalfDay + $nbFull * $priceFullDay;
 
         return [
-            'label' => $label,
+            'label' => implode(', ', $labelParts),
             'price' => $price,
         ];
+    }
+
+    /**
+     * Convertit "HH:MM" (ou "HH:MM:SS") en heures décimales.
+     */
+    protected function timeToHours(?string $time): float
+    {
+        if (! $time) {
+            return 0.0;
+        }
+        $p = explode(':', $time);
+
+        return (int) ($p[0] ?? 0) + ((int) ($p[1] ?? 0)) / 60;
+    }
+
+    /**
+     * Formate un nombre d'heures sans zéros inutiles (3, 1.5, 2.25).
+     */
+    protected function formatHours(float $hours): string
+    {
+        return rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.');
     }
 
     /**

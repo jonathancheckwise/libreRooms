@@ -1036,5 +1036,11 @@
     "Hourly booking: max hours": "Réservation à l'heure : durée max (heures)",
     "Beyond this duration, the visitor must choose a half-day or full-day booking.": "Au-delà de cette durée, le visiteur doit choisir une demi-journée ou une journée.",
     "Morning half-day": "Demi-journée matin",
-    "Afternoon half-day": "Demi-journée après-midi"
+    "Afternoon half-day": "Demi-journée après-midi",
+    "Hourly price": "Prix horaire",
+    "Prices are specific to this room. Time windows (hourly max, half-day and full-day slots) are set globally in the system settings.": "Les prix sont propres à cette salle. Les créneaux (durée max horaire, demi-journées et journée) sont définis globalement dans les réglages système.",
+    "Charged per hour × number of hours booked (up to the global hourly max). Leave empty to disable.": "Facturé au prix × nombre d'heures réservées (jusqu'à la durée max globale). Laisser vide pour désactiver.",
+    "Flat price. Morning and afternoon windows are set globally. Leave empty to disable.": "Prix forfaitaire. Les créneaux matin et après-midi sont définis globalement. Laisser vide pour désactiver.",
+    "Flat price. The full-day time window is set globally in the system settings.": "Prix forfaitaire. Le créneau journée est défini globalement dans les réglages système.",
+    "Hourly booking": "Réservation à l'heure"
 }

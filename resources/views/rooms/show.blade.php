@@ -185,15 +185,15 @@
                     <h4 class="text-sm font-medium text-gray-900 mb-2 mt-4">{{ __('Recommended rate:') }}</h4>
                 @endif
                 <div class="space-y-3">
-                    @if($room->price_short && $room->max_hours_short)
+                    @if($room->price_hourly)
                         <div class="flex justify-between text-sm">
-                            <span class="text-gray-600">{{ $room->shortPriceRuleLabel() }}</span>
-                            <span class="text-gray-900 font-medium">{{ currency($room->price_short, $room->owner) }}</span>
+                            <span class="text-gray-600">{{ __('Hourly booking') }}</span>
+                            <span class="text-gray-900 font-medium">{{ currency($room->price_hourly, $room->owner) }} / h</span>
                         </div>
                     @endif
-                    @if($room->price_half_day && $room->max_hours_half_day)
+                    @if($room->price_half_day)
                         <div class="flex justify-between text-sm">
-                            <span class="text-gray-600">{{ __('Half day') }} (≤ {{ $room->max_hours_half_day }}h)</span>
+                            <span class="text-gray-600">{{ __('Half day') }}</span>
                             <span class="text-gray-900 font-medium">{{ currency($room->price_half_day, $room->owner) }}</span>
                         </div>
                     @endif

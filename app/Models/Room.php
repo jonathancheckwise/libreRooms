@@ -38,6 +38,7 @@ class Room extends Model
         'price_short',
         'price_full_day',
         'price_half_day',
+        'price_hourly',
         'max_hours_short',
         'max_hours_half_day',
         'always_short_after',

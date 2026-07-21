@@ -329,15 +329,15 @@
                                         <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{{ __('Prices') }}</h4>
                                         @if($room->price_mode->value === 'fixed')
                                             <div class="bg-white rounded-lg border border-slate-200 p-3 space-y-2">
-                                                @if($room->price_short && $room->max_hours_short)
+                                                @if($room->price_hourly)
                                                     <div class="flex justify-between text-sm">
-                                                        <span class="text-slate-500">{{ $room->shortPriceRuleLabel() }}</span>
-                                                        <span class="text-slate-900 font-medium">{{ currency($room->price_short, $room->owner) }}</span>
+                                                        <span class="text-slate-500">{{ __('Hourly booking') }}</span>
+                                                        <span class="text-slate-900 font-medium">{{ currency($room->price_hourly, $room->owner) }} / h</span>
                                                     </div>
                                                 @endif
-                                                @if($room->price_half_day && $room->max_hours_half_day)
+                                                @if($room->price_half_day)
                                                     <div class="flex justify-between text-sm">
-                                                        <span class="text-slate-500">{{ __('Half day') }} (≤ {{ $room->max_hours_half_day }}h)</span>
+                                                        <span class="text-slate-500">{{ __('Half day') }}</span>
                                                         <span class="text-slate-900 font-medium">{{ currency($room->price_half_day, $room->owner) }}</span>
                                                     </div>
                                                 @endif

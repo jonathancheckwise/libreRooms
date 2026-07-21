@@ -80,20 +80,12 @@ class RoomRules
             'free_price_explanation' => ['nullable', 'string'],
             'price_short' => ['nullable', 'numeric', 'min:0'],
             'price_full_day' => ['required', 'numeric', 'min:0'],
-            // Tarif demi-journée (La Pépite) : optionnel, palier intermédiaire
+            // Prix par salle (La Pépite) : demi-journée + horaire
             'price_half_day' => ['nullable', 'numeric', 'min:0'],
-            // max_hours_short is required if price_short is set
-            'max_hours_short' => [
-                $request->filled('price_short') ? 'required' : 'nullable',
-                'integer',
-                'min:1',
-            ],
-            // max_hours_half_day is required if price_half_day is set
-            'max_hours_half_day' => [
-                $request->filled('price_half_day') ? 'required' : 'nullable',
-                'integer',
-                'min:1',
-            ],
+            'price_hourly' => ['nullable', 'numeric', 'min:0'],
+            // Anciens champs (durées) désormais définis globalement : facultatifs
+            'max_hours_short' => ['nullable', 'integer', 'min:1'],
+            'max_hours_half_day' => ['nullable', 'integer', 'min:1'],
             'always_short_after' => ['nullable', 'integer', 'min:0', 'max:24'],
             'always_short_before' => ['nullable', 'integer', 'min:0', 'max:24'],
             'allow_late_end_hour' => ['nullable', 'integer', 'min:0'],
