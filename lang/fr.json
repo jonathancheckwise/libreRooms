@@ -1042,5 +1042,13 @@
     "Charged per hour × number of hours booked (up to the global hourly max). Leave empty to disable.": "Facturé au prix × nombre d'heures réservées (jusqu'à la durée max globale). Laisser vide pour désactiver.",
     "Flat price. Morning and afternoon windows are set globally. Leave empty to disable.": "Prix forfaitaire. Les créneaux matin et après-midi sont définis globalement. Laisser vide pour désactiver.",
     "Flat price. The full-day time window is set globally in the system settings.": "Prix forfaitaire. Le créneau journée est défini globalement dans les réglages système.",
-    "Hourly booking": "Réservation à l'heure"
+    "Hourly booking": "Réservation à l'heure",
+    "Booking mode": "Mode de réservation",
+    "Hourly": "À l'heure",
+    "max": "max",
+    "Choose your start and end times below (max :h h).": "Choisissez vos heures de début et de fin ci-dessous (max :h h).",
+    "Times are locked to the morning window.": "Les heures sont bloquées sur le créneau du matin.",
+    "Times are locked to the afternoon window.": "Les heures sont bloquées sur le créneau de l'après-midi.",
+    "Times are locked to the full-day window.": "Les heures sont bloquées sur le créneau de la journée.",
+    "Maximum :h h in hourly mode — pick a half-day or full-day for longer.": "Maximum :h h en mode à l'heure — choisissez une demi-journée ou une journée pour plus."
 }

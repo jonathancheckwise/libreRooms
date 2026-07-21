@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateReservationRequest;
 use App\Models\Contact;
 use App\Models\Reservation;
 use App\Models\Room;
+use App\Models\SystemSettings;
 use App\Services\Reservation\ReservationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,9 @@ class ReservationController extends Controller
         $room->load('owner', 'discounts', 'options', 'customFields');
         $timezone = $room->getTimezone();
 
+        // Créneaux globaux (La Pépite) pour l'aperçu de prix côté client
+        $pep = app(SystemSettings::class);
+
         // Prepare room configuration for JavaScript
         $roomConfig = [
             'settings' => [
@@ -34,6 +38,16 @@ class ReservationController extends Controller
                 'max_hours_short' => $room->max_hours_short,
                 'always_short_after' => $room->always_short_after,
                 'always_short_before' => $room->always_short_before,
+                // La Pépite : tarifs par salle + créneaux globaux
+                'price_hourly' => $room->price_hourly,
+                'price_half_day' => $room->price_half_day,
+                'hourly_max_hours' => (int) $pep->hourly_max_hours,
+                'half_day_morning_start' => substr($pep->half_day_morning_start, 0, 5),
+                'half_day_morning_end' => substr($pep->half_day_morning_end, 0, 5),
+                'half_day_afternoon_start' => substr($pep->half_day_afternoon_start, 0, 5),
+                'half_day_afternoon_end' => substr($pep->half_day_afternoon_end, 0, 5),
+                'full_day_start' => substr($pep->full_day_start, 0, 5),
+                'full_day_end' => substr($pep->full_day_end, 0, 5),
                 'allow_late_end_hour' => $room->allow_late_end_hour,
                 'reservation_cutoff_days' => $room->reservation_cutoff_days,
                 'reservation_advance_limit' => $room->reservation_advance_limit,

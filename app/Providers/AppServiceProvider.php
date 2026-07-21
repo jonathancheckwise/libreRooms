@@ -55,6 +55,9 @@ class AppServiceProvider extends ServiceProvider
             // Use our custom OIDC provider instead of the outdated package
             $event->extendSocialite('nextcloud', \App\Services\Auth\OidcProvider::class);
         });
-        URL::forceScheme('https');
+        // Ne force le HTTPS qu'en production (permet le dev local en http).
+        if (! app()->environment('local')) {
+            URL::forceScheme('https');
+        }
     }
 }

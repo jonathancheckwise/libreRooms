@@ -299,49 +299,65 @@ function splitByDay(start, end, ALLOW_LATE_END) {
 
     return segments;
 }
-function getEventPrice(start,end) {
-    const short_after = window.RoomConfig.settings.always_short_after;
-    const short_before = window.RoomConfig.settings.always_short_before;
-    const max_hours_short = window.RoomConfig.settings.max_hours_short;
-    const late_end_hour = window.RoomConfig.settings.allow_late_end_hour;
-    const price_short = window.RoomConfig.settings.price_short;
-    const price_full_day = window.RoomConfig.settings.price_full_day;
+function pepTimeToHours(str) {
+    if (!str) return 0;
+    const p = String(str).split(':');
+    return (parseInt(p[0], 10) || 0) + ((parseInt(p[1], 10) || 0)) / 60;
+}
 
-    const segments = splitByDay(start,end,late_end_hour);
-    let label = "";
-    let nb_short = 0;
-    let nb_full = 0;
-    segments.forEach((ev) => {
-        if ((short_before && ev.end <= short_before) ||
-            (short_after && ev.start >= short_after) ||
-            (max_hours_short && ev.end-ev.start <= max_hours_short)) {
-            nb_short++;
-        } else {
-            nb_full++;
+// La Pépite : aperçu de prix par CRÉNEAU (miroir du moteur serveur PricingService).
+// Chaque segment est classé selon les fenêtres globales, facturé au prix de la salle.
+function getEventPrice(start, end) {
+    const s = window.RoomConfig.settings;
+    const late_end_hour = s.allow_late_end_hour;
+    const priceHourly = s.price_hourly;
+    const priceHalf = s.price_half_day;
+    const priceFull = s.price_full_day;
+    const hourlyMax = s.hourly_max_hours;
+
+    const mS = pepTimeToHours(s.half_day_morning_start), mE = pepTimeToHours(s.half_day_morning_end);
+    const aS = pepTimeToHours(s.half_day_afternoon_start), aE = pepTimeToHours(s.half_day_afternoon_end);
+    const fS = pepTimeToHours(s.full_day_start), fE = pepTimeToHours(s.full_day_end);
+    const match = (a, b) => Math.abs(a - b) < 0.02;
+
+    const L = {
+        full: t.full_day_booking || 'Journée complète',
+        morning: t.morning_half_day || 'Demi-journée matin',
+        afternoon: t.afternoon_half_day || 'Demi-journée après-midi',
+        hourly: t.hourly_booking || "Réservation à l'heure",
+    };
+
+    const segments = splitByDay(start, end, late_end_hour);
+    let price = 0;
+    const parts = [];
+
+    segments.forEach((seg) => {
+        const a = seg.start, b = seg.end, dur = b - a;
+        if (priceFull != null && match(a, fS) && match(b, fE)) {
+            price += priceFull; parts.push(L.full);
+        } else if (priceHalf != null && match(a, mS) && match(b, mE)) {
+            price += priceHalf; parts.push(L.morning);
+        } else if (priceHalf != null && match(a, aS) && match(b, aE)) {
+            price += priceHalf; parts.push(L.afternoon);
+        } else if (priceHourly != null && dur <= hourlyMax + 0.001) {
+            const h = Math.round(dur * 100) / 100;
+            price += priceHourly * h; parts.push(L.hourly + ' (' + h + 'h)');
+        } else if (priceFull != null) {
+            price += priceFull; parts.push(L.full);
         }
-    })
-    const shortLabel = t.short_booking || 'short booking';
-    const fullLabel = t.full_day_booking || 'full day booking';
-    if (segments.length > 1) {
-        label += segments[0].date + " " + (t.to || 'to') + " " + segments[segments.length-1].date + " (";
-        if (nb_short) {
-            label += nb_short + "x " + shortLabel + ", ";
-        }
-        if (nb_full) {
-            label += nb_full + "x " + fullLabel + ", ";
-        }
-        label = label.substring(0, label.length - 2) + ")"
-    } else {
-        label = segments[0].date + " (";
-        if (nb_short) {
-            label += shortLabel;
-        } else if (nb_full) {
-            label += fullLabel;
-        }
-        label += ")";
-    }
-    const price = nb_short*price_short + nb_full*price_full_day;
-    return ([label, price]);
+    });
+
+    // Libellé agrégé
+    const counts = {};
+    parts.forEach((p) => { counts[p] = (counts[p] || 0) + 1; });
+    const labelParts = Object.keys(counts).map((k) => counts[k] > 1 ? counts[k] + '× ' + k : k);
+    const dateStr = segments.length
+        ? (segments.length > 1
+            ? segments[0].date + ' ' + (t.to || 'to') + ' ' + segments[segments.length - 1].date
+            : segments[0].date)
+        : '';
+    const label = dateStr + ' (' + labelParts.join(', ') + ')';
+    return [label, price];
 }
 
 function getOptionsPrice(options) {

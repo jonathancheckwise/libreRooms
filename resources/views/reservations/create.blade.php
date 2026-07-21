@@ -23,6 +23,9 @@
             non_bookable: @json(__('Non-bookable')),
             short_booking: @json(__('short booking')),
             full_day_booking: @json(__('full day booking')),
+            morning_half_day: @json(__('Morning half-day')),
+            afternoon_half_day: @json(__('Afternoon half-day')),
+            hourly_booking: @json(__('Hourly booking')),
             to: @json(__('to')),
             error_no_dates: @json(__('Error: You must add at least one reservation date.')),
             error_invalid_dates: @json(__('Error: Some reservation dates are not valid:')),
@@ -104,6 +107,96 @@
                 </div>
             </div>
         @endif
+
+        {{-- 6.0 Mode de réservation (La Pépite) : pilote les champs de créneau ci-dessous --}}
+        @php
+            $pep = app(\App\Models\SystemSettings::class);
+            $pepWindows = [
+                'hourly_max' => (int) $pep->hourly_max_hours,
+                'morning_start' => substr($pep->half_day_morning_start, 0, 5),
+                'morning_end' => substr($pep->half_day_morning_end, 0, 5),
+                'afternoon_start' => substr($pep->half_day_afternoon_start, 0, 5),
+                'afternoon_end' => substr($pep->half_day_afternoon_end, 0, 5),
+                'full_start' => substr($pep->full_day_start, 0, 5),
+                'full_end' => substr($pep->full_day_end, 0, 5),
+            ];
+        @endphp
+        <div class="form-group" id="pep-mode-group">
+            <h3 class="form-group-title">{{ __('Booking mode') }}</h3>
+            <div class="form-element">
+                <label for="pep-date" class="form-element-title">{{ __('Date') }}</label>
+                <input type="date" id="pep-date">
+            </div>
+            <div class="form-element" style="display:flex;flex-direction:column;gap:.5rem">
+                <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="hourly"> {{ __('Hourly') }} <span class="text-gray-500 text-sm">({{ __('max') }} {{ $pepWindows['hourly_max'] }}h)</span></label>
+                <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="morning"> {{ __('Morning half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['morning_start'] }}–{{ $pepWindows['morning_end'] }})</span></label>
+                <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="afternoon"> {{ __('Afternoon half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['afternoon_start'] }}–{{ $pepWindows['afternoon_end'] }})</span></label>
+                <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="full"> {{ __('Full day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['full_start'] }}–{{ $pepWindows['full_end'] }})</span></label>
+            </div>
+            <p id="pep-mode-hint" class="text-sm text-gray-600 mt-1"></p>
+        </div>
+        <script>
+        (function () {
+            const W = @json($pepWindows);
+            const hintTxt = {
+                hourly: @json(__('Choose your start and end times below (max :h h).', ['h' => $pepWindows['hourly_max']])),
+                morning: @json(__('Times are locked to the morning window.')),
+                afternoon: @json(__('Times are locked to the afternoon window.')),
+                full: @json(__('Times are locked to the full-day window.')),
+            };
+            function hm(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
+            function toDT(d,t){ return d + 'T' + t; }
+            function addMinutes(t,mins){ let x=hm(t)+mins; x=Math.max(0,Math.min(24*60-1,x)); const h=String(Math.floor(x/60)).padStart(2,'0'); const m=String(x%60).padStart(2,'0'); return h+':'+m; }
+            const dateEl = () => document.getElementById('pep-date');
+            const firstStart = () => document.querySelector('.event-start');
+            const firstEnd = () => document.querySelector('.event-end');
+            function currentMode(){ const r=document.querySelector('input[name="pep_mode"]:checked'); return r?r.value:null; }
+
+            function fire(el){ el.dispatchEvent(new Event('input', {bubbles:true})); }
+
+            function apply(){
+                const mode = currentMode(); const date = dateEl().value;
+                const s = firstStart(), e = firstEnd();
+                if (!s || !e || !mode || !date) return;
+                let start, end, lock = true;
+                if (mode==='morning'){ start=W.morning_start; end=W.morning_end; }
+                else if (mode==='afternoon'){ start=W.afternoon_start; end=W.afternoon_end; }
+                else if (mode==='full'){ start=W.full_start; end=W.full_end; }
+                else { start=W.full_start; end=addMinutes(W.full_start,60); lock=false; }
+                s.value = toDT(date,start); e.value = toDT(date,end);
+                s.readOnly = lock; e.readOnly = lock;
+                s.style.background = lock ? '#f3f4f6' : ''; e.style.background = lock ? '#f3f4f6' : '';
+                fire(s); fire(e);
+                const hintEl=document.getElementById('pep-mode-hint'); if(hintEl) hintEl.textContent = hintTxt[mode] || '';
+            }
+
+            // Bride la durée en mode "à l'heure" pour ne pas dépasser le max
+            function clampHourly(target){
+                if (currentMode()!=='hourly') return;
+                const s = firstStart(), e = firstEnd();
+                if (!s.value || !e.value) return;
+                const sd = new Date(s.value), ed = new Date(e.value);
+                const diffMin = (ed - sd)/60000;
+                if (diffMin > W.hourly_max*60){
+                    const capped = new Date(sd.getTime() + W.hourly_max*3600*1000);
+                    const pad=n=>String(n).padStart(2,'0');
+                    e.value = `${capped.getFullYear()}-${pad(capped.getMonth()+1)}-${pad(capped.getDate())}T${pad(capped.getHours())}:${pad(capped.getMinutes())}`;
+                    const hintEl=document.getElementById('pep-mode-hint');
+                    if(hintEl) hintEl.textContent = @json(__('Maximum :h h in hourly mode — pick a half-day or full-day for longer.', ['h' => $pepWindows['hourly_max']]));
+                    fire(e);
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function(){
+                document.querySelectorAll('input[name="pep_mode"]').forEach(r=>r.addEventListener('change', apply));
+                const d = dateEl(); if (d) d.addEventListener('change', apply);
+                const cont = document.getElementById('events-container');
+                if (cont) cont.addEventListener('input', function(ev){
+                    if (ev.target.matches('.event-end,.event-start')) clampHourly(ev.target);
+                });
+            });
+        })();
+        </script>
 
         {{-- 6. Events --}}
         @include('reservations.partials.events', [
