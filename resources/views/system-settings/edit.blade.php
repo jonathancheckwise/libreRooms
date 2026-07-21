@@ -300,6 +300,76 @@
                 </fieldset>
             </div>
 
+            {{-- Plages horaires globales (La Pépite) --}}
+            <div class="form-group">
+                <h3 class="form-group-title">{{ __('Booking time windows (all rooms)') }}</h3>
+                <p class="text-sm text-gray-600 mb-4">{{ __('These windows define what an hourly / half-day / full-day booking means. Prices remain set per room.') }}</p>
+
+                <fieldset class="form-element">
+                    <div class="form-field">
+                        <label for="hourly_max_hours" class="form-element-title">{{ __('Hourly booking: max hours') }}</label>
+                        <input type="number" id="hourly_max_hours" name="hourly_max_hours" min="1" max="24"
+                            value="{{ old('hourly_max_hours', $settings?->hourly_max_hours ?? 3) }}" required>
+                        <small class="text-gray-600 block mt-1">{{ __('Beyond this duration, the visitor must choose a half-day or full-day booking.') }}</small>
+                        @error('hourly_max_hours') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-element">
+                    <legend class="text-sm font-medium mb-2">{{ __('Morning half-day') }}</legend>
+                    <div class="form-element-row">
+                        <div class="form-field">
+                            <label for="half_day_morning_start" class="form-element-title">{{ __('Start') }}</label>
+                            <input type="time" id="half_day_morning_start" name="half_day_morning_start"
+                                value="{{ old('half_day_morning_start', $settings ? substr($settings->half_day_morning_start, 0, 5) : '06:00') }}" required>
+                            @error('half_day_morning_start') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-field">
+                            <label for="half_day_morning_end" class="form-element-title">{{ __('End') }}</label>
+                            <input type="time" id="half_day_morning_end" name="half_day_morning_end"
+                                value="{{ old('half_day_morning_end', $settings ? substr($settings->half_day_morning_end, 0, 5) : '12:00') }}" required>
+                            @error('half_day_morning_end') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-element">
+                    <legend class="text-sm font-medium mb-2">{{ __('Afternoon half-day') }}</legend>
+                    <div class="form-element-row">
+                        <div class="form-field">
+                            <label for="half_day_afternoon_start" class="form-element-title">{{ __('Start') }}</label>
+                            <input type="time" id="half_day_afternoon_start" name="half_day_afternoon_start"
+                                value="{{ old('half_day_afternoon_start', $settings ? substr($settings->half_day_afternoon_start, 0, 5) : '12:00') }}" required>
+                            @error('half_day_afternoon_start') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-field">
+                            <label for="half_day_afternoon_end" class="form-element-title">{{ __('End') }}</label>
+                            <input type="time" id="half_day_afternoon_end" name="half_day_afternoon_end"
+                                value="{{ old('half_day_afternoon_end', $settings ? substr($settings->half_day_afternoon_end, 0, 5) : '17:00') }}" required>
+                            @error('half_day_afternoon_end') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-element">
+                    <legend class="text-sm font-medium mb-2">{{ __('Full day') }}</legend>
+                    <div class="form-element-row">
+                        <div class="form-field">
+                            <label for="full_day_start" class="form-element-title">{{ __('Start') }}</label>
+                            <input type="time" id="full_day_start" name="full_day_start"
+                                value="{{ old('full_day_start', $settings ? substr($settings->full_day_start, 0, 5) : '07:00') }}" required>
+                            @error('full_day_start') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-field">
+                            <label for="full_day_end" class="form-element-title">{{ __('End') }}</label>
+                            <input type="time" id="full_day_end" name="full_day_end"
+                                value="{{ old('full_day_end', $settings ? substr($settings->full_day_end, 0, 5) : '17:00') }}" required>
+                            @error('full_day_end') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
             <div class="btn-group justify-end mt-6">
                 <button type="submit" class="btn btn-primary">
                     {{ __('Save') }}

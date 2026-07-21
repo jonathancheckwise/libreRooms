@@ -43,6 +43,14 @@ class SystemSettingsController extends Controller
             'timezone' => 'required|string',
             'currency' => 'required|string',
             'locale' => 'required|string',
+            // Plages horaires globales (La Pépite)
+            'hourly_max_hours' => 'required|integer|min:1|max:24',
+            'half_day_morning_start' => 'required|date_format:H:i',
+            'half_day_morning_end' => 'required|date_format:H:i|after:half_day_morning_start',
+            'half_day_afternoon_start' => 'required|date_format:H:i',
+            'half_day_afternoon_end' => 'required|date_format:H:i|after:half_day_afternoon_start',
+            'full_day_start' => 'required|date_format:H:i',
+            'full_day_end' => 'required|date_format:H:i|after:full_day_start',
         ];
 
         $validated = $request->validate($rules);

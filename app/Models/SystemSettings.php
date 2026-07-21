@@ -29,6 +29,14 @@ class SystemSettings extends Model
         'timezone',
         'currency',
         'locale',
+        // Plages horaires globales (La Pépite)
+        'hourly_max_hours',
+        'half_day_morning_start',
+        'half_day_morning_end',
+        'half_day_afternoon_start',
+        'half_day_afternoon_end',
+        'full_day_start',
+        'full_day_end',
     ];
 
     public function mailSettings(): MailSettingsDTO {

@@ -1030,5 +1030,11 @@
     "Half day booking": "Demi-journée (forfait)",
     "Half day": "Demi-journée",
     "A full day covers the room opening hours:": "Une journée complète couvre les horaires d'ouverture de la salle :",
-    "A full day covers the room opening hours (set them in the Availability section below).": "Une journée complète couvre les horaires d'ouverture de la salle (à définir dans la section Disponibilités plus bas)."
+    "A full day covers the room opening hours (set them in the Availability section below).": "Une journée complète couvre les horaires d'ouverture de la salle (à définir dans la section Disponibilités plus bas).",
+    "Booking time windows (all rooms)": "Plages horaires de réservation (toutes les salles)",
+    "These windows define what an hourly / half-day / full-day booking means. Prices remain set per room.": "Ces plages définissent ce qu'est une réservation à l'heure / demi-journée / journée. Les prix, eux, restent définis par salle.",
+    "Hourly booking: max hours": "Réservation à l'heure : durée max (heures)",
+    "Beyond this duration, the visitor must choose a half-day or full-day booking.": "Au-delà de cette durée, le visiteur doit choisir une demi-journée ou une journée.",
+    "Morning half-day": "Demi-journée matin",
+    "Afternoon half-day": "Demi-journée après-midi"
 }
