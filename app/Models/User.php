@@ -79,6 +79,28 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withTimestamps();
     }
 
+    /**
+     * Entreprises auxquelles cet utilisateur appartient (La Pépite).
+     */
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class);
+    }
+
+    /**
+     * Vrai si l'utilisateur a accès à la salle via une de ses entreprises.
+     */
+    public function hasCompanyAccessToRoom(Room $room): bool
+    {
+        $companyIds = $this->companies()->pluck('companies.id');
+
+        if ($companyIds->isEmpty()) {
+            return false;
+        }
+
+        return $room->companies()->whereIn('companies.id', $companyIds)->exists();
+    }
+
     // ─── New unified role methods (UserRole) ────────────────────────────
 
     /**
@@ -163,7 +185,12 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $role = $this->getEffectiveRoomRole($room);
 
-        return $role !== null && $role->hasAtLeast(UserRole::VIEWER);
+        if ($role !== null && $role->hasAtLeast(UserRole::VIEWER)) {
+            return true;
+        }
+
+        // Accès accordé via une entreprise de l'utilisateur.
+        return $this->hasCompanyAccessToRoom($room);
     }
 
     public function canModerateRoom(Room $room): bool
@@ -268,6 +295,15 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($minRole === UserRole::VIEWER) {
             $publicRoomIds = Room::where('active', true)->where('is_public', true)->pluck('id');
             $ids = $ids->merge($publicRoomIds);
+
+            // Salles accessibles via les entreprises de l'utilisateur.
+            $companyIds = $this->companies()->pluck('companies.id');
+            if ($companyIds->isNotEmpty()) {
+                $companyRoomIds = Room::where('active', true)
+                    ->whereHas('companies', fn ($q) => $q->whereIn('companies.id', $companyIds))
+                    ->pluck('id');
+                $ids = $ids->merge($companyRoomIds);
+            }
         }
 
         return $ids->unique()->values();

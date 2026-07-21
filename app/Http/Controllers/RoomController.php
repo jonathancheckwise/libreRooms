@@ -7,6 +7,7 @@ use App\Enums\ReservationStatus;
 use App\Enums\RoomCurrentStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Concerns\RedirectsBack;
+use App\Models\Company;
 use App\Models\Image;
 use App\Models\Owner;
 use App\Models\Room;
@@ -119,6 +120,7 @@ class RoomController extends Controller
             'ownerTimezones' => $ownerTimezones,
             'ownersCaldavValid' => $ownersCaldavValid,
             'systemSettings' => app(SystemSettings::class),
+            'companies' => Company::orderBy('name')->get(),
         ]);
     }
 
@@ -150,6 +152,10 @@ class RoomController extends Controller
 
         // Create room
         $room = Room::create($validated);
+
+        // Entreprises ayant accès (La Pépite)
+        $request->validate(['companies' => ['array'], 'companies.*' => ['exists:companies,id']]);
+        $room->companies()->sync($request->input('companies', []));
 
         // Handle image uploads and ordering
         $this->handleImageUploadsAndOrder($request, $room);
@@ -478,6 +484,7 @@ class RoomController extends Controller
             'owners' => $owners,
             'ownerTimezones' => $ownerTimezones,
             'ownersCaldavValid' => $ownersCaldavValid,
+            'companies' => Company::orderBy('name')->get(),
         ]);
     }
 
@@ -516,6 +523,10 @@ class RoomController extends Controller
 
         // Update room
         $room->update($validated);
+
+        // Entreprises ayant accès (La Pépite)
+        $request->validate(['companies' => ['array'], 'companies.*' => ['exists:companies,id']]);
+        $room->companies()->sync($request->input('companies', []));
 
         return $this->redirectBack('rooms.show', ['room' => $room])
             ->with('success', __('Room updated successfully.'));

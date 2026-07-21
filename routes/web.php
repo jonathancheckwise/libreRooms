@@ -200,6 +200,16 @@ Route::controller(UserController::class)->middleware(['auth', 'recently_authenti
     Route::delete('/users/{user}', 'destroy')->name('users.destroy');
 });
 
+// Entreprises / organisations (La Pépite) — admin global uniquement
+Route::controller(\App\Http\Controllers\CompanyController::class)->middleware(['auth', 'verified', 'global_admin'])->group(function () {
+    Route::get('/companies', 'index')->name('companies.index');
+    Route::get('/companies/create', 'create')->name('companies.create');
+    Route::post('/companies', 'store')->name('companies.store');
+    Route::get('/companies/{company}/edit', 'edit')->name('companies.edit');
+    Route::put('/companies/{company}', 'update')->name('companies.update');
+    Route::delete('/companies/{company}', 'destroy')->name('companies.destroy');
+});
+
 // System settings (global admin only)
 Route::controller(\App\Http\Controllers\SystemSettingsController::class)->middleware(['auth', 'verified', 'global_admin'])->group(function () {
     Route::get('/system-settings', 'edit')->name('system-settings.edit');

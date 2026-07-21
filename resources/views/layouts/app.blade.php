@@ -41,6 +41,7 @@
                     <a href="{{ route('owners.index') }}" class="nav-link">{{ __('Owners') }}</a>
                 @endcan
                 @if(auth()->user()->is_global_admin)
+                    <a href="{{ route('companies.index') }}" class="nav-link">{{ __('Companies') }}</a>
                     <a href="{{ route('users.index') }}" class="nav-link">{{ __('Users') }}</a>
                     <a href="{{ route('system-settings.edit') }}" class="nav-link" title="{{ __('System settings') }}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">

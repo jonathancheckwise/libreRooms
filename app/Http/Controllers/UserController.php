@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Concerns\RedirectsBack;
+use App\Models\Company;
 use App\Models\Owner;
 use App\Models\User;
 use App\Services\Settings\SettingsService;
@@ -177,6 +178,7 @@ class UserController extends Controller
             'user' => null,
             'owners' => $owners,
             'ownerRoles' => UserRole::cases(),
+            'companies' => Company::orderBy('name')->get(),
         ]);
     }
 
@@ -194,6 +196,8 @@ class UserController extends Controller
             'owners' => ['array'],
             'owners.*.id' => ['exists:owners,id'],
             'owners.*.role' => ['in:'.implode(',', $roleValues)],
+            'companies' => ['array'],
+            'companies.*' => ['exists:companies,id'],
         ]);
 
         // Create user with email verified (admin created)
@@ -214,6 +218,9 @@ class UserController extends Controller
         }
         $user->owners()->sync($ownerSync);
 
+        // Rattachement aux entreprises (La Pépite)
+        $user->companies()->sync($validated['companies'] ?? []);
+
         return $this->redirectBack('users.index')
             ->with('success', __('User created successfully.'));
     }
@@ -223,13 +230,14 @@ class UserController extends Controller
      */
     public function edit(User $user): View
     {
-        $user->load(['owners']);
+        $user->load(['owners', 'companies']);
         $owners = Owner::with('contact')->orderBy('id')->get();
 
         return view('users.form', [
             'user' => $user,
             'owners' => $owners,
             'ownerRoles' => UserRole::cases(),
+            'companies' => Company::orderBy('name')->get(),
         ]);
     }
 
@@ -247,6 +255,8 @@ class UserController extends Controller
             'owners' => ['array'],
             'owners.*.id' => ['exists:owners,id'],
             'owners.*.role' => ['in:'.implode(',', $roleValues)],
+            'companies' => ['array'],
+            'companies.*' => ['exists:companies,id'],
         ]);
 
         // Update user
@@ -276,6 +286,9 @@ class UserController extends Controller
             }
         }
         $user->owners()->sync($ownerSync);
+
+        // Rattachement aux entreprises (La Pépite)
+        $user->companies()->sync($validated['companies'] ?? []);
 
         return $this->redirectBack('users.index')
             ->with('success', __('User updated successfully.'));

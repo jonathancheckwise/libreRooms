@@ -119,6 +119,28 @@
                 </div>
             </div>
 
+            {{-- Entreprises (La Pépite) : rattachement de l'utilisateur --}}
+            <div class="form-section mt-6">
+                <h2 class="text-lg font-semibold mb-2">{{ __('Companies') }}</h2>
+                <p class="text-sm text-gray-600 mb-4">{{ __('Companies this user belongs to (grants access to rooms open to those companies).') }}</p>
+                @php
+                    $userCompanyIds = isset($user) ? $user->companies->pluck('id')->all() : [];
+                    $oldCompanies = collect(old('companies', $userCompanyIds))->map(fn ($v) => (int) $v)->all();
+                @endphp
+                @forelse($companies as $company)
+                    <label class="flex items-center gap-2 mb-2">
+                        <input type="checkbox" name="companies[]" value="{{ $company->id }}"
+                            @checked(in_array($company->id, $oldCompanies))>
+                        <span>{{ $company->name }}</span>
+                    </label>
+                @empty
+                    <p class="text-sm text-gray-500">
+                        {{ __('No company yet.') }}
+                        <a href="{{ route('companies.create') }}" class="link-primary">{{ __('Create one') }}</a>.
+                    </p>
+                @endforelse
+            </div>
+
             <div class="btn-group justify-end mt-6">
                 <a href="{{ redirect_back_url('users.index') }}" class="btn btn-secondary">
                     {{ __('Cancel') }}

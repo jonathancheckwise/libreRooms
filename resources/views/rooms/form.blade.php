@@ -297,9 +297,9 @@
                 </fieldset>
             </div>
 
-            <!-- Visibilité -->
+            <!-- Accès à la salle -->
             <div class="form-group">
-                <h3 class="form-group-title">{{ __('Visibility') }}</h3>
+                <h3 class="form-group-title">{{ __('Room access') }}</h3>
 
                 <fieldset class="form-element">
                     <div class="form-field">
@@ -311,12 +311,32 @@
                                 value="1"
                                 @checked(old('is_public', $room?->is_public ?? true))
                             >
-                            <span>{{ __('Public room') }}</span>
+                            <span>{{ __('Open to all logged-in members') }}</span>
                         </label>
                         <small class="text-gray-600 block mt-1">
-                            {{ __('If enabled, the room is visible and bookable by everyone (including non-logged-in visitors).') }}<br>
-                            {{ __('If disabled, only users with access to the owner or direct access to the room can see and book it.') }}
+                            {{ __('If enabled, every logged-in member can see and book this room.') }}<br>
+                            {{ __('If disabled, only members of the companies selected below (and people with direct access) can see and book it.') }}
                         </small>
+                    </div>
+
+                    <div class="form-field mt-4">
+                        <label class="block mb-1 font-medium">{{ __('Companies with access (used when not open to all)') }}</label>
+                        @php
+                            $roomCompanyIds = $room ? $room->companies->pluck('id')->all() : [];
+                            $oldRoomCompanies = collect(old('companies', $roomCompanyIds))->map(fn ($v) => (int) $v)->all();
+                        @endphp
+                        @forelse($companies as $company)
+                            <label class="flex items-center gap-2 mb-2">
+                                <input type="checkbox" name="companies[]" value="{{ $company->id }}"
+                                    @checked(in_array($company->id, $oldRoomCompanies))>
+                                <span>{{ $company->name }}</span>
+                            </label>
+                        @empty
+                            <p class="text-sm text-gray-500">
+                                {{ __('No company yet.') }}
+                                <a href="{{ route('companies.create') }}" class="link-primary" target="_blank">{{ __('Create one') }}</a>.
+                            </p>
+                        @endforelse
                     </div>
                 </fieldset>
             </div>

@@ -158,6 +158,14 @@ class Room extends Model
             ->orderBy('name');
     }
 
+    /**
+     * Entreprises ayant accès à cette salle (La Pépite).
+     */
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class);
+    }
+
     public function shortPriceRuleLabel()
     {
         if (! $this->price_short || ! $this->max_hours_short) {
