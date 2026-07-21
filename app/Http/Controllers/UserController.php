@@ -122,7 +122,7 @@ class UserController extends Controller
         $request->session()->regenerateToken();
 
         // Use query parameter for flash message (survives session invalidation)
-        return redirect(route('rooms.index').'?logout_success=1');
+        return redirect(route('login').'?logout_success=1');
     }
 
     // ============================================

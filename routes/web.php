@@ -44,7 +44,11 @@ Route::bind('reservation', function (string $value) {
 });
 
 Route::get('/', function () {
-    return redirect(route('rooms.index'));
+    // La Pépite : un visiteur non connecté est envoyé vers la connexion,
+    // pas vers la liste des salles (rien n'est public pour l'instant).
+    return auth()->check()
+        ? redirect(route('rooms.index'))
+        : redirect(route('login'));
 });
 
 // Initial setup routes (protected by controller - requires DB_CONFIGURED=false OR global_admin)
@@ -70,8 +74,9 @@ Route::get('/webcron/schedule-run', function (Request $request) {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [UserController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [UserController::class, 'login']);
-    Route::get('/register', [UserController::class, 'showRegisterForm'])->name('register');
-    Route::post('/register', [UserController::class, 'register']);
+    // La Pépite : inscription libre désactivée. Les comptes sont créés par l'équipe.
+    Route::get('/register', fn () => redirect()->route('login'))->name('register');
+    Route::post('/register', fn () => abort(403));
     Route::get('/auth/{provider:slug}', [OidcController::class, 'redirect'])->name('auth.oidc.redirect');
 
     // Password reset routes

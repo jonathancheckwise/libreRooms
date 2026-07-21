@@ -97,7 +97,8 @@
     </p>
 
     <p class="auth-link">
-        {{ __('No account yet?') }} <a href="{{ route('register') }}">{{ __('Sign up') }}</a>
+        Pas encore de compte ? Les accès sont créés par l'équipe de La Pépite —
+        <a href="mailto:reservations@pepite-lausanne.ch?subject=Demande d'accès à la réservation de salles">demandez un accès</a>.
     </p>
 </div>
 @endsection

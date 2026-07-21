@@ -33,11 +33,11 @@
     "pagination.next": "Suivant",
     "My contacts": "Mes contacts",
     "All contacts": "Tous les contacts",
-    "New contact" : "Nouveau contact",
+    "New contact": "Nouveau contact",
     "Edit contact": "Modifier le contact",
     "Contact type": "Type de contact",
     "Type": "Type",
-    "Informations" : "Informations",
+    "Informations": "Informations",
     "Organization name": "Nom de l'organisation",
     "First name": "Prénom",
     "Last name": "Nom",
@@ -95,14 +95,12 @@
     "Past": "Passé",
     "Occupied": "Occupé",
     "Untitled": "Sans titre",
-
     "Invoice due :days days before the first reservation date": "Facture due :days jours avant la première date de réservation",
     "Invoice due :days days after the first reservation date": "Facture due :days jours après la première date de réservation",
     "Invoice due :days days after reservation confirmation": "Facture due :days jours après la confirmation de réservation",
     ":days days before event": ":days j avant év.",
     ":days days after event": ":days j après év.",
     ":days days": ":days j",
-
     "Email": "Email",
     "Password": "Mot de passe",
     "Remember me": "Se souvenir de moi",
@@ -112,31 +110,25 @@
     "Forgot password?": "Mot de passe oublié ?",
     "No account yet?": "Pas encore de compte ?",
     "Sign up": "S'inscrire",
-
     "Name": "Nom",
     "Confirm password": "Confirmer le mot de passe",
     "Already have an account?": "Déjà un compte ?",
-
     "Enter your email address and we will send you a link to reset your password.": "Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
     "Email address": "Adresse email",
     "Send reset link": "Envoyer le lien de réinitialisation",
     "Back to login": "Retour à la connexion",
-
     "New password": "Nouveau mot de passe",
     "Minimum :count characters": "Minimum :count caractères",
-
     "Email verification": "Vérification de l'email",
     "Verify your email": "Vérifiez votre email",
     "Thanks for signing up! Before getting started, please verify your email address by clicking the link we just sent you.": "Merci de vous être inscrit ! Avant de commencer, veuillez vérifier votre adresse email en cliquant sur le lien que nous venons de vous envoyer.",
     "If you didn't receive the email, we can send you a new one.": "Si vous n'avez pas reçu l'email, nous pouvons vous en envoyer un nouveau.",
     "Resend verification email": "Renvoyer l'email de vérification",
-
     "Confirm your identity": "Confirmer votre identité",
     "For security reasons, please confirm your identity before continuing.": "Pour des raisons de sécurité, veuillez confirmer votre identité avant de continuer.",
     "Confirm": "Confirmer",
     "Reconnect with :provider": "Se reconnecter avec :provider",
     "Cancel and return to profile": "Annuler et retourner au profil",
-
     "List of room owners": "Liste des propriétaires de salles",
     "New owner": "Nouveau propriétaire",
     "Edit owner": "Modifier le propriétaire",
@@ -229,23 +221,19 @@
     "Save path": "Chemin de sauvegarde",
     "Regional settings (optional)": "Paramètres régionaux (optionnel)",
     "Leave empty to use system default settings": "Laissez vide pour utiliser les paramètres système par défaut",
-
     "Hello": "Bonjour",
     "Best regards,": "Avec nos meilleures salutations,",
     "to": "au",
     "Reservation system": "Système de réservation",
-
     "Cancellation of your invoice no. :number": "Annulation de votre facture n° :number",
     "You had received an invoice related to a reservation of the room :room for the event/activity :title.": "Vous aviez reçu une facture en lien avec une réservation de la salle :room pour l'événement/activité :title.",
     "Requested dates": "Dates demandées",
     "Requested date": "Date demandée",
     "We inform you that this invoice has been cancelled.": "Nous vous informons que cette facture est annulée.",
     "Reason for cancellation:": "Raison de l'annulation :",
-
     "Cancellation of your reservation": "Annulation de votre réservation",
     "You made a reservation request for the room :room for the event/activity :title.": "Vous avez fait une demande de réservation de la salle :room pour l'événement/activité :title.",
     "Thank you for your understanding. For any questions, feel free to contact us by replying to this email.": "Nous vous remercions pour votre compréhension. Pour toute question, n'hésitez pas à nous contacter en réponse à cet email.",
-
     "Confirmation of your reservation": "Confirmation de votre réservation",
     "Your reservation of the room :room has been confirmed.": "Votre réservation de la salle :room a été confirmée.",
     "Reserved dates": "Dates réservées",
@@ -261,7 +249,6 @@
     "Download the invoice": "Télécharger la facture",
     "Download confirmation": "Télécharger la confirmation",
     "For any questions, feel free to contact us by replying to this email.": "Pour toute question, n'hésitez pas à nous contacter en réponse à cet email.",
-
     "Late invoices": "Factures en retard",
     ":count late invoice": ":count facture en retard",
     "require your attention.": "nécessitent votre attention.",
@@ -269,22 +256,18 @@
     "We remind you that some invoices are awaiting payment and have passed their due date.": "Nous vous rappelons que certaines factures sont en attente de paiement et ont dépassé leur date d'échéance.",
     "Please check if these invoices have been paid and mark them as paid, or send a payment reminder if necessary.": "Veuillez vérifier si ces factures ont été réglées et les marquer comme payées, ou envoyer un rappel de paiement si nécessaire.",
     "View late invoices": "Voir les factures en retard",
-
     "New invoice": "Nouvelle facture",
     "A new invoice has been created for your reservation of the room :room for the event :title.": "Une nouvelle facture a été créée pour votre réservation de la salle :room pour l'événement :title.",
     "Explanation:": "Explication :",
-
     "New reservation request": "Nouvelle demande de réservation",
     "A reservation request has been made by :tenant for the room :room.": "Une demande de réservation a été faite par :tenant pour la salle :room.",
     "Please review the request to confirm or reject it:": "Merci de contrôler la demande pour la confirmer ou la refuser :",
     "View the request": "Voir la demande",
-
     "Your reservation request": "Votre demande de réservation",
     "We have received your reservation request for the room :room.": "Nous avons bien reçu votre demande de réservation de la salle :room.",
     "The reservation must be validated by an admin. You will then receive a confirmation email.": "La réservation doit être validée par un·e admin. Vous recevrez ensuite un email de confirmation.",
     "Pre-reserved dates": "Dates préréservées",
     "Pre-reserved date": "Date préréservée",
-
     "Payment reminder": "Rappel de paiement",
     "Final reminder": "Dernier rappel",
     "Invoice no.": "Facture n°",
@@ -293,7 +276,6 @@
     "New due date:": "Nouvelle échéance :",
     "Download the reminder": "Télécharger le rappel",
     "Thank you in advance for your payment. For any questions, feel free to contact us by replying to this email.": "Nous vous remercions d'avance pour votre paiement. Pour toute question, n'hésitez pas à nous contacter en réponse à cet email.",
-
     "Available rooms": "Salles disponibles",
     "My rooms": "Mes salles",
     "Discounts": "Réductions",
@@ -338,7 +320,6 @@
     "Org.": "Org.",
     "Individual": "Privé",
     "Are you sure you want to delete this room? This action cannot be undone.": "Êtes-vous sûr de vouloir supprimer cette salle ? Cette action est irréversible.",
-
     "Back to rooms": "Retour aux salles",
     "Back to reservations": "Retour aux réservations",
     "Reserve this room": "Réserver cette salle",
@@ -360,14 +341,12 @@
     "days before": "jours avant",
     "Max. reservation": "Réservation max.",
     "days in advance": "jours à l'avance",
-
     "Loading calendar...": "Chargement du calendrier...",
     "today": "aujourd'hui",
     "month": "mois",
     "week": "semaine",
     "day": "jour",
     "list": "liste",
-
     "Room created successfully.": "La salle a été créée avec succès.",
     "Room updated successfully.": "La salle a été mise à jour avec succès.",
     "Room deleted successfully.": "La salle a été supprimée avec succès.",
@@ -411,14 +390,12 @@
     "User not found.": "Compte non trouvé.",
     "You cannot remove yourself from the owner.": "Vous ne pouvez pas vous retirer du propriétaire.",
     "You cannot remove yourself from the room.": "Vous ne pouvez pas vous retirer de la salle.",
-
     "short booking": "réservation courte",
     "full day booking": "réservation journée",
-    "Short booking": "Réservation courte",
-    "Full day booking": "Réservation journée",
+    "Short booking": "Réservation courte (forfait)",
+    "Full day booking": "Journée complète (forfait)",
     "option": "option",
     "options": "options",
-
     "My invoices": "Mes factures",
     "Invoices to manage": "Factures à gérer",
     "Number": "Numéro",
@@ -427,7 +404,6 @@
     "Send reminder": "Envoyer un rappel",
     "Download": "Télécharger",
     "No invoice found": "Aucune facture trouvée",
-
     "My reservations": "Mes réservations",
     "Reservations to manage": "Réservations à gérer",
     "Room": "Salle",
@@ -453,7 +429,6 @@
     "Confirm cancellation": "Confirmer l'annulation",
     "Cancel reservation": "Annuler la réservation",
     "Send cancellation email to tenant": "Envoyer un email d'annulation au locataire",
-
     "Identity providers": "Fournisseurs d'identité",
     "Manage identity providers (OIDC)": "Gestion des fournisseurs d'identité (OIDC)",
     "No identity provider configured.": "Aucun fournisseur d'identité configuré.",
@@ -470,7 +445,6 @@
     "Driver": "Driver",
     "Client ID": "Client ID",
     "Client Secret": "Client Secret",
-
     "Custom field": "Champ personnalisé",
     "Edit custom field": "Modifier le champ personnalisé",
     "New custom field": "Nouveau champ personnalisé",
@@ -494,7 +468,6 @@
     "Are you sure you want to delete this custom field?": "Êtes-vous sûr de vouloir supprimer ce champ personnalisé ?",
     "No custom fields found": "Aucun champ personnalisé trouvé",
     "Required": "Requis",
-
     "Edit option": "Modifier l'option",
     "New option": "Nouvelle option",
     "Option name": "Nom de l'option",
@@ -502,7 +475,6 @@
     "Active option": "Option active",
     "Are you sure you want to delete this option?": "Êtes-vous sûr de vouloir supprimer cette option ?",
     "No options found": "Aucune option trouvée",
-
     "Edit discount": "Modifier la réduction",
     "New discount": "Nouvelle réduction",
     "Discount name": "Nom de la réduction",
@@ -515,7 +487,6 @@
     "No limit": "Sans limite",
     "Are you sure you want to delete this discount?": "Êtes-vous sûr de vouloir supprimer cette réduction ?",
     "No discounts found": "Aucune réduction trouvée",
-
     "Manage users with access to owner": "Gérer les utilisateur·ice·s ayant accès au propriétaire",
     "Manage users with access to room": "Gérer les utilisateur·ice·s ayant accès à la salle",
     "Back to owners": "Retour aux propriétaires",
@@ -540,7 +511,6 @@
     "Add a user to room": "Ajouter un·e utilisateur·ice à la salle",
     "User must have an existing account": "L'utilisateur·ice doit avoir un compte existant",
     "As a global administrator, you cannot delete your own account. Contact another administrator if necessary.": "En tant qu'admin global, vous ne pouvez pas supprimer votre propre compte. Contactez un·e autre admin si nécessaire.",
-
     "Start": "Début",
     "End": "Fin",
     "Initial total": "Total initial",
@@ -550,12 +520,10 @@
     "Total recommended rate": "Total tarif recommandé",
     "Free rate": "Tarif libre",
     "Total (incl. VAT)": "Total (TTC)",
-
     "CalDAV not configured for this owner": "CalDAV non configuré pour ce propriétaire",
     "Permission denied: you do not have rights to create a calendar": "Permission refusée : vous n'avez pas les droits pour créer un calendrier",
     "Unable to create calendar: :error": "Impossible de créer le calendrier : :error",
     "Unable to find or create calendar :name on the CalDAV server": "Impossible de trouver ou créer le calendrier :name sur le serveur CalDAV",
-
     "Are you sure you want to delete this room?": "Êtes-vous sûr de vouloir supprimer cette salle ?",
     "Label": "Label",
     "All rooms": "Toutes les salles",
@@ -563,7 +531,6 @@
     "Text area": "Zone de texte",
     "Dropdown": "Liste déroulante",
     "Checkbox": "Case à cocher",
-
     "General settings": "Réglages généraux",
     "Environment (.env)": "Environnement (.env)",
     "Initial setup": "Configuration initiale",
@@ -591,14 +558,12 @@
     "Save and continue": "Enregistrer et continuer",
     "Incomplete configuration": "Configuration incomplète",
     "First, please configure the essential system settings (email, time zone, currency, language).": "Veuillez d'abord configurer les paramètres système essentiels (mail, timezone, devise, langue).",
-
     "Pre-booking confirmation": "Confirmation de pré-réservation",
     "Pre-booking confirmation for :room": "Confirmation de pré-réservation de :room",
     "Your reservation request for :room has been received.": "Votre demande de réservation de :room a bien été reçue.",
     "The reservation must be confirmed by :owner before it becomes effective.": "La réservation doit être confirmée par :owner avant d'être effective.",
     "You will receive a confirmation and an invoice by email.": "Vous recevrez une confirmation et une facture par email.",
     "If the deadlines are short and you do not receive anything, please contact us!": "Si les délais sont courts et que vous ne recevez rien, contactez-nous !",
-
     "Reminder - Invoice :number": "Rappel - Facture :number",
     "INVOICE": "FACTURE",
     "Invoice date:": "Date de la facture :",
@@ -611,7 +576,6 @@
     "Please proceed with payment before :date.": "Nous vous prions de bien vouloir procéder au règlement avant le :date.",
     "If you have already made the payment, please disregard this reminder.": "Si vous avez déjà effectué le paiement, veuillez ne pas tenir compte de ce rappel.",
     "For any questions, feel free to contact us.": "Pour toute question, n'hésitez pas à nous contacter.",
-
     "Check what applies": "Cocher ce qui s'applique",
     "Remove this date": "Supprimer cette date",
     "Summary": "Résumé",
@@ -638,12 +602,10 @@
     "These instructions will be included in the confirmation email.": "Ces indications seront transmises dans le mail de confirmation.",
     "Free pricing": "Prix libre",
     "Set your own price for the reservation in :currency": "Fixez vous-même le prix de la réservation en :currency",
-
     "Reservation": "Réservation",
     "Dates": "Dates",
     "These codes may be changed at any time. We recommend checking this page on the day of your event to ensure you have the latest information.": "Ces codes peuvent être modifiés à tout moment. Nous vous recommandons de consulter cette page le jour même de votre événement pour vous assurer d'avoir les informations à jour.",
     "For any questions, contact us at": "Pour toute question, contactez-nous à",
-
     "Default settings": "Paramètres par défaut",
     "Others": "Autres",
     "Not defined": "Non défini",
@@ -657,7 +619,6 @@
     "Scan to pay": "Scanner pour payer",
     "BIC/SWIFT:": "BIC/SWIFT :",
     "Bank:": "Banque :",
-
     "List of all your invoices": "Liste de toutes vos factures",
     "Debtor": "Débiteur",
     "All debtors": "Tous les débiteurs",
@@ -682,7 +643,6 @@
     "Explanation (optional)": "Explication (facultatif)",
     "Add an explanation...": "Ajoutez une explication...",
     "This explanation will be included in the email if the box above is checked.": "Cette explication sera incluse dans l'email si la case ci-dessus est cochée.",
-
     "List of all your reservations": "Liste de toutes vos réservations",
     "No.": "N°",
     "Title": "Titre",
@@ -699,7 +659,6 @@
     "Processing...": "Traitement...",
     "Send cancellation email": "Envoyer un email d'annulation",
     "Cancel request": "Annuler la demande",
-
     "Invoice no.:": "Facture n° :",
     "Date:": "Date :",
     "Payable by:": "À payer avant le :",
@@ -707,7 +666,6 @@
     "Reservation of :room - :title": "Réservation de :room - :title",
     "Thank you for your reservation.": "Merci pour votre réservation.",
     "This invoice must be paid by :date.": "Cette facture doit être payée avant le :date.",
-
     "Global application configuration": "Configuration globale de l'application",
     "SMTP configuration for sending emails (required)": "Configuration SMTP pour l'envoi d'emails (requis)",
     "(leave blank to keep current)": "(laisser vide pour conserver)",
@@ -720,7 +678,6 @@
     "Save": "Enregistrer",
     "Connexion failed": "Échec de connexion",
     "CalDAV connection successful": "Connexion CalDAV réussie",
-
     "Discount configuration": "Configuration de la réduction",
     "Fixed amount": "Montant fixe",
     "Fixed amount or percentage depending on selection": "Montant fixe ou pourcentage selon la sélection",
@@ -729,7 +686,6 @@
     "Organization only": "Organisation uniquement",
     "Optional: restrict the discount to a specific contact type": "Optionnel : restreindre la réduction à un type de contact spécifique",
     "Type / Value": "Type / Valeur",
-
     "Edit user": "Modifier l'utilisateur·ice",
     "New user": "Nouvel utilisateur·ice",
     "My profile": "Mon profil",
@@ -743,7 +699,6 @@
     "Select the owners and the role of the user for each": "Sélectionnez les propriétaires et le rôle de l'utilisateur·ice pour chacun",
     "Delete account": "Supprimer le compte",
     "Are you absolutely sure you want to delete this account? This action cannot be undone and all related data will be lost.": "Êtes-vous absolument sûr de vouloir supprimer ce compte ? Cette action est irréversible et toutes les données associées seront perdues.",
-
     "User management": "Gestion des utilisateur·ice·s",
     "users": "utilisateur·ice·s",
     "user": "utilisateur·ice",
@@ -761,7 +716,6 @@
     "No role": "Aucun rôle",
     "No user found.": "Aucun compte trouvé.",
     "Are you sure you want to delete this user? This action cannot be undone.": "Êtes-vous sûr de vouloir supprimer ce compte ? Cette action est irréversible.",
-
     "Change password": "Modifier le mot de passe",
     "Set a password": "Définir un mot de passe",
     "Choose a new secure password for your account.": "Choisissez un nouveau mot de passe sécurisé pour votre compte.",
@@ -781,7 +735,6 @@
     "you": "vous",
     "Add a user to owner": "Ajouter un·e utilisateur·ice au propriétaire",
     "Select an owner": "Sélectionner un propriétaire",
-
     "Room name": "Nom de la salle",
     "The slug will be automatically generated from the name": "Le slug sera généré automatiquement à partir du nom",
     "Active room (bookable)": "Salle active (réservable)",
@@ -803,18 +756,18 @@
     "Pricing mode": "Mode de tarification",
     "Fixed price": "Prix fixe",
     "If free contribution is selected, the following settings are used to calculate a suggested price": "Si la libre participation est sélectionnée, les paramètres suivants sont utilisés pour calculer un prix suggéré",
-    "Short reservation price": "Prix réservation courte",
+    "Short reservation price": "Prix forfaitaire d'une réservation courte",
     "E.g.: reservations after 5pm always get the \"short\" rate": "Par ex.: réservations après 17h ont toujours le tarif \"court\"",
     "E.g.: reservations ending before 12pm always get the \"short\" rate": "Par ex.: réservations terminées avant 12h ont toujours le tarif \"court\"",
     "E.g.: if a reservation ends the next day before 3am, the following day is not counted": "Par ex.: si une réservation se termine le jour suivant à 3h, le jours suivant n'est pas compté",
     "before": "avant",
     "after": "après",
     "Leave empty to disable": "Laisser vide pour désactiver",
-    "Max hours for short reservation": "Heures max pour réservation courte",
-    "Required if short reservation price is set": "Requis si le prix de réservation courte est défini",
-    "Full day price": "Prix journée complète",
-    "Always short after (hour)": "Toujours courte après (heure)",
-    "Always short before (hour)": "Toujours courte avant (heure)",
+    "Max hours for short reservation": "Durée max comptée comme « courte » (heures)",
+    "Required if short reservation price is set": "Requis si un prix de réservation courte est défini",
+    "Full day price": "Prix forfaitaire d'une journée complète",
+    "Always short after (hour)": "Toujours au tarif court si la résa commence après (heure)",
+    "Always short before (hour)": "Toujours au tarif court si la résa se termine avant (heure)",
     "Allowed late end hour": "Heure de fin tardive autorisée",
     "Use special discounts": "Utiliser les réductions spéciales",
     "Allows admins to grant special discounts on a case-by-case basis": "Permet aux admins d'accorder des réductions spéciales au cas par cas",
@@ -851,7 +804,6 @@
     "results": "résultats",
     "Pagination Navigation": "Navigation de pagination",
     "Go to page :page": "Aller à la page :page",
-
     "You must be an administrator of at least one owner to access this page.": "Vous devez être admin d'au moins un propriétaire pour accéder à cette page.",
     "You must have moderation rights for at least one owner to access this page.": "Vous devez avoir les droits de modération pour au moins un propriétaire pour accéder à cette page.",
     "You must be an administrator of at least one owner to create a custom field.": "Vous devez être admin d'au moins un propriétaire pour créer un champ personnalisé.",
@@ -930,13 +882,11 @@
     "Conflict: a calendar with this name may already exist": "Conflit : un calendrier avec ce nom existe peut-être déjà",
     "Insufficient space on server": "Espace insuffisant sur le serveur",
     "Error creating calendar (HTTP :code)": "Erreur lors de la création du calendrier (HTTP :code)",
-
     "Reservation slots cannot overlap.": "Les créneaux de réservation ne peuvent pas se chevaucher.",
     "Invalid reservation.": "Réservation invalide.",
     "Reservation too late.": "Réservation trop tardive.",
     "Reservation too far in advance.": "Réservation trop anticipée.",
     "Room unavailable.": "Salle indisponible.",
-
     "SMTP connection successful": "Connexion SMTP réussie",
     "Connection failed": "Échec de connexion",
     "WebDAV connection successful": "Connexion WebDAV réussie",
@@ -944,18 +894,14 @@
     "Access denied": "Accès refusé",
     "Path not found": "Chemin non trouvé",
     "HTTP error :code": "Erreur HTTP :code",
-
     "Password reset email sent": "Mail de réinitialisation envoyé",
     "Email not found or error": "Email inexistant ou erreur",
     "Password updated successfully. You are now logged in.": "Mot de passe mis à jour avec succès. Vous êtes maintenant connecté.",
     "Unable to update password": "Impossible de mettre à jour le mot de passe",
-
     "No invoice for this reservation.": "Aucune facture pour cette réservation.",
     "No reminder for this invoice.": "Aucun rappel pour cette facture.",
-
     "The password is incorrect.": "Le mot de passe est incorrect.",
     "This identity provider is not linked to your account.": "Ce fournisseur d'identité n'est pas lié à votre compte.",
-
     "No access codes available for this room.": "Aucun code d'accès disponible pour cette salle.",
     "Access codes are only available once the reservation is confirmed.": "Les codes d'accès ne sont disponibles qu'une fois la réservation confirmée.",
     "This reservation has been cancelled.": "Cette réservation a été annulée.",
@@ -966,7 +912,6 @@
     "Access codes will be available from :date.": "Les codes d'accès seront disponibles à partir du :date.",
     "Secret message visible X days before events": "Message secret visible X jours avant les événements",
     "If empty, the secret message is always visible for confirmed reservations.": "Si vide, le message secret est toujours visible pour les réservations confirmées.",
-
     "Access restricted to administrators.": "Accès réservé aux comptes admin.",
     "Invalid application URL": "URL de l'application invalide",
     "Database name is required": "Le nom de la base de données est requis",
@@ -977,9 +922,7 @@
     "Administrator account created! Please configure the system settings.": "Compte admin créé ! Veuillez maintenant configurer les paramètres système.",
     "Initial setup completed!": "Configuration initiale terminée !",
     "The directory :dir does not exist": "Le dossier :dir n'existe pas",
-
     "The selected contact is not valid.": "Le contact sélectionné n'est pas valide.",
-
     "Empty": "Vide",
     "Available": "Disponible",
     "Too close": "Trop proche",
@@ -989,35 +932,27 @@
     "Error: You must add at least one reservation date.": "Erreur : Vous devez ajouter au moins une date de réservation.",
     "Error: Some reservation dates are not valid:": "Erreur : Certaines dates de réservation ne sont pas valides :",
     "Please fix these dates before submitting the form.": "Veuillez corriger ces dates avant de soumettre le formulaire.",
-
     "Please fill in at least the street and city.": "Veuillez remplir au moins la rue et la ville.",
     "Address not found. Please check or enter coordinates manually.": "Adresse non trouvée. Veuillez vérifier ou entrer les coordonnées manuellement.",
     "Search error. Please try again.": "Erreur lors de la recherche. Veuillez réessayer.",
-
     "Conditions link": "Lien vers les conditions",
     "Restore this image": "Restaurer cette image",
-
     "Testing...": "Test en cours...",
     "Verifying...": "Vérification...",
     "Network error": "Erreur réseau",
-
     "last reminder": "dernier rappel",
     ":ordinal reminder": ":ordinal rappel",
-
     "Europe": "Europe",
     "Americas": "Amérique",
     "Asia & Pacific": "Asie & Pacifique",
     "Africa & Middle East": "Afrique & Moyen-Orient",
-
     "Explanation for free contribution": "Explication à afficher concernant le prix libre",
     "Optional text explaining the free contribution policy": "Texte facultatif expliquant la politique de prix libre",
     "Hide email on public pages": "Cacher l'email sur les pages publiques",
     "Hide phone number on public pages": "Cacher le numéro de téléphone sur les pages publiques",
-
     "Card view": "Vue cartes",
     "List view": "Vue liste",
     "More info": "Plus d'infos",
-
     "Unavailabilities": "Indisponibilités",
     "Add unavailability": "Ajouter une indisponibilité",
     "New unavailability": "Nouvelle indisponibilité",
@@ -1056,7 +991,6 @@
     "Bookable hours": "Heures réservables",
     "Current availability": "Disponibilité actuelle",
     "Free": "Libre",
-    "Occupied": "Occupé",
     "Outside bookable hours": "Hors périodes réservables",
     "Updated at": "Mis à jour à",
     "The room is currently available": "La salle est actuellement disponible",
@@ -1068,8 +1002,6 @@
     "Available from :time": "Disponible à partir de :time",
     "The room is currently unavailable": "La salle est actuellement indisponible",
     "Reason": "Raison",
-    "Bookable days": "Jours réservables",
-    "More info": "Plus d'infos",
     "Book this room": "Réserver cette salle",
     "None.days": "Aucun jour"
 }

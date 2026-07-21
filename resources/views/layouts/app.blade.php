@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'LibreRooms')</title>
+    <title>@yield('title', 'La Pépite — Réservation de salles')</title>
+    <link rel="icon" type="image/svg+xml" href="/pepite/favicon.svg">
     @vite('resources/css/app.css')
+    {{-- Thème La Pépite (surcharge, chargé après le CSS de base) --}}
+    <link rel="stylesheet" href="/pepite/theme.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     @yield('page-script')
     @vite(['resources/js/app.js'])
 
@@ -117,5 +122,11 @@
 <main class="container">
     @yield('content')
 </main>
+
+<footer class="pepite-footer">
+    <span>Réservation de salles · La Pépite</span>
+    <span class="sep">·</span>
+    <span>Propulsé par <a href="https://github.com/theosche/libreRooms" target="_blank" rel="noopener">LibreRooms</a>, plateforme libre de Théophile Schenker</span>
+</footer>
 </body>
 </html>

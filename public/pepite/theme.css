@@ -1,0 +1,195 @@
+/* ============================================================
+   THÈME LA PÉPITE pour LibreRooms
+   ------------------------------------------------------------
+   Fichier de SURCHARGE. On ne touche JAMAIS aux fichiers de
+   Théophile : ce CSS est chargé APRÈS le sien et gagne.
+   Emplacement serveur : /sites/libreRooms/public/pepite/theme.css
+   Survit aux mises à jour (./update.sh ne supprime pas ce dossier).
+   ============================================================ */
+
+/* Polices Pépite (identiques au site principal) */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* ------------------------------------------------------------
+   1. REMAP GLOBAL : tout le bleu de Tailwind -> or Pépite.
+   Redéfinir ces variables retourne d'un coup toutes les classes
+   utilitaires bg-blue-*, text-blue-*, border-blue-*, ring-blue-*.
+   ------------------------------------------------------------ */
+:root {
+  --color-blue-50:  #FDF4E3;
+  --color-blue-100: #FBE8C4;
+  --color-blue-200: #F8D493;
+  --color-blue-300: #F5C063;
+  --color-blue-400: #F3B24C;
+  --color-blue-500: #F2A83C; /* or Pépite (nugget) */
+  --color-blue-600: #E0961F;
+  --color-blue-700: #C8861F; /* or profond (nugget-deep) */
+  --color-blue-800: #A66E1A;
+  --color-blue-900: #855814;
+}
+
+/* Variables de marque, réutilisables ci-dessous */
+:root {
+  --pep-cream: #FAF5E9;
+  --pep-ink:   #2D2318;
+  --pep-sand:  #EDE3CC;
+  --pep-gold:  #F2A83C;
+  --pep-gold-deep: #C8861F;
+}
+
+/* ------------------------------------------------------------
+   2. POLICES
+   ------------------------------------------------------------ */
+body,
+button, input, select, textarea,
+.nav-link {
+  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+}
+h1, h2, h3,
+.nav-logo, .page-title, .card-title, .section-title {
+  font-family: "Fraunces", Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+/* ------------------------------------------------------------
+   3. FOND & TEXTE
+   ------------------------------------------------------------ */
+body {
+  background: var(--pep-cream);
+  color: var(--pep-ink);
+}
+
+/* ------------------------------------------------------------
+   4. HEADER crème (au lieu du blanc)
+   ------------------------------------------------------------ */
+.header {
+  background: var(--pep-cream);
+  box-shadow: 0 1px 0 rgba(45, 35, 24, 0.12);
+}
+
+/* ------------------------------------------------------------
+   5. LOGO : remplace les 2 images par le lockup Pépite complet
+   ------------------------------------------------------------ */
+#logo-icon { display: none; }
+#logo-text {
+  content: url('/pepite/logo-text.svg');
+  height: 40px;
+  width: auto;
+}
+.nav-logo { color: var(--pep-ink); }
+
+/* ------------------------------------------------------------
+   6. LIENS & NAVIGATION
+   ------------------------------------------------------------ */
+a { color: var(--pep-gold-deep); }
+a:hover { color: var(--pep-ink); }
+
+.nav-link { color: var(--pep-ink); }
+.nav-link:hover { color: var(--pep-gold-deep); }
+.nav-link::after { background-color: var(--pep-gold); }
+
+.nav-user { background: var(--pep-sand); color: var(--pep-ink); }
+.nav-user:hover { background: #E3D5B8; }
+
+/* ------------------------------------------------------------
+   7. BOUTONS — or Pépite, forme pilule, texte encre (lisible)
+   ------------------------------------------------------------ */
+.btn, .nav-action { border-radius: 999px; }
+
+.btn-primary,
+.nav-action.register {
+  background: var(--pep-gold);
+  color: var(--pep-ink);
+}
+.btn-primary:hover,
+.nav-action.register:hover {
+  background: var(--pep-gold-deep);
+  color: var(--pep-ink);
+}
+
+.nav-action.login {
+  color: var(--pep-gold-deep);
+  border-color: var(--pep-gold-deep);
+  background: transparent;
+}
+.nav-action.login:hover {
+  background: var(--pep-gold);
+  color: var(--pep-ink);
+  border-color: var(--pep-gold);
+}
+.nav-action.logout { color: var(--pep-ink); }
+
+/* On garde le vert "confirmer" et le rouge "supprimer" tels quels :
+   ce sont des couleurs de sens (succès / danger), pas de la marque. */
+
+/* ------------------------------------------------------------
+   8. Onglets / sous-menus (couleurs "en dur" non captées par Tailwind)
+   ------------------------------------------------------------ */
+.page-submenu-nav.active,
+.page-submenu-secondary.active {
+  background: var(--pep-gold) !important;
+  color: var(--pep-ink) !important;
+}
+.page-submenu-action { color: var(--pep-gold-deep) !important; }
+
+/* Liens divers encore en bleu */
+.styled-form a,
+.link-primary,
+.contact-info-icons a,
+.room-name-link {
+  color: var(--pep-gold-deep);
+}
+.styled-form a:hover,
+.link-primary:hover,
+.contact-info-icons a:hover,
+.room-name-link:hover {
+  color: var(--pep-ink);
+}
+.cost-value { color: var(--pep-gold-deep) !important; }
+
+/* Focus des champs de formulaire en or */
+.styled-form .form-field input:focus,
+.styled-form .form-field select:focus,
+.styled-form .form-field textarea:focus,
+input:focus, select:focus, textarea:focus {
+  border-color: var(--pep-gold) !important;
+}
+
+/* ------------------------------------------------------------
+   9. Inscription libre coupée : on masque les liens "Inscription".
+   (Le blocage réel de l'URL /register se fait côté serveur, voir SSH.)
+   ------------------------------------------------------------ */
+.nav-action.register,
+a[href$="/register"] {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------
+   10. Accents : focus visible clavier
+   ------------------------------------------------------------ */
+:focus-visible {
+  outline: 2px solid var(--pep-gold);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   11. Pied de page — crédit LibreRooms / Théophile
+   ------------------------------------------------------------ */
+.pepite-footer {
+  max-width: 1200px;
+  margin: 3rem auto 1.5rem;
+  padding: 1.25rem 2rem 0;
+  border-top: 1px solid rgba(45, 35, 24, 0.12);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 0.82rem;
+  color: rgba(45, 35, 24, 0.6);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.pepite-footer a { color: var(--pep-gold-deep); }
+.pepite-footer a:hover { color: var(--pep-ink); }
+.pepite-footer .sep { opacity: 0.5; }
