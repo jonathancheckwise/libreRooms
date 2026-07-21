@@ -193,3 +193,10 @@ a[href$="/register"] {
 .pepite-footer a { color: var(--pep-gold-deep); }
 .pepite-footer a:hover { color: var(--pep-ink); }
 .pepite-footer .sep { opacity: 0.5; }
+
+/* Icône GitHub du pied de page */
+.pepite-footer .gh-icon {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 3px;
+}
