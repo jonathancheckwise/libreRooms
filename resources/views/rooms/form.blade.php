@@ -394,6 +394,21 @@
                 </script>
             </div>
 
+            <!-- Équipements (La Pépite) -->
+            <div class="form-group">
+                <h3 class="form-group-title">{{ __('Equipment') }}</h3>
+                @php $roomEquipments = old('equipments', $room?->equipments ?? []); @endphp
+                <div class="form-element" style="display:flex;flex-wrap:wrap;gap:.75rem 1.5rem">
+                    @foreach(\App\Models\Room::EQUIPMENTS as $eq)
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="equipments[]" value="{{ $eq }}"
+                                @checked(in_array($eq, $roomEquipments))>
+                            <span>{{ \App\Models\Room::equipmentLabel($eq) }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+
             <!-- Tarification -->
             <div class="form-group">
                 <h3 class="form-group-title">{{ __('Pricing') }}</h3>

@@ -111,6 +111,18 @@
                 </div>
             @endif
 
+            <!-- Équipements (La Pépite) -->
+            @if(!empty($room->equipments))
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Equipment') }}</h2>
+                    <ul style="display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;list-style:none;padding:0;margin:0">
+                        @foreach($room->equipments as $eq)
+                            <li class="text-gray-700">✓ {{ \App\Models\Room::equipmentLabel($eq) }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <!-- Calendar -->
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Calendar') }}</h2>

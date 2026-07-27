@@ -23,6 +23,12 @@ class RoomRules
             $request->merge(['allowed_weekdays' => []]);
         }
 
+        // Équipements (La Pépite) : aucune case cochée → tableau vide (permet de
+        // tout décocher lors d'une mise à jour).
+        if (! $request->has('equipments')) {
+            $request->merge(['equipments' => []]);
+        }
+
         // Salle « sur demande » (La Pépite) : pas de prix → on force le prix
         // journée à 0 (colonne non nulle en base) pour ne pas bloquer la
         // validation ni l'enregistrement.

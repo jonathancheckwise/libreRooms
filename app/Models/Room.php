@@ -89,6 +89,23 @@ class Room extends Model
         'allowed_weekdays' => 'array',
     ];
 
+    /** Équipements proposables à la création d'une salle (La Pépite). */
+    public const EQUIPMENTS = ['wifi', 'visio', 'screen', 'flipchart', 'sound', 'pmr'];
+
+    /** Libellé traduit d'un équipement. */
+    public static function equipmentLabel(string $key): string
+    {
+        return match ($key) {
+            'wifi' => __('Wi-Fi'),
+            'visio' => __('Videoconferencing'),
+            'screen' => __('Screen / beamer'),
+            'flipchart' => __('Flip-chart'),
+            'sound' => __('Sound system'),
+            'pmr' => __('Wheelchair access'),
+            default => $key,
+        };
+    }
+
     public function getRouteKeyName(): string
     {
         return 'slug';
