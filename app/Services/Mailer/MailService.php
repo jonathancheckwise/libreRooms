@@ -5,6 +5,7 @@ namespace App\Services\Mailer;
 use App\Models\Invoice;
 use App\Models\Owner;
 use App\Models\Reservation;
+use App\Models\SpecialRequest;
 use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\Mail;
 
@@ -183,6 +184,24 @@ class MailService
             $message->from($owner->mailSettings()->user, $owner->contact->display_name())
                 ->to($this->redirectIfDebug($owner->contact->email), $owner->contact->display_name())
                 ->subject(__('Reminder: :count late invoice(s)', ['count' => $lateCount]));
+        });
+    }
+
+    /**
+     * Notifie l'équipe (propriétaire) d'une nouvelle demande spéciale (La Pépite).
+     */
+    public function sendSpecialRequest(SpecialRequest $request, Owner $owner): void
+    {
+        $this->configureMailer($owner);
+
+        Mail::send('emails.special-request-admin', [
+            'request' => $request,
+            'owner' => $owner,
+        ], function ($message) use ($owner, $request) {
+            $message->from($owner->mailSettings()->user, $owner->contact->display_name())
+                ->to($this->redirectIfDebug($owner->contact->email), $owner->contact->display_name())
+                ->replyTo($request->email, $request->name)
+                ->subject(__('New special request to review'));
         });
     }
 

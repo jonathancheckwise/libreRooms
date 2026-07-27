@@ -163,6 +163,12 @@ Route::controller(ReservationController::class)->middleware(['auth', 'verified']
     Route::post('/reservations/{reservation}/cancel', 'cancel')->name('reservations.cancel');
 });
 
+// Demandes spéciales (La Pépite) : salles sur demande, catering, hors horaires.
+Route::controller(\App\Http\Controllers\SpecialRequestController::class)->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/demande-speciale', 'create')->name('special-requests.create');
+    Route::post('/demande-speciale', 'store')->name('special-requests.store');
+});
+
 Route::controller(OwnerController::class)->middleware(['auth', 'verified'])->group(function () {
     Route::get('/owners', 'index')->name('owners.index');
     Route::get('/owners/create', 'create')->name('owners.create');

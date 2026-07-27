@@ -159,9 +159,15 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function create(Room $room): View
+    public function create(Room $room): View|RedirectResponse
     {
         $this->authorize('reserve', $room);
+
+        // Salle « sur demande » (La Pépite) : pas de réservation directe, on
+        // redirige vers le formulaire de demande spéciale / devis.
+        if ($room->on_request) {
+            return redirect()->route('special-requests.create', ['room' => $room->id]);
+        }
 
         return $this->reservationForm($room, null);
     }
