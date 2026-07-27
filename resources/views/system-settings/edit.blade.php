@@ -352,20 +352,49 @@
                 </fieldset>
 
                 <fieldset class="form-element">
+                    <legend class="text-sm font-medium mb-2">{{ __('Evening half-day') }}</legend>
+                    <div class="form-element-row">
+                        <div class="form-field">
+                            <label for="half_day_evening_start" class="form-element-title">{{ __('Start') }}</label>
+                            <input type="time" id="half_day_evening_start" name="half_day_evening_start"
+                                value="{{ old('half_day_evening_start', $settings ? substr($settings->half_day_evening_start, 0, 5) : '18:00') }}" required>
+                            @error('half_day_evening_start') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-field">
+                            <label for="half_day_evening_end" class="form-element-title">{{ __('End') }}</label>
+                            <input type="time" id="half_day_evening_end" name="half_day_evening_end"
+                                value="{{ old('half_day_evening_end', $settings ? substr($settings->half_day_evening_end, 0, 5) : '22:00') }}" required>
+                            @error('half_day_evening_end') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-element">
                     <legend class="text-sm font-medium mb-2">{{ __('Full day') }}</legend>
                     <div class="form-element-row">
                         <div class="form-field">
                             <label for="full_day_start" class="form-element-title">{{ __('Start') }}</label>
                             <input type="time" id="full_day_start" name="full_day_start"
-                                value="{{ old('full_day_start', $settings ? substr($settings->full_day_start, 0, 5) : '07:00') }}" required>
+                                value="{{ old('full_day_start', $settings ? substr($settings->full_day_start, 0, 5) : '08:00') }}" required>
                             @error('full_day_start') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                         </div>
                         <div class="form-field">
                             <label for="full_day_end" class="form-element-title">{{ __('End') }}</label>
                             <input type="time" id="full_day_end" name="full_day_end"
-                                value="{{ old('full_day_end', $settings ? substr($settings->full_day_end, 0, 5) : '17:00') }}" required>
+                                value="{{ old('full_day_end', $settings ? substr($settings->full_day_end, 0, 5) : '18:00') }}" required>
                             @error('full_day_end') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                         </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-element">
+                    <legend class="text-sm font-medium mb-2">{{ __('Member benefits') }}</legend>
+                    <div class="form-field">
+                        <label for="member_discount_percent" class="form-element-title">{{ __('Member discount (%)') }}</label>
+                        <input type="number" id="member_discount_percent" name="member_discount_percent" min="0" max="100"
+                            value="{{ old('member_discount_percent', $settings?->member_discount_percent ?? 10) }}" required>
+                        <small class="text-gray-600 block mt-1">{{ __('Discount applied when the reservation is made by a member of La Pépite.') }}</small>
+                        @error('member_discount_percent') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                     </div>
                 </fieldset>
             </div>

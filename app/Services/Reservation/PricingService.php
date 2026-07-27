@@ -67,48 +67,58 @@ class PricingService
      * Calculate price and label for an event (without options)
      * Returns ['label' => string, 'price' => float]
      */
-    public function calculateEventPrice(Carbon $start, Carbon $end, Room $room): array
+    public function calculateEventPrice(Carbon $start, Carbon $end, Room $room, ?string $orgType = null): array
     {
         // Modèle La Pépite : chaque segment est classé selon les CRÉNEAUX GLOBAUX
         // (réglages système), et facturé au PRIX DE LA SALLE correspondant.
+        // La colonne de prix dépend du statut du réservant (sans/avec but
+        // lucratif). La remise membre -10 % est appliquée séparément au total.
         $settings = app(SystemSettings::class);
         $hourlyMax = (float) $settings->hourly_max_hours;
         $morningStart = $this->timeToHours($settings->half_day_morning_start);
         $morningEnd = $this->timeToHours($settings->half_day_morning_end);
         $afternoonStart = $this->timeToHours($settings->half_day_afternoon_start);
         $afternoonEnd = $this->timeToHours($settings->half_day_afternoon_end);
+        $eveningStart = $this->timeToHours($settings->half_day_evening_start);
+        $eveningEnd = $this->timeToHours($settings->half_day_evening_end);
         $fullStart = $this->timeToHours($settings->full_day_start);
         $fullEnd = $this->timeToHours($settings->full_day_end);
 
-        // Prix propres à la salle
-        $priceHourly = $room->price_hourly;
-        $priceHalfDay = $room->price_half_day;
-        $priceFullDay = $room->price_full_day;
+        // Prix propres à la salle, colonne choisie selon le type d'organisme.
+        $priceHourly = $this->tierPrice($room, $orgType, 'hourly');
+        $priceHalfDay = $this->tierPrice($room, $orgType, 'half_day');
+        $priceFullDay = $this->tierPrice($room, $orgType, 'full_day');
 
         $segments = $this->splitByDay($start, $end, $room);
 
         $match = fn ($a, $b) => abs($a - $b) < 0.02;
+        $isWindow = fn ($s, $e, $ws, $we) => $match($s, $ws) && $match($e, $we);
 
         $price = 0.0;
         $parts = [];
+        $hourlyMinutes = 0.0; // minutes facturées au tarif horaire (pour l'heure offerte membre)
 
         foreach ($segments as $segment) {
             $s = $segment['start'];
             $e = $segment['end'];
             $duration = $e - $s;
 
-            if ($priceFullDay !== null && $match($s, $fullStart) && $match($e, $fullEnd)) {
+            if ($priceFullDay !== null && $isWindow($s, $e, $fullStart, $fullEnd)) {
                 $price += $priceFullDay;
                 $parts[] = __('Full day booking');
-            } elseif ($priceHalfDay !== null && $match($s, $morningStart) && $match($e, $morningEnd)) {
+            } elseif ($priceHalfDay !== null && $isWindow($s, $e, $morningStart, $morningEnd)) {
                 $price += $priceHalfDay;
                 $parts[] = __('Morning half-day');
-            } elseif ($priceHalfDay !== null && $match($s, $afternoonStart) && $match($e, $afternoonEnd)) {
+            } elseif ($priceHalfDay !== null && $isWindow($s, $e, $afternoonStart, $afternoonEnd)) {
                 $price += $priceHalfDay;
                 $parts[] = __('Afternoon half-day');
+            } elseif ($priceHalfDay !== null && $isWindow($s, $e, $eveningStart, $eveningEnd)) {
+                $price += $priceHalfDay;
+                $parts[] = __('Evening half-day');
             } elseif ($priceHourly !== null && $duration <= $hourlyMax + 0.001) {
                 $hours = round($duration, 2);
                 $price += $priceHourly * $hours;
+                $hourlyMinutes += $duration * 60;
                 $parts[] = __('Hourly booking').' ('.$this->formatHours($hours).'h)';
             } elseif ($priceFullDay !== null) {
                 // Repli : créneau non reconnu -> tarif journée
@@ -127,6 +137,7 @@ class PricingService
         return [
             'label' => implode(', ', $labelParts),
             'price' => $price,
+            'hourly_minutes' => $hourlyMinutes,
         ];
     }
 
@@ -149,6 +160,92 @@ class PricingService
     protected function formatHours(float $hours): string
     {
         return rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.');
+    }
+
+    /**
+     * Prix d'une salle pour un mode ('hourly'|'half_day'|'full_day'), selon le
+     * type d'organisme du réservant. Les organismes sans but lucratif utilisent
+     * la colonne price_np_* ; à défaut (colonne vide) on retombe sur le tarif
+     * standard (à but lucratif).
+     */
+    protected function tierPrice(Room $room, ?string $orgType, string $mode): ?int
+    {
+        if ($orgType === 'non_profit') {
+            return $room->{"price_np_$mode"} ?? $room->{"price_$mode"};
+        }
+
+        return $room->{"price_$mode"};
+    }
+
+    /**
+     * Remise membre La Pépite (-10 % par défaut) sur le prix de base.
+     * Retourne une ligne de remise [id, libellé, montant] ou null.
+     */
+    public function memberDiscount(bool $isMember, float $basePrice): ?array
+    {
+        if (! $isMember || $basePrice <= 0) {
+            return null;
+        }
+
+        $pct = (int) app(SystemSettings::class)->member_discount_percent;
+        if ($pct <= 0) {
+            return null;
+        }
+
+        $amount = round($basePrice * $pct / 100, 2);
+
+        return [0, __('Member discount (:pct%)', ['pct' => $pct]), $amount];
+    }
+
+    /** Tarif horaire de la salle pour le tier du réservant (ou null). */
+    public function hourlyRate(Room $room, ?string $orgType): ?int
+    {
+        return $this->tierPrice($room, $orgType, 'hourly');
+    }
+
+    /**
+     * Minutes offertes encore disponibles ce mois-là pour un membre.
+     * Quota mensuel = 60 min, décompté sur ses réservations non annulées
+     * ayant un événement dans le mois. On peut exclure une réservation
+     * (celle en cours d'édition) pour éviter de la compter deux fois.
+     */
+    public function memberFreeMinutesRemaining(?int $userId, Carbon $monthAnchor, ?int $excludeReservationId = null): int
+    {
+        if (! $userId) {
+            return 0;
+        }
+
+        $start = $monthAnchor->copy()->startOfMonth();
+        $end = $monthAnchor->copy()->endOfMonth();
+
+        $used = \App\Models\Reservation::query()
+            ->where('booked_by_user_id', $userId)
+            ->where('status', '!=', 'cancelled')
+            ->when($excludeReservationId, fn ($q) => $q->where('id', '!=', $excludeReservationId))
+            ->whereHas('events', fn ($q) => $q->whereBetween('start', [$start, $end]))
+            ->sum('free_minutes_applied');
+
+        return max(0, 60 - (int) $used);
+    }
+
+    /**
+     * Calcule l'heure offerte membre pour une réservation à l'heure.
+     * Retourne [minutesOffertes, ligneRemise|null].
+     */
+    public function memberFreeHour(bool $isMember, ?int $hourlyRate, float $hourlyMinutes, int $freeMinutesAvailable): array
+    {
+        if (! $isMember || ! $hourlyRate || $hourlyMinutes <= 0 || $freeMinutesAvailable <= 0) {
+            return [0, null];
+        }
+
+        $freeMinutes = (int) min(60, $freeMinutesAvailable, $hourlyMinutes);
+        if ($freeMinutes <= 0) {
+            return [0, null];
+        }
+
+        $amount = round($hourlyRate * $freeMinutes / 60, 2);
+
+        return [$freeMinutes, [0, __('Free hour (member)'), $amount]];
     }
 
     /**

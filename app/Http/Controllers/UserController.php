@@ -94,12 +94,17 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::min(12)],
+            // Déclarations La Pépite (déterminent le tarif appliqué).
+            'org_type' => ['required', 'in:non_profit,for_profit'],
+            'is_pepite_member' => ['boolean'],
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'org_type' => $validated['org_type'],
+            'is_pepite_member' => $request->boolean('is_pepite_member'),
         ]);
 
         Auth::login($user);
@@ -193,6 +198,8 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::min(12)],
             'is_global_admin' => ['boolean'],
+            'is_pepite_member' => ['boolean'],
+            'org_type' => ['nullable', 'in:non_profit,for_profit'],
             'owners' => ['array'],
             'owners.*.id' => ['exists:owners,id'],
             'owners.*.role' => ['in:'.implode(',', $roleValues)],
@@ -206,6 +213,8 @@ class UserController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'is_global_admin' => $request->boolean('is_global_admin'),
+            'is_pepite_member' => $request->boolean('is_pepite_member'),
+            'org_type' => $validated['org_type'] ?? null,
             'email_verified_at' => now(),
         ]);
 
@@ -252,6 +261,8 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'password' => ['nullable', 'confirmed', Password::min(12)],
             'is_global_admin' => ['boolean'],
+            'is_pepite_member' => ['boolean'],
+            'org_type' => ['nullable', 'in:non_profit,for_profit'],
             'owners' => ['array'],
             'owners.*.id' => ['exists:owners,id'],
             'owners.*.role' => ['in:'.implode(',', $roleValues)],
@@ -262,6 +273,8 @@ class UserController extends Controller
         // Update user
         $user->name = $validated['name'];
         $user->email = $validated['email'];
+        $user->is_pepite_member = $request->boolean('is_pepite_member');
+        $user->org_type = $validated['org_type'] ?? null;
 
         // Empêcher un utilisateur de retirer son propre statut de global_admin
         if ($user->id === auth()->id() && $user->is_global_admin && ! $request->boolean('is_global_admin')) {
@@ -339,6 +352,8 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'org_type' => ['nullable', 'in:non_profit,for_profit'],
+            'is_pepite_member' => ['boolean'],
         ]);
 
         // Check if email changed
@@ -347,6 +362,8 @@ class UserController extends Controller
         // Update user
         $user->name = $validated['name'];
         $user->email = $validated['email'];
+        $user->org_type = $validated['org_type'] ?? null;
+        $user->is_pepite_member = $request->boolean('is_pepite_member');
 
         // If email changed, mark as unverified and send new verification email
         if ($emailChanged) {

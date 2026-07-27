@@ -19,6 +19,10 @@ class Reservation extends Model
         'tenant_id',
         'hash',
         'status',
+        'booked_by_user_id',
+        'reservant_org_type',
+        'reservant_is_member',
+        'free_minutes_applied',
         'title',
         'description',
         'full_price',
@@ -34,6 +38,7 @@ class Reservation extends Model
 
     protected $casts = [
         'status' => ReservationStatus::class,
+        'reservant_is_member' => 'boolean',
         'discounts' => 'array',
         'sum_discounts' => 'decimal:2',
         'special_discount' => 'decimal:2',

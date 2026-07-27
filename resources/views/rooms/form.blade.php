@@ -427,66 +427,68 @@
                     </div>
                 </fieldset>
 
-                {{-- Prix par salle (La Pépite). Les créneaux/durées sont globaux (réglages système). --}}
-                <p class="text-sm text-gray-600 mb-2">{{ __('Prices are specific to this room. Time windows (hourly max, half-day and full-day slots) are set globally in the system settings.') }}</p>
-
-                {{-- Prix horaire --}}
+                {{-- Salle « sur demande » : pas de prix affiché, réservation par devis --}}
                 <fieldset class="form-element">
                     <div class="form-field">
-                        <label for="price_hourly" class="form-element-title">{{ __('Hourly price') }}</label>
-                        <input
-                            type="number"
-                            id="price_hourly"
-                            name="price_hourly"
-                            step="0.01"
-                            min="0"
-                            value="{{ old('price_hourly', $room?->price_hourly ?? '') }}"
-                        >
-                        <small class="text-gray-600 block mt-1">{{ __('Charged per hour × number of hours booked (up to the global hourly max). Leave empty to disable.') }}</small>
-                        @error('price_hourly')
-                            <span class="text-red-600 text-sm">{{ $message }}</span>
-                        @enderror
+                        <label class="flex items-center gap-2">
+                            <input type="hidden" name="on_request" value="0">
+                            <input type="checkbox" name="on_request" value="1" id="on_request_checkbox"
+                                @checked(old('on_request', $room?->on_request))>
+                            <span class="font-medium">{{ __('On request only (no online price — booked via a special request / quote)') }}</span>
+                        </label>
+                        <small class="text-gray-600 block mt-1">{{ __('For rooms like La Big Room or La Place du Village. Hides the pricing below and the direct booking.') }}</small>
                     </div>
                 </fieldset>
 
-                {{-- Prix demi-journée --}}
-                <fieldset class="form-element">
-                    <div class="form-field">
-                        <label for="price_half_day" class="form-element-title">{{ __('Half day price') }}</label>
-                        <input
-                            type="number"
-                            id="price_half_day"
-                            name="price_half_day"
-                            step="0.01"
-                            min="0"
-                            value="{{ old('price_half_day', $room?->price_half_day ?? '') }}"
-                        >
-                        <small class="text-gray-600 block mt-1">{{ __('Flat price. Morning and afternoon windows are set globally. Leave empty to disable.') }}</small>
-                        @error('price_half_day')
-                            <span class="text-red-600 text-sm">{{ $message }}</span>
-                        @enderror
-                    </div>
-                </fieldset>
+                {{-- Prix par salle (La Pépite). Deux colonnes selon le statut du réservant.
+                     Les créneaux/durées sont globaux (réglages système). --}}
+                <div id="pep-pricing-block">
+                <p class="text-sm text-gray-600 mb-2">{{ __('Prices are specific to this room. Left column: non-profit organizations. Right column: for-profit organizations. Time windows are set globally in the system settings.') }}</p>
 
-                {{-- Prix journée complète --}}
-                <fieldset class="form-element">
-                    <div class="form-field">
-                        <label for="price_full_day" class="form-element-title">{{ __('Full day price') }}</label>
-                        <input
-                            type="number"
-                            id="price_full_day"
-                            name="price_full_day"
-                            step="0.01"
-                            min="0"
-                            value="{{ old('price_full_day', $room?->price_full_day ?? '') }}"
-                            required
-                        >
-                        <small class="text-gray-600 block mt-1">{{ __('Flat price. The full-day time window is set globally in the system settings.') }}</small>
-                        @error('price_full_day')
-                            <span class="text-red-600 text-sm">{{ $message }}</span>
-                        @enderror
-                    </div>
-                </fieldset>
+                <table class="pep-price-table" style="width:100%;border-collapse:collapse">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;padding:6px"></th>
+                            <th style="text-align:left;padding:6px">{{ __('Non-profit') }}</th>
+                            <th style="text-align:left;padding:6px">{{ __('For-profit') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding:6px">{{ __('Hourly price') }}</td>
+                            <td style="padding:6px"><input type="number" name="price_np_hourly" step="0.01" min="0" value="{{ old('price_np_hourly', $room?->price_np_hourly ?? '') }}" style="width:120px"></td>
+                            <td style="padding:6px"><input type="number" id="price_hourly" name="price_hourly" step="0.01" min="0" value="{{ old('price_hourly', $room?->price_hourly ?? '') }}" style="width:120px"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:6px">{{ __('Half day price') }}</td>
+                            <td style="padding:6px"><input type="number" name="price_np_half_day" step="0.01" min="0" value="{{ old('price_np_half_day', $room?->price_np_half_day ?? '') }}" style="width:120px"></td>
+                            <td style="padding:6px"><input type="number" id="price_half_day" name="price_half_day" step="0.01" min="0" value="{{ old('price_half_day', $room?->price_half_day ?? '') }}" style="width:120px"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:6px">{{ __('Full day price') }}</td>
+                            <td style="padding:6px"><input type="number" name="price_np_full_day" step="0.01" min="0" value="{{ old('price_np_full_day', $room?->price_np_full_day ?? '') }}" style="width:120px"></td>
+                            <td style="padding:6px"><input type="number" id="price_full_day" name="price_full_day" step="0.01" min="0" value="{{ old('price_full_day', $room?->price_full_day ?? '') }}" style="width:120px"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <small class="text-gray-600 block mt-1">{{ __('Hourly = price × hours (up to the global hourly max). Half-day = flat price for morning / afternoon / evening. Leave a cell empty to disable that mode. If the non-profit cell is empty, the for-profit price is used.') }}</small>
+                @error('price_full_day')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+                </div>
+
+                {{-- Bascule prix ⇄ sur demande --}}
+                <script>
+                    (function () {
+                        const onReq = document.getElementById('on_request_checkbox');
+                        const block = document.getElementById('pep-pricing-block');
+                        const sync = () => {
+                            const off = onReq.checked;
+                            block.style.opacity = off ? '.4' : '1';
+                            block.style.pointerEvents = off ? 'none' : 'auto';
+                        };
+                        onReq.addEventListener('change', sync);
+                        sync();
+                    })();
+                </script>
 
                 <fieldset class="form-element">
                     <div class="form-field">

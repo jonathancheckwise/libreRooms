@@ -25,6 +25,7 @@
             full_day_booking: @json(__('full day booking')),
             morning_half_day: @json(__('Morning half-day')),
             afternoon_half_day: @json(__('Afternoon half-day')),
+            evening_half_day: @json(__('Evening half-day')),
             hourly_booking: @json(__('Hourly booking')),
             to: @json(__('to')),
             error_no_dates: @json(__('Error: You must add at least one reservation date.')),
@@ -117,6 +118,8 @@
                 'morning_end' => substr($pep->half_day_morning_end, 0, 5),
                 'afternoon_start' => substr($pep->half_day_afternoon_start, 0, 5),
                 'afternoon_end' => substr($pep->half_day_afternoon_end, 0, 5),
+                'evening_start' => substr($pep->half_day_evening_start, 0, 5),
+                'evening_end' => substr($pep->half_day_evening_end, 0, 5),
                 'full_start' => substr($pep->full_day_start, 0, 5),
                 'full_end' => substr($pep->full_day_end, 0, 5),
             ];
@@ -131,6 +134,7 @@
                 <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="hourly"> {{ __('Hourly') }} <span class="text-gray-500 text-sm">({{ __('max') }} {{ $pepWindows['hourly_max'] }}h)</span></label>
                 <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="morning"> {{ __('Morning half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['morning_start'] }}–{{ $pepWindows['morning_end'] }})</span></label>
                 <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="afternoon"> {{ __('Afternoon half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['afternoon_start'] }}–{{ $pepWindows['afternoon_end'] }})</span></label>
+                <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="evening"> {{ __('Evening half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['evening_start'] }}–{{ $pepWindows['evening_end'] }})</span></label>
                 <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="full"> {{ __('Full day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['full_start'] }}–{{ $pepWindows['full_end'] }})</span></label>
             </div>
             <p id="pep-mode-hint" class="text-sm text-gray-600 mt-1"></p>
@@ -142,6 +146,7 @@
                 hourly: @json(__('Choose your start and end times below (max :h h).', ['h' => $pepWindows['hourly_max']])),
                 morning: @json(__('Times are locked to the morning window.')),
                 afternoon: @json(__('Times are locked to the afternoon window.')),
+                evening: @json(__('Times are locked to the evening window.')),
                 full: @json(__('Times are locked to the full-day window.')),
             };
             function hm(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
@@ -161,6 +166,7 @@
                 let start, end, lock = true;
                 if (mode==='morning'){ start=W.morning_start; end=W.morning_end; }
                 else if (mode==='afternoon'){ start=W.afternoon_start; end=W.afternoon_end; }
+                else if (mode==='evening'){ start=W.evening_start; end=W.evening_end; }
                 else if (mode==='full'){ start=W.full_start; end=W.full_end; }
                 else { start=W.full_start; end=addMinutes(W.full_start,60); lock=false; }
                 s.value = toDT(date,start); e.value = toDT(date,end);

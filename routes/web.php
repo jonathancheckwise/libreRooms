@@ -75,8 +75,8 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [UserController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [UserController::class, 'login']);
     // La Pépite : inscription libre désactivée. Les comptes sont créés par l'équipe.
-    Route::get('/register', fn () => redirect()->route('login'))->name('register');
-    Route::post('/register', fn () => abort(403));
+    Route::get('/register', [UserController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [UserController::class, 'register']);
     Route::get('/auth/{provider:slug}', [OidcController::class, 'redirect'])->name('auth.oidc.redirect');
 
     // Password reset routes

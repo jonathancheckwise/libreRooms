@@ -16,6 +16,16 @@
                     <span class="cost-value"><span id="discount_{{ $discount->id }}-cost">{{ currency($discount->value,$owner) }}</span></span>
                 </p>
             @endforeach
+            {{-- Heure offerte membre (La Pépite), affichée dynamiquement par le JS --}}
+            <p id="pep-free-cost-p" class="cost hidden">
+                <span class="cost-label">{{ __('Free hour (member)') }}:</span>
+                <span class="cost-value"><span id="pep-free-cost">{{ currency(0,$owner) }}</span></span>
+            </p>
+            {{-- Remise membre La Pépite (-10 %), affichée dynamiquement par le JS --}}
+            <p id="pep-member-cost-p" class="cost hidden">
+                <span class="cost-label">{{ __('Member discount') }}:</span>
+                <span class="cost-value"><span id="pep-member-cost">{{ currency(0,$owner) }}</span></span>
+            </p>
             <p id="special_discount-cost-p" class="cost {{ $specialDiscount > 0 ? '' : 'hidden' }}">
                 <span class="cost-label">{{ __('Special discount (admin)') }}:</span>
                 <span class="cost-value"><span id="special_discount-cost">{{ currency($specialDiscount,$owner) }}</span></span>

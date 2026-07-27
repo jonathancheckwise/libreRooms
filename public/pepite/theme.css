@@ -156,13 +156,9 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ------------------------------------------------------------
-   9. Inscription libre coupée : on masque les liens "Inscription".
-   (Le blocage réel de l'URL /register se fait côté serveur, voir SSH.)
+   9. Inscription publique réactivée (les externes créent leur compte
+   et déclarent leur statut). Le lien "Inscription" est donc réaffiché.
    ------------------------------------------------------------ */
-.nav-action.register,
-a[href$="/register"] {
-  display: none !important;
-}
 
 /* ------------------------------------------------------------
    10. Accents : focus visible clavier
