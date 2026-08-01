@@ -123,6 +123,32 @@
                 </div>
             @endif
 
+            <!-- Disponibilité (La Pépite) -->
+            @php
+                $roomWindows = $room->availabilityWindows->sortBy(['weekday','start_time']);
+                $weekdayNames = [1 => __('Monday'), 2 => __('Tuesday'), 3 => __('Wednesday'), 4 => __('Thursday'), 5 => __('Friday'), 6 => __('Saturday'), 7 => __('Sunday')];
+            @endphp
+            @if(! $room->bookable || $room->booking_optional || $roomWindows->isNotEmpty())
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Availability') }}</h2>
+                    @unless($room->bookable)
+                        <p class="text-sm" style="color:#b45309">🔒 {{ __('This space is not bookable online. Its opening hours are shown for information only.') }}</p>
+                    @endunless
+                    @if($room->booking_optional)
+                        <p class="text-sm text-gray-600">ℹ️ {{ __('Booking is optional but advised if you need a quiet, reserved space.') }}</p>
+                    @endif
+                    @if($roomWindows->isNotEmpty())
+                        <ul class="mt-2 text-gray-700" style="list-style:none;padding:0;margin:0">
+                            @foreach($roomWindows->groupBy('weekday') as $wd => $wins)
+                                <li>{{ $weekdayNames[$wd] ?? $wd }} :
+                                    {{ $wins->map(fn($w) => substr($w->start_time,0,5).'–'.substr($w->end_time,0,5))->implode(', ') }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            @endif
+
             <!-- Calendar -->
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Calendar') }}</h2>

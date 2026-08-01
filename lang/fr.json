@@ -1121,5 +1121,17 @@
     "Purpose of the booking": "Motif de la réservation",
     "I would like a catering offer": "Je souhaite une offre de catering",
     "Send the request": "Envoyer la demande",
-    "Send the special request": "Envoyer la demande"
+    "Send the special request": "Envoyer la demande",
+    "Availability (La Pépite)": "Disponibilité (La Pépite)",
+    "Availability": "Disponibilité",
+    "This room can be booked by users": "Cette salle est réservable par les utilisateurs",
+    "Uncheck for a space that is shown but never bookable (e.g. La Garderie).": "Décochez pour un espace visible mais jamais réservable (ex. La Garderie).",
+    "Booking optional but advised": "Réservation facultative mais conseillée",
+    "Shows a note that booking is optional (e.g. La Chill).": "Affiche une note indiquant que la réservation est facultative (ex. La Chill).",
+    "Availability windows per weekday": "Fenêtres de disponibilité par jour de semaine",
+    "Optional. If set, the room can only be booked within these windows (e.g. La Douce, or La Focus with privatised slots excluded). Leave empty for the standard behaviour.": "Facultatif. Si renseigné, la salle n'est réservable que dans ces fenêtres (ex. La Douce, ou La Focus en excluant les créneaux privatisés). Laissez vide pour le comportement standard.",
+    "Add a window": "Ajouter une fenêtre",
+    "This space is not bookable online. Its opening hours are shown for information only.": "Cet espace n'est pas réservable en ligne. Ses horaires d'ouverture sont affichés à titre indicatif.",
+    "Booking is optional but advised if you need a quiet, reserved space.": "La réservation est facultative mais conseillée si vous avez besoin d'un espace calme et réservé.",
+    "This room can only be booked within its available time windows.": "Cette salle ne peut être réservée que dans ses fenêtres de disponibilité."
 }

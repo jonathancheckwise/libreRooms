@@ -17,6 +17,7 @@ use App\Support\DateHelper;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 use function Illuminate\Support\defer;
 
@@ -47,6 +48,9 @@ class ReservationService
 
         // Calculate prices first (we need full_price before creating reservation)
         [$eventsWithPrices, $fullPrice, $hourlyMinutes] = $this->getEventsWithPrices($request->input('events'), $room, $orgType);
+
+        // Refuse les créneaux hors fenêtres de disponibilité (La Pépite).
+        $this->assertWithinAvailabilityWindows($room, $eventsWithPrices);
 
         // Calculate sum of discounts
         $discountIds = $request->input('discounts', []);
@@ -329,6 +333,9 @@ class ReservationService
         // Calculate prices for all events in request
         [$eventsWithPrices, $fullPrice, $hourlyMinutes] = $this->getEventsWithPrices($request->input('events'), $room, $orgType);
 
+        // Refuse les créneaux hors fenêtres de disponibilité (La Pépite).
+        $this->assertWithinAvailabilityWindows($room, $eventsWithPrices);
+
         // Calculate sum of discounts
         $discountIds = $request->input('discounts', []);
         [$sumDiscounts, $discountsData] = $this->pricing->calculateSumDiscounts($room, $discountIds, $fullPrice);
@@ -560,6 +567,25 @@ class ReservationService
         (new WebdavUploader)
             ->setOwner($reservation->room->owner)
             ->deleteSilent($path);
+    }
+
+    /**
+     * Refuse tout créneau hors des fenêtres de disponibilité de la salle
+     * (La Pépite). Sans fenêtre définie, ne restreint rien.
+     */
+    protected function assertWithinAvailabilityWindows(Room $room, array $eventsWithPrices): void
+    {
+        if (! $room->hasAvailabilityWindows()) {
+            return;
+        }
+
+        foreach ($eventsWithPrices as $ev) {
+            if (! $room->isWithinAvailabilityWindows($ev['start'], $ev['end'])) {
+                throw ValidationException::withMessages([
+                    'events' => __('This room can only be booked within its available time windows.'),
+                ]);
+            }
+        }
     }
 
     protected function getEventsWithPrices(array $eventsData, $room, ?string $orgType = null): array

@@ -223,6 +223,19 @@ function isNonBookable(ev) {
         if (ev.start < uEnd && ev.end > uStart) return true;
     }
 
+    // Fenêtres de disponibilité par jour (La Pépite) : restriction seule.
+    // Le créneau doit tenir entièrement dans une fenêtre du bon jour.
+    const windows = settings.availability_windows || [];
+    if (windows.length > 0) {
+        if (isMultiDay) return true;
+        const toMin = (s) => { const [h, m] = String(s).split(':').map(Number); return h * 60 + m; };
+        const wd = ev.start.weekday; // 1..7
+        const startMin = ev.start.hour * 60 + ev.start.minute;
+        const endMin = ev.end.hour * 60 + ev.end.minute;
+        const fits = windows.some(w => w.weekday === wd && endMin > startMin && startMin >= toMin(w.start) && endMin <= toMin(w.end));
+        if (!fits) return true;
+    }
+
     return false;
 }
 async function initAvailabilityCheck() {

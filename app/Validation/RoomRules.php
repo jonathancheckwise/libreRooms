@@ -85,6 +85,14 @@ class RoomRules
             'is_public' => ['boolean'],
             // Salle « sur demande » (La Pépite) : pas de prix affiché.
             'on_request' => ['boolean'],
+            // Salle non réservable (La Garderie) / réservation facultative (La Chill).
+            'bookable' => ['boolean'],
+            'booking_optional' => ['boolean'],
+            // Fenêtres de disponibilité par jour (ISO 1=lun..7=dim).
+            'availability_windows' => ['nullable', 'array'],
+            'availability_windows.*.weekday' => ['nullable', 'integer', 'between:1,7'],
+            'availability_windows.*.start' => ['nullable', 'date_format:H:i'],
+            'availability_windows.*.end' => ['nullable', 'date_format:H:i'],
             // Équipements (La Pépite) : wifi, visio, pmr, sonorisation…
             'equipments' => ['nullable', 'array'],
             'equipments.*' => ['string', 'max:50'],

@@ -69,6 +69,12 @@ class ReservationController extends Controller
                 'reservation_cutoff_days' => $room->reservation_cutoff_days,
                 'reservation_advance_limit' => $room->reservation_advance_limit,
                 'allowed_weekdays' => $room->allowed_weekdays,
+                // Fenêtres de dispo par jour (La Pépite) : ISO 1=lun..7=dim.
+                'availability_windows' => $room->availabilityWindows->map(fn ($w) => [
+                    'weekday' => (int) $w->weekday,
+                    'start' => substr($w->start_time, 0, 5),
+                    'end' => substr($w->end_time, 0, 5),
+                ])->values(),
                 'day_start_time' => $room->day_start_time ? substr($room->day_start_time, 0, 5) : null,
                 'day_end_time' => $room->day_end_time ? substr($room->day_end_time, 0, 5) : null,
                 'timeZone' => $timezone,

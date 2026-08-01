@@ -159,6 +159,9 @@ class RoomController extends Controller
         $request->validate(['companies' => ['array'], 'companies.*' => ['exists:companies,id']]);
         $room->companies()->sync($request->input('companies', []));
 
+        // Fenêtres de disponibilité par jour (La Pépite)
+        $this->syncAvailabilityWindows($room, $request);
+
         // Handle image uploads and ordering
         $this->handleImageUploadsAndOrder($request, $room);
 
@@ -531,8 +534,34 @@ class RoomController extends Controller
         $request->validate(['companies' => ['array'], 'companies.*' => ['exists:companies,id']]);
         $room->companies()->sync($request->input('companies', []));
 
+        // Fenêtres de disponibilité par jour (La Pépite)
+        $this->syncAvailabilityWindows($room, $request);
+
         return $this->redirectBack('rooms.show', ['room' => $room])
             ->with('success', __('Room updated successfully.'));
+    }
+
+    /**
+     * Remplace les fenêtres de disponibilité d'une salle (La Pépite) à partir
+     * du formulaire (ignore les lignes incomplètes ou incohérentes).
+     */
+    protected function syncAvailabilityWindows(Room $room, Request $request): void
+    {
+        $room->availabilityWindows()->delete();
+
+        foreach ($request->input('availability_windows', []) as $w) {
+            $weekday = (int) ($w['weekday'] ?? 0);
+            $start = $w['start'] ?? null;
+            $end = $w['end'] ?? null;
+            if ($weekday < 1 || $weekday > 7 || ! $start || ! $end || $end <= $start) {
+                continue;
+            }
+            $room->availabilityWindows()->create([
+                'weekday' => $weekday,
+                'start_time' => $start,
+                'end_time' => $end,
+            ]);
+        }
     }
 
     /**

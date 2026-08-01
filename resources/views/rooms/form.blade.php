@@ -394,6 +394,81 @@
                 </script>
             </div>
 
+            <!-- Disponibilité (La Pépite) : espaces communautaires -->
+            <div class="form-group">
+                <h3 class="form-group-title">{{ __('Availability (La Pépite)') }}</h3>
+
+                <fieldset class="form-element">
+                    <div class="form-field">
+                        <label class="flex items-center gap-2">
+                            <input type="hidden" name="bookable" value="0">
+                            <input type="checkbox" name="bookable" value="1" @checked(old('bookable', $room?->bookable ?? true))>
+                            <span class="font-medium">{{ __('This room can be booked by users') }}</span>
+                        </label>
+                        <small class="text-gray-600 block mt-1">{{ __('Uncheck for a space that is shown but never bookable (e.g. La Garderie).') }}</small>
+                    </div>
+                    <div class="form-field mt-2">
+                        <label class="flex items-center gap-2">
+                            <input type="hidden" name="booking_optional" value="0">
+                            <input type="checkbox" name="booking_optional" value="1" @checked(old('booking_optional', $room?->booking_optional))>
+                            <span class="font-medium">{{ __('Booking optional but advised') }}</span>
+                        </label>
+                        <small class="text-gray-600 block mt-1">{{ __('Shows a note that booking is optional (e.g. La Chill).') }}</small>
+                    </div>
+                </fieldset>
+
+                {{-- Fenêtres de dispo par jour : si vide, comportement natif (jours/plage globaux) --}}
+                <fieldset class="form-element mt-3">
+                    <legend class="text-sm font-medium mb-1">{{ __('Availability windows per weekday') }}</legend>
+                    <small class="text-gray-600 block mb-2">{{ __('Optional. If set, the room can only be booked within these windows (e.g. La Douce, or La Focus with privatised slots excluded). Leave empty for the standard behaviour.') }}</small>
+                    @php
+                        $weekdayLabels = [1 => __('Monday'), 2 => __('Tuesday'), 3 => __('Wednesday'), 4 => __('Thursday'), 5 => __('Friday'), 6 => __('Saturday'), 7 => __('Sunday')];
+                        $existingWindows = old('availability_windows', $room ? $room->availabilityWindows->map(fn($w) => ['weekday' => $w->weekday, 'start' => substr($w->start_time,0,5), 'end' => substr($w->end_time,0,5)])->all() : []);
+                    @endphp
+                    <div id="pep-windows-list">
+                        @foreach($existingWindows as $i => $w)
+                            <div class="pep-window-row" style="display:flex;gap:.5rem;align-items:center;margin-bottom:.4rem">
+                                <select name="availability_windows[{{ $i }}][weekday]">
+                                    @foreach($weekdayLabels as $val => $lbl)
+                                        <option value="{{ $val }}" @selected((int)($w['weekday'] ?? 0) === $val)>{{ $lbl }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="time" name="availability_windows[{{ $i }}][start]" value="{{ $w['start'] ?? '' }}">
+                                <span>–</span>
+                                <input type="time" name="availability_windows[{{ $i }}][end]" value="{{ $w['end'] ?? '' }}">
+                                <button type="button" class="btn btn-secondary pep-window-remove" style="padding:.2rem .5rem">✕</button>
+                            </div>
+                        @endforeach
+                    </div>
+                    <button type="button" id="pep-window-add" class="btn btn-secondary" style="margin-top:.3rem">{{ __('Add a window') }}</button>
+                </fieldset>
+                <script>
+                    (function () {
+                        const list = document.getElementById('pep-windows-list');
+                        const addBtn = document.getElementById('pep-window-add');
+                        const weekdays = @json($weekdayLabels);
+                        let idx = {{ count($existingWindows) }};
+                        function buildRow(i) {
+                            const row = document.createElement('div');
+                            row.className = 'pep-window-row';
+                            row.style.cssText = 'display:flex;gap:.5rem;align-items:center;margin-bottom:.4rem';
+                            let opts = '';
+                            for (const [val, lbl] of Object.entries(weekdays)) { opts += `<option value="${val}">${lbl}</option>`; }
+                            row.innerHTML = `<select name="availability_windows[${i}][weekday]">${opts}</select>`
+                                + `<input type="time" name="availability_windows[${i}][start]">`
+                                + `<span>–</span>`
+                                + `<input type="time" name="availability_windows[${i}][end]">`
+                                + `<button type="button" class="btn btn-secondary pep-window-remove" style="padding:.2rem .5rem">✕</button>`;
+                            return row;
+                        }
+                        addBtn.addEventListener('click', () => { list.appendChild(buildRow(idx++)); });
+                        list.addEventListener('click', (e) => {
+                            if (e.target.classList.contains('pep-window-remove')) { e.target.closest('.pep-window-row').remove(); }
+                        });
+                    })();
+                </script>
+            </div>
+
             <!-- Équipements (La Pépite) -->
             <div class="form-group">
                 <h3 class="form-group-title">{{ __('Equipment') }}</h3>

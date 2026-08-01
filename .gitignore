@@ -28,3 +28,7 @@ CLAUDE.md
 .junie/
 .mcp.json
 .editorconfig
+
+# Base sqlite de dev créée par erreur
+librerooms
+*.sqlite

@@ -16,7 +16,7 @@
     "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-v4compatibility.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-CYK9SUMU.css",
+    "file": "assets/app-CqH9lPAc.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -67,7 +67,7 @@
     ]
   },
   "resources/js/reservations/reservation-form.js": {
-    "file": "assets/reservation-form-ggNKx0UE.js",
+    "file": "assets/reservation-form-Cn9-ATYg.js",
     "name": "reservation-form",
     "src": "resources/js/reservations/reservation-form.js",
     "isEntry": true
