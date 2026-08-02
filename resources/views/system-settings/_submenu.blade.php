@@ -7,8 +7,6 @@
        class="page-submenu-item page-submenu-nav {{ request()->routeIs('identity-providers.*') ? 'active' : '' }}">
         {{ __('Identity providers') }}
     </a>
-    <a href="{{ route('setup.environment') }}"
-       class="page-submenu-item page-submenu-nav {{ request()->routeIs('setup.environment') ? 'active' : '' }}">
-        {{ __('Environment (.env)') }}
-    </a>
+    {{-- Onglet « Environment (.env) » retiré (La Pépite) : édition bas niveau du
+         .env inutile pour l'équipe, gérée par l'hébergeur/dev. --}}
 </nav>

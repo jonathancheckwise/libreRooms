@@ -1133,5 +1133,9 @@
     "Add a window": "Ajouter une fenêtre",
     "This space is not bookable online. Its opening hours are shown for information only.": "Cet espace n'est pas réservable en ligne. Ses horaires d'ouverture sont affichés à titre indicatif.",
     "Booking is optional but advised if you need a quiet, reserved space.": "La réservation est facultative mais conseillée si vous avez besoin d'un espace calme et réservé.",
-    "This room can only be booked within its available time windows.": "Cette salle ne peut être réservée que dans ses fenêtres de disponibilité."
+    "This room can only be booked within its available time windows.": "Cette salle ne peut être réservée que dans ses fenêtres de disponibilité.",
+    "Time slot": "Créneau",
+    "Pick a day: the booking covers this room's available slot for that day. For several days, make one booking per day.": "Choisissez un jour : la réservation couvre le créneau de disponibilité de la salle pour ce jour-là. Pour plusieurs jours, faites une réservation par jour.",
+    "Slot booked:": "Créneau réservé :",
+    "No slot available on this day for this room.": "Aucun créneau disponible ce jour-là pour cette salle."
 }

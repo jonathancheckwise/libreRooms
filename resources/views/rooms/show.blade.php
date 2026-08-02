@@ -150,6 +150,7 @@
             @endif
 
             <!-- Calendar -->
+            @if($room->bookable || (auth()->user() && auth()->user()->can('manageReservations', $room)))
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Calendar') }}</h2>
                 @can('manageReservations', $room)
@@ -171,6 +172,7 @@
                 @endcan
                 @include('rooms._calendar', ['room' => $room])
             </div>
+            @endif
 
             <!-- Admin actions -->
             @can('update', $room)
@@ -220,6 +222,7 @@
             @endif
 
             <!-- Pricing -->
+            @if($room->bookable && ! $room->on_request)
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Pricing') }}</h3>
 
@@ -279,6 +282,7 @@
                     </div>
                 @endif
             </div>
+            @endif
 
             <!-- Conditions -->
             @if($room->charter_mode->value !== 'none')
@@ -342,7 +346,7 @@
             </div>
 
             <!-- Options -->
-            @if($room->options->where('active', true)->count() > 0)
+            @if($room->bookable && $room->options->where('active', true)->count() > 0)
                 <div class="bg-white rounded-lg shadow p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Options') }}</h3>
                     <div class="space-y-3">

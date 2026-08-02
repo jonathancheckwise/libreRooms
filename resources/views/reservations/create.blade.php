@@ -123,20 +123,31 @@
                 'full_start' => substr($pep->full_day_start, 0, 5),
                 'full_end' => substr($pep->full_day_end, 0, 5),
             ];
+            // Salle à fenêtres de disponibilité (La Pépite) : réservation « au jour ».
+            $isWindowed = $room->availabilityWindows->isNotEmpty();
         @endphp
-        <div class="form-group" id="pep-mode-group">
+        <div class="form-group" id="pep-mode-group" data-windowed="{{ $isWindowed ? '1' : '0' }}">
             <h3 class="form-group-title">{{ __('Booking mode') }}</h3>
             <div class="form-element">
                 <label for="pep-date" class="form-element-title">{{ __('Date') }}</label>
                 <input type="date" id="pep-date">
             </div>
-            <div class="form-element" style="display:flex;flex-direction:column;gap:.5rem">
-                <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="hourly"> {{ __('Hourly') }} <span class="text-gray-500 text-sm">({{ __('max') }} {{ $pepWindows['hourly_max'] }}h)</span></label>
-                <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="morning"> {{ __('Morning half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['morning_start'] }}–{{ $pepWindows['morning_end'] }})</span></label>
-                <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="afternoon"> {{ __('Afternoon half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['afternoon_start'] }}–{{ $pepWindows['afternoon_end'] }})</span></label>
-                <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="evening"> {{ __('Evening half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['evening_start'] }}–{{ $pepWindows['evening_end'] }})</span></label>
-                <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="full"> {{ __('Full day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['full_start'] }}–{{ $pepWindows['full_end'] }})</span></label>
-            </div>
+            @if($isWindowed)
+                {{-- On choisit uniquement le jour : le créneau = la fenêtre de dispo de ce jour --}}
+                <div class="form-element" id="pep-window-choice-wrap" style="display:none">
+                    <label class="form-element-title">{{ __('Time slot') }}</label>
+                    <div id="pep-window-choice" style="display:flex;flex-direction:column;gap:.4rem"></div>
+                </div>
+                <p class="text-sm text-gray-600 mt-1">{{ __('Pick a day: the booking covers this room\'s available slot for that day. For several days, make one booking per day.') }}</p>
+            @else
+                <div class="form-element" style="display:flex;flex-direction:column;gap:.5rem">
+                    <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="hourly"> {{ __('Hourly') }} <span class="text-gray-500 text-sm">({{ __('max') }} {{ $pepWindows['hourly_max'] }}h)</span></label>
+                    <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="morning"> {{ __('Morning half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['morning_start'] }}–{{ $pepWindows['morning_end'] }})</span></label>
+                    <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="afternoon"> {{ __('Afternoon half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['afternoon_start'] }}–{{ $pepWindows['afternoon_end'] }})</span></label>
+                    <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="evening"> {{ __('Evening half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['evening_start'] }}–{{ $pepWindows['evening_end'] }})</span></label>
+                    <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="full"> {{ __('Full day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['full_start'] }}–{{ $pepWindows['full_end'] }})</span></label>
+                </div>
+            @endif
             <p id="pep-mode-hint" class="text-sm text-gray-600 mt-1"></p>
         </div>
         <script>
@@ -158,6 +169,51 @@
             function currentMode(){ const r=document.querySelector('input[name="pep_mode"]:checked'); return r?r.value:null; }
 
             function fire(el){ el.dispatchEvent(new Event('input', {bubbles:true})); }
+
+            // Salle à fenêtres (La Pépite) : on choisit le jour, le créneau = la fenêtre.
+            const WINDOWED = @json($isWindowed);
+            const AVAIL = (window.RoomConfig && window.RoomConfig.settings.availability_windows) || [];
+            if (WINDOWED) {
+                const choiceWrap = () => document.getElementById('pep-window-choice-wrap');
+                const choiceBox = () => document.getElementById('pep-window-choice');
+                const hintEl = () => document.getElementById('pep-mode-hint');
+                const isoWeekday = (d) => { const g = new Date(d + 'T00:00:00').getDay(); return g === 0 ? 7 : g; };
+                function setWindow(date, w) {
+                    const s = firstStart(), e = firstEnd();
+                    if (!s || !e) return;
+                    s.value = date + 'T' + w.start; e.value = date + 'T' + w.end;
+                    s.readOnly = true; e.readOnly = true; s.style.background = '#f3f4f6'; e.style.background = '#f3f4f6';
+                    fire(s); fire(e);
+                    hintEl().textContent = @json(__('Slot booked:')) + ' ' + w.start + '–' + w.end;
+                }
+                function applyWindowed() {
+                    const date = dateEl().value, s = firstStart(), e = firstEnd();
+                    if (!s || !e || !date) return;
+                    const day = AVAIL.filter(w => Number(w.weekday) === isoWeekday(date));
+                    if (!day.length) {
+                        choiceWrap().style.display = 'none'; choiceBox().innerHTML = '';
+                        s.value = ''; e.value = ''; fire(s); fire(e);
+                        hintEl().textContent = @json(__('No slot available on this day for this room.'));
+                        return;
+                    }
+                    if (day.length === 1) {
+                        choiceWrap().style.display = 'none'; choiceBox().innerHTML = '';
+                        setWindow(date, day[0]);
+                    } else {
+                        choiceWrap().style.display = '';
+                        choiceBox().innerHTML = day.map((w, i) => `<label class="flex items-center gap-2"><input type="radio" name="pep_win" value="${i}" ${i === 0 ? 'checked' : ''}> ${w.start}–${w.end}</label>`).join('');
+                        choiceBox().querySelectorAll('input[name="pep_win"]').forEach(r => r.addEventListener('change', () => {
+                            setWindow(date, day[Number(choiceBox().querySelector('input[name="pep_win"]:checked').value)]);
+                        }));
+                        setWindow(date, day[0]);
+                    }
+                }
+                document.addEventListener('DOMContentLoaded', function () {
+                    const d = dateEl(); if (d) d.addEventListener('change', applyWindowed);
+                    const addBtn = document.getElementById('add-event'); if (addBtn) addBtn.style.display = 'none';
+                });
+                return;
+            }
 
             function apply(){
                 const mode = currentMode(); const date = dateEl().value;
