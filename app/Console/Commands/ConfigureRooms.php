@@ -68,7 +68,7 @@ class ConfigureRooms extends Command
         $extra = Room::whereNotIn('id', $this->matchedIds)->pluck('name');
         if ($extra->isNotEmpty()) {
             $this->newLine();
-            $this->comment('Salles présentes en base mais absentes du document (à configurer à la main si besoin) :');
+            $this->comment('Salles non gérées par la commande — à configurer à la main (ex. espaces communautaires La Secrète, L\'Accueil, La Coworking, Cabine acoustique, La Cuisine) :');
             foreach ($extra as $n) {
                 $this->line("  - {$n}");
             }
@@ -104,8 +104,9 @@ class ConfigureRooms extends Command
      */
     protected function roomConfigs(): array
     {
-        // Salles privatisables (bi-tarif). Ouvertes lun–sam 08:00–22:00 (créneau
-        // soir 18–22 possible). Dimanche / week-end externe = sur demande.
+        // Salles privatisables (bi-tarif). Réservables en ligne lun–ven
+        // 08:00–22:00 (créneau soir 18–22 possible). Week-ends = sur demande
+        // (bouton « Demande spéciale »).
         $priced = [
             ['La Petite Sérieuse', [25, 60, 100], [35, 120, 200], ['screen', 'flipchart', 'wifi']],
             ['La Grande Sérieuse', [35, 120, 200], [45, 160, 290], ['screen', 'flipchart', 'wifi']],
@@ -123,7 +124,7 @@ class ConfigureRooms extends Command
                 'price_np_hourly' => $np[0], 'price_np_half_day' => $np[1], 'price_np_full_day' => $np[2],
                 'price_hourly' => $lucr[0], 'price_half_day' => $lucr[1], 'price_full_day' => $lucr[2],
                 'equipments' => $equip,
-                'allowed_weekdays' => ['1', '2', '3', '4', '5', '6'],
+                'allowed_weekdays' => ['1', '2', '3', '4', '5'],
                 'day_start_time' => '08:00', 'day_end_time' => '22:00',
             ];
         }
@@ -147,7 +148,7 @@ class ConfigureRooms extends Command
             'price_np_hourly' => 15, 'price_np_half_day' => 40, 'price_np_full_day' => 60,
             'price_hourly' => 25, 'price_half_day' => 50, 'price_full_day' => 80,
             'equipments' => ['wifi'],
-            'allowed_weekdays' => ['1', '2', '3', '4', '5', '6'],
+            'allowed_weekdays' => ['1', '2', '3', '4', '5'],
             'day_start_time' => '08:00', 'day_end_time' => '22:00',
         ];
 
@@ -159,7 +160,7 @@ class ConfigureRooms extends Command
                 'bookable' => true, 'booking_optional' => false,
                 'price_mode' => 'fixed', 'price_full_day' => 0,
                 'equipments' => $equip,
-                'allowed_weekdays' => ['1', '2', '3', '4', '5', '6'],
+                'allowed_weekdays' => ['1', '2', '3', '4', '5'],
             ];
         }
 
