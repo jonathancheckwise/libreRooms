@@ -37,6 +37,7 @@
                 <a href="{{ route('contacts.index') }}" class="nav-link">{{ __('Contacts') }}</a>
                 <a href="{{ route('invoices.index') }}" class="nav-link">{{ __('Invoices') }}</a>
                 <a href="{{ route('rooms.index') }}" class="nav-link">{{ __('Rooms') }}</a>
+                <a href="{{ route('special-requests.create') }}" class="nav-link">{{ __('Special request') }}</a>
                 @can('viewany', App\Models\Owner::class)
                     <a href="{{ route('owners.index') }}" class="nav-link">{{ __('Owners') }}</a>
                 @endcan

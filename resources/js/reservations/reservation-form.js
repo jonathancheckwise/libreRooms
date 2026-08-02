@@ -223,6 +223,19 @@ function isNonBookable(ev) {
         if (ev.start < uEnd && ev.end > uStart) return true;
     }
 
+    // Fenêtres de disponibilité par jour (La Pépite) : restriction seule.
+    // Le créneau doit tenir entièrement dans une fenêtre du bon jour.
+    const windows = settings.availability_windows || [];
+    if (windows.length > 0) {
+        if (isMultiDay) return true;
+        const toMin = (s) => { const [h, m] = String(s).split(':').map(Number); return h * 60 + m; };
+        const wd = ev.start.weekday; // 1..7
+        const startMin = ev.start.hour * 60 + ev.start.minute;
+        const endMin = ev.end.hour * 60 + ev.end.minute;
+        const fits = windows.some(w => w.weekday === wd && endMin > startMin && startMin >= toMin(w.start) && endMin <= toMin(w.end));
+        if (!fits) return true;
+    }
+
     return false;
 }
 async function initAvailabilityCheck() {
@@ -317,6 +330,7 @@ function getEventPrice(start, end) {
 
     const mS = pepTimeToHours(s.half_day_morning_start), mE = pepTimeToHours(s.half_day_morning_end);
     const aS = pepTimeToHours(s.half_day_afternoon_start), aE = pepTimeToHours(s.half_day_afternoon_end);
+    const eS = pepTimeToHours(s.half_day_evening_start), eE = pepTimeToHours(s.half_day_evening_end);
     const fS = pepTimeToHours(s.full_day_start), fE = pepTimeToHours(s.full_day_end);
     const match = (a, b) => Math.abs(a - b) < 0.02;
 
@@ -324,11 +338,13 @@ function getEventPrice(start, end) {
         full: t.full_day_booking || 'Journée complète',
         morning: t.morning_half_day || 'Demi-journée matin',
         afternoon: t.afternoon_half_day || 'Demi-journée après-midi',
+        evening: t.evening_half_day || 'Demi-journée soir',
         hourly: t.hourly_booking || "Réservation à l'heure",
     };
 
     const segments = splitByDay(start, end, late_end_hour);
     let price = 0;
+    let hourlyMinutes = 0; // minutes au tarif horaire (pour l'heure offerte membre)
     const parts = [];
 
     segments.forEach((seg) => {
@@ -339,9 +355,11 @@ function getEventPrice(start, end) {
             price += priceHalf; parts.push(L.morning);
         } else if (priceHalf != null && match(a, aS) && match(b, aE)) {
             price += priceHalf; parts.push(L.afternoon);
+        } else if (priceHalf != null && match(a, eS) && match(b, eE)) {
+            price += priceHalf; parts.push(L.evening);
         } else if (priceHourly != null && dur <= hourlyMax + 0.001) {
             const h = Math.round(dur * 100) / 100;
-            price += priceHourly * h; parts.push(L.hourly + ' (' + h + 'h)');
+            price += priceHourly * h; hourlyMinutes += dur * 60; parts.push(L.hourly + ' (' + h + 'h)');
         } else if (priceFull != null) {
             price += priceFull; parts.push(L.full);
         }
@@ -357,7 +375,7 @@ function getEventPrice(start, end) {
             : segments[0].date)
         : '';
     const label = dateStr + ' (' + labelParts.join(', ') + ')';
-    return [label, price];
+    return [label, price, hourlyMinutes];
 }
 
 function getOptionsPrice(options) {
@@ -392,12 +410,14 @@ function updateCost(ev) {
 
     if (!canCalculateCost) {
         ev.price = 0;
+        ev.hourlyMinutes = 0;
         ev.eventRow.querySelector(".event-info-text").textContent = "";
         return;
     }
-    const [label, price] = getEventPrice(ev.start, ev.end);
+    const [label, price, hourlyMinutes] = getEventPrice(ev.start, ev.end);
     const [options_label, options_price] = getOptionsPrice(ev.options);
     ev.price = price + options_price;
+    ev.hourlyMinutes = hourlyMinutes || 0;
     let full_label = options_label ? label + " - " + options_label : label;
     full_label += ": " + currency(ev.price);
     ev.eventRow.querySelector(".event-info-text").textContent = full_label;
@@ -441,7 +461,43 @@ function updateTotalCost() {
         hideDOM(donation_cost_span.parentElement.parentElement);
     }
 
-    const final_cost = initPrice - sumDiscounts - (special_discount || 0) + (donation || 0);
+    const settings = window.RoomConfig.settings;
+    const memberPct = settings.member_discount_percent || 0;
+
+    // Heure offerte membre (quota mensuel) : gratuité horaire avant la remise -10 %.
+    const freeAvail = settings.member_free_minutes_remaining || 0;
+    const hourlyRate = settings.price_hourly;
+    const totalHourlyMin = window.ResEvents.reduce((sum, ev) => sum + (ev.hourlyMinutes || 0), 0);
+    const free_cost_span = document.getElementById("pep-free-cost");
+    let freeAmount = 0;
+    if (memberPct > 0 && freeAvail > 0 && hourlyRate && totalHourlyMin > 0) {
+        const freeMin = Math.min(60, freeAvail, totalHourlyMin);
+        freeAmount = Math.round(hourlyRate * freeMin / 60 * 100) / 100;
+    }
+    if (free_cost_span) {
+        if (freeAmount > 0) {
+            free_cost_span.textContent = currency(-freeAmount);
+            showDOM(free_cost_span.parentElement.parentElement);
+        } else {
+            hideDOM(free_cost_span.parentElement.parentElement);
+        }
+    }
+
+    // Remise membre La Pépite (-10 %) sur le prix restant (après heure offerte).
+    const member_cost_span = document.getElementById("pep-member-cost");
+    let memberDiscount = 0;
+    const memberBase = initPrice - freeAmount;
+    if (memberPct > 0 && memberBase > 0) {
+        memberDiscount = Math.round(memberBase * memberPct) / 100;
+        if (member_cost_span) {
+            member_cost_span.textContent = currency(-memberDiscount);
+            showDOM(member_cost_span.parentElement.parentElement);
+        }
+    } else if (member_cost_span) {
+        hideDOM(member_cost_span.parentElement.parentElement);
+    }
+
+    const final_cost = initPrice - sumDiscounts - freeAmount - memberDiscount - (special_discount || 0) + (donation || 0);
     document.getElementById("final-cost").textContent = currency(final_cost);
 }
 

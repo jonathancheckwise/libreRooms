@@ -23,6 +23,18 @@ class RoomRules
             $request->merge(['allowed_weekdays' => []]);
         }
 
+        // Équipements (La Pépite) : aucune case cochée → tableau vide (permet de
+        // tout décocher lors d'une mise à jour).
+        if (! $request->has('equipments')) {
+            $request->merge(['equipments' => []]);
+        }
+
+        // Salle « sur demande » (La Pépite) : pas de prix → on force le prix
+        // journée à 0 (colonne non nulle en base) pour ne pas bloquer la
+        // validation ni l'enregistrement.
+        if ($request->boolean('on_request') && blank($request->input('price_full_day'))) {
+            $request->merge(['price_full_day' => 0]);
+        }
     }
 
     public static function rules(Request $request): array
@@ -71,6 +83,19 @@ class RoomRules
             'image_order.*' => ['string', 'regex:/^(existing|new):\d+$/'],
             'active' => ['boolean'],
             'is_public' => ['boolean'],
+            // Salle « sur demande » (La Pépite) : pas de prix affiché.
+            'on_request' => ['boolean'],
+            // Salle non réservable (La Garderie) / réservation facultative (La Chill).
+            'bookable' => ['boolean'],
+            'booking_optional' => ['boolean'],
+            // Fenêtres de disponibilité par jour (ISO 1=lun..7=dim).
+            'availability_windows' => ['nullable', 'array'],
+            'availability_windows.*.weekday' => ['nullable', 'integer', 'between:1,7'],
+            'availability_windows.*.start' => ['nullable', 'date_format:H:i'],
+            'availability_windows.*.end' => ['nullable', 'date_format:H:i'],
+            // Équipements (La Pépite) : wifi, visio, pmr, sonorisation…
+            'equipments' => ['nullable', 'array'],
+            'equipments.*' => ['string', 'max:50'],
 
             // Price configuration
             'price_mode' => [
@@ -79,10 +104,15 @@ class RoomRules
             ],
             'free_price_explanation' => ['nullable', 'string'],
             'price_short' => ['nullable', 'numeric', 'min:0'],
-            'price_full_day' => ['required', 'numeric', 'min:0'],
-            // Prix par salle (La Pépite) : demi-journée + horaire
+            // Non requis si la salle est « sur demande » (pas de prix).
+            'price_full_day' => ['nullable', 'required_unless:on_request,1', 'numeric', 'min:0'],
+            // Prix par salle (La Pépite) : demi-journée + horaire, tarifs
+            // lucratif (price_*) et non-lucratif (price_np_*).
             'price_half_day' => ['nullable', 'numeric', 'min:0'],
             'price_hourly' => ['nullable', 'numeric', 'min:0'],
+            'price_np_full_day' => ['nullable', 'numeric', 'min:0'],
+            'price_np_half_day' => ['nullable', 'numeric', 'min:0'],
+            'price_np_hourly' => ['nullable', 'numeric', 'min:0'],
             // Anciens champs (durées) désormais définis globalement : facultatifs
             'max_hours_short' => ['nullable', 'integer', 'min:1'],
             'max_hours_half_day' => ['nullable', 'integer', 'min:1'],

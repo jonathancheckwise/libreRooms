@@ -131,6 +131,31 @@
                 </div>
             </div>
 
+            {{-- Statut Pépite (La Pépite) : détermine le tarif appliqué à ses réservations --}}
+            <div class="form-group">
+                <h3 class="form-group-title">{{ __('La Pépite status') }}</h3>
+                <p class="text-sm text-gray-600 mb-4">{{ __('Determines the price tier applied to this user\'s reservations.') }}</p>
+
+                <div class="form-field">
+                    <label for="org_type">{{ __('Type of organization') }}</label>
+                    <select id="org_type" name="org_type">
+                        <option value="" @selected(! old('org_type', $user?->org_type))>{{ __('Not specified (full price)') }}</option>
+                        <option value="non_profit" @selected(old('org_type', $user?->org_type) === 'non_profit')>{{ __('Non-profit organization') }}</option>
+                        <option value="for_profit" @selected(old('org_type', $user?->org_type) === 'for_profit')>{{ __('For-profit organization') }}</option>
+                    </select>
+                </div>
+
+                <div class="form-field mt-3">
+                    <label class="flex items-center gap-2">
+                        <input type="hidden" name="is_pepite_member" value="0">
+                        <input type="checkbox" name="is_pepite_member" value="1"
+                            @checked(old('is_pepite_member', $user?->is_pepite_member))>
+                        <span class="font-medium">{{ __('Member of La Pépite') }}</span>
+                    </label>
+                    <small class="text-gray-600">{{ __('Grants 1 free hour per month and −10% on bookings.') }}</small>
+                </div>
+            </div>
+
             {{-- Entreprises (La Pépite) : rattachement de l'utilisateur --}}
             <div class="form-section mt-6">
                 <h2 class="text-lg font-semibold mb-2">{{ __('Companies') }}</h2>

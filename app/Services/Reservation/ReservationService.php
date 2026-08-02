@@ -17,6 +17,7 @@ use App\Support\DateHelper;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 use function Illuminate\Support\defer;
 
@@ -33,29 +34,66 @@ class ReservationService
         // Create or find Contact
         $contact = $this->createOrFindContact($request, $user);
 
-        // Determine status and confirmation info
+        // Determine status and confirmation info.
+        // Validation manuelle (La Pépite) : seul un responsable de la salle peut
+        // confirmer directement ; un réservant crée toujours une demande PENDING.
         $action = $request->input('action');
-        $isConfirmed = $action === 'confirm';
+        $canConfirm = $user && $user->can('manageReservations', $room);
+        $isConfirmed = $action === 'confirm' && $canConfirm;
         $status = $isConfirmed ? ReservationStatus::CONFIRMED : ReservationStatus::PENDING;
 
+        // Snapshot du statut du réservant (fige le tarif appliqué).
+        $orgType = $user?->org_type;
+        $isMember = (bool) $user?->is_pepite_member;
+
         // Calculate prices first (we need full_price before creating reservation)
-        [$eventsWithPrices, $fullPrice] = $this->getEventsWithPrices($request->input('events'), $room);
+        [$eventsWithPrices, $fullPrice, $hourlyMinutes] = $this->getEventsWithPrices($request->input('events'), $room, $orgType);
+
+        // Refuse les créneaux hors fenêtres de disponibilité (La Pépite).
+        $this->assertWithinAvailabilityWindows($room, $eventsWithPrices);
 
         // Calculate sum of discounts
         $discountIds = $request->input('discounts', []);
         [$sumDiscounts, $discountsData] = $this->pricing->calculateSumDiscounts($room, $discountIds, $fullPrice);
 
+        // Heure offerte membre (quota mensuel) : gratuité sur les heures, avant la remise -10 %.
+        $freeMinutes = 0;
+        $freeAmount = 0.0;
+        if ($isMember && $hourlyMinutes > 0 && ! empty($eventsWithPrices)) {
+            $monthAnchor = $eventsWithPrices[0]['start']->copy();
+            $available = $this->pricing->memberFreeMinutesRemaining($user?->id, $monthAnchor);
+            [$freeMinutes, $freeLine] = $this->pricing->memberFreeHour(
+                $isMember, $this->pricing->hourlyRate($room, $orgType), $hourlyMinutes, $available
+            );
+            if ($freeLine) {
+                $freeAmount = $freeLine[2];
+                $sumDiscounts += $freeAmount;
+                $discountsData[] = $freeLine;
+            }
+        }
+
+        // Remise membre La Pépite (-10 %) sur le prix de base restant (après heure offerte)
+        if ($memberDiscount = $this->pricing->memberDiscount($isMember, $fullPrice - $freeAmount)) {
+            $sumDiscounts += $memberDiscount[2];
+            $discountsData[] = $memberDiscount;
+        }
+
         // Use transaction for DB + CalDAV operations
         $reservation = DB::transaction(function () use (
             $room, $contact, $status, $isConfirmed, $user, $request,
-            $eventsWithPrices, $fullPrice, $sumDiscounts, $discountsData
+            $eventsWithPrices, $fullPrice, $sumDiscounts, $discountsData,
+            $orgType, $isMember, $freeMinutes
         ) {
             // Create Reservation
             $reservation = Reservation::create([
                 'room_id' => $room->id,
                 'tenant_id' => $contact->id,
+                'booked_by_user_id' => $user?->id,
                 'hash' => Str::random(32),
                 'status' => $status,
+                'reservant_org_type' => $orgType,
+                'reservant_is_member' => $isMember,
+                'free_minutes_applied' => $freeMinutes,
                 'title' => $request->input('res_title'),
                 'description' => $request->input('res_description'),
                 'full_price' => $fullPrice,
@@ -140,10 +178,12 @@ class ReservationService
 
     public function updateFromRequest(FormRequest $request, Reservation $reservation, User $user): Reservation
     {
-        // Handle confirm/cancel actions via dedicated methods
+        // Handle confirm/cancel actions via dedicated methods.
+        // Validation manuelle (La Pépite) : seul un responsable peut confirmer.
         $action = $request->input('action');
+        $canConfirm = $user->can('manageReservations', $reservation->room);
 
-        if ($action === 'confirm') {
+        if ($action === 'confirm' && $canConfirm) {
             // Already set status confirmed in updateReservationData to avoid doing caldav updates twice
             $this->updateReservationData($request, $reservation, $user, confirm: true);
 
@@ -285,16 +325,44 @@ class ReservationService
         $room = $reservation->room;
         $wasCancelled = $reservation->status === ReservationStatus::CANCELLED;
 
+        // On recalcule avec le statut FIGÉ du réservant (snapshot), pas celui de
+        // la personne qui édite/confirme — sinon la remise serait perdue.
+        $orgType = $reservation->reservant_org_type;
+        $isMember = (bool) $reservation->reservant_is_member;
+
         // Calculate prices for all events in request
-        [$eventsWithPrices, $fullPrice] = $this->getEventsWithPrices($request->input('events'), $room);
+        [$eventsWithPrices, $fullPrice, $hourlyMinutes] = $this->getEventsWithPrices($request->input('events'), $room, $orgType);
+
+        // Refuse les créneaux hors fenêtres de disponibilité (La Pépite).
+        $this->assertWithinAvailabilityWindows($room, $eventsWithPrices);
 
         // Calculate sum of discounts
         $discountIds = $request->input('discounts', []);
         [$sumDiscounts, $discountsData] = $this->pricing->calculateSumDiscounts($room, $discountIds, $fullPrice);
 
+        // Heure offerte : on réutilise les minutes déjà figées (bornées aux heures actuelles).
+        $freeAmount = 0.0;
+        $freeMinutes = (int) min($reservation->free_minutes_applied, $hourlyMinutes);
+        if ($isMember && $freeMinutes > 0) {
+            [$freeMinutes, $freeLine] = $this->pricing->memberFreeHour(
+                $isMember, $this->pricing->hourlyRate($room, $orgType), $hourlyMinutes, $freeMinutes
+            );
+            if ($freeLine) {
+                $freeAmount = $freeLine[2];
+                $sumDiscounts += $freeAmount;
+                $discountsData[] = $freeLine;
+            }
+        }
+
+        // Remise membre La Pépite (-10 %) — sur le prix restant, avec le snapshot
+        if ($memberDiscount = $this->pricing->memberDiscount($isMember, $fullPrice - $freeAmount)) {
+            $sumDiscounts += $memberDiscount[2];
+            $discountsData[] = $memberDiscount;
+        }
+
         DB::transaction(function () use (
             $reservation, $contact, $room, $request,
-            $eventsWithPrices, $fullPrice, $sumDiscounts, $discountsData, $wasCancelled, $confirm
+            $eventsWithPrices, $fullPrice, $sumDiscounts, $discountsData, $wasCancelled, $confirm, $freeMinutes
         ) {
             // Update Reservation
             $reservation->update([
@@ -305,6 +373,7 @@ class ReservationService
                 'full_price' => $fullPrice,
                 'sum_discounts' => $sumDiscounts,
                 'discounts' => $discountsData,
+                'free_minutes_applied' => $freeMinutes,
                 'special_discount' => $request->input('special_discount'),
                 'donation' => $request->input('donation'),
                 'custom_message' => $request->input('custom_message'),
@@ -500,9 +569,29 @@ class ReservationService
             ->deleteSilent($path);
     }
 
-    protected function getEventsWithPrices(array $eventsData, $room): array
+    /**
+     * Refuse tout créneau hors des fenêtres de disponibilité de la salle
+     * (La Pépite). Sans fenêtre définie, ne restreint rien.
+     */
+    protected function assertWithinAvailabilityWindows(Room $room, array $eventsWithPrices): void
+    {
+        if (! $room->hasAvailabilityWindows()) {
+            return;
+        }
+
+        foreach ($eventsWithPrices as $ev) {
+            if (! $room->isWithinAvailabilityWindows($ev['start'], $ev['end'])) {
+                throw ValidationException::withMessages([
+                    'events' => __('This room can only be booked within its available time windows.'),
+                ]);
+            }
+        }
+    }
+
+    protected function getEventsWithPrices(array $eventsData, $room, ?string $orgType = null): array
     {
         $fullPrice = 0;
+        $hourlyMinutes = 0.0;
         $eventsWithPrices = [];
         $timezone = $room->getTimezone();
 
@@ -511,8 +600,8 @@ class ReservationService
             $endAt = DateHelper::fromLocalInput($eventData['end'], $timezone);
             $uid = $eventData['uid'] ?? null;
 
-            // Calculate event price (without options)
-            $eventPricing = $this->pricing->calculateEventPrice($startAt, $endAt, $room);
+            // Calculate event price (without options) — tarif selon le statut du réservant
+            $eventPricing = $this->pricing->calculateEventPrice($startAt, $endAt, $room, $orgType);
             // Calculate options price
             $optionIds = $eventData['options'] ?? [];
             $optionsPricing = $this->pricing->calculateOptionsPrice($optionIds, $room);
@@ -524,6 +613,7 @@ class ReservationService
                 : $eventPricing['label'];
 
             $fullPrice += $totalPrice;
+            $hourlyMinutes += $eventPricing['hourly_minutes'] ?? 0;
 
             $eventsWithPrices[] = [
                 'uid' => $uid,
@@ -535,7 +625,7 @@ class ReservationService
             ];
         }
 
-        return [$eventsWithPrices, $fullPrice];
+        return [$eventsWithPrices, $fullPrice, $hourlyMinutes];
     }
 
     protected function createOrFindContact(FormRequest $request, ?User $user): Contact

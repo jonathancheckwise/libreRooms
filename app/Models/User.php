@@ -26,6 +26,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'is_global_admin',
+        'is_pepite_member',
+        'org_type',
         'email_verified_at',
     ];
 
@@ -50,6 +52,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_global_admin' => 'boolean',
+            'is_pepite_member' => 'boolean',
         ];
     }
 

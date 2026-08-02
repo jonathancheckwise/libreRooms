@@ -28,30 +28,53 @@ class ReservationController extends Controller
         // Créneaux globaux (La Pépite) pour l'aperçu de prix côté client
         $pep = app(SystemSettings::class);
 
+        // Tarif du bon tier selon le statut du réservant connecté (aperçu).
+        // Le serveur reste autoritaire (snapshot à l'enregistrement).
+        $authUser = auth()->user();
+        $isNonProfit = $authUser?->org_type === 'non_profit';
+        $tier = fn (string $mode) => $isNonProfit
+            ? ($room->{"price_np_$mode"} ?? $room->{"price_$mode"})
+            : $room->{"price_$mode"};
+        $memberPct = $authUser?->is_pepite_member ? (int) $pep->member_discount_percent : 0;
+        // Minutes offertes restantes ce mois-ci (aperçu ; serveur autoritaire).
+        $freeMinutesRemaining = $authUser?->is_pepite_member
+            ? app(\App\Services\Reservation\PricingService::class)->memberFreeMinutesRemaining($authUser->id, now())
+            : 0;
+
         // Prepare room configuration for JavaScript
         $roomConfig = [
             'settings' => [
                 'availability_route' => route('rooms.availability', $room),
                 'price_mode' => $room->price_mode->value,
                 'price_short' => $room->price_short,
-                'price_full_day' => $room->price_full_day,
+                'price_full_day' => $tier('full_day'),
                 'max_hours_short' => $room->max_hours_short,
                 'always_short_after' => $room->always_short_after,
                 'always_short_before' => $room->always_short_before,
-                // La Pépite : tarifs par salle + créneaux globaux
-                'price_hourly' => $room->price_hourly,
-                'price_half_day' => $room->price_half_day,
+                // La Pépite : tarifs (tier réservant) + créneaux globaux + remise membre
+                'price_hourly' => $tier('hourly'),
+                'price_half_day' => $tier('half_day'),
+                'member_discount_percent' => $memberPct,
+                'member_free_minutes_remaining' => $freeMinutesRemaining,
                 'hourly_max_hours' => (int) $pep->hourly_max_hours,
                 'half_day_morning_start' => substr($pep->half_day_morning_start, 0, 5),
                 'half_day_morning_end' => substr($pep->half_day_morning_end, 0, 5),
                 'half_day_afternoon_start' => substr($pep->half_day_afternoon_start, 0, 5),
                 'half_day_afternoon_end' => substr($pep->half_day_afternoon_end, 0, 5),
+                'half_day_evening_start' => substr($pep->half_day_evening_start, 0, 5),
+                'half_day_evening_end' => substr($pep->half_day_evening_end, 0, 5),
                 'full_day_start' => substr($pep->full_day_start, 0, 5),
                 'full_day_end' => substr($pep->full_day_end, 0, 5),
                 'allow_late_end_hour' => $room->allow_late_end_hour,
                 'reservation_cutoff_days' => $room->reservation_cutoff_days,
                 'reservation_advance_limit' => $room->reservation_advance_limit,
                 'allowed_weekdays' => $room->allowed_weekdays,
+                // Fenêtres de dispo par jour (La Pépite) : ISO 1=lun..7=dim.
+                'availability_windows' => $room->availabilityWindows->map(fn ($w) => [
+                    'weekday' => (int) $w->weekday,
+                    'start' => substr($w->start_time, 0, 5),
+                    'end' => substr($w->end_time, 0, 5),
+                ])->values(),
                 'day_start_time' => $room->day_start_time ? substr($room->day_start_time, 0, 5) : null,
                 'day_end_time' => $room->day_end_time ? substr($room->day_end_time, 0, 5) : null,
                 'timeZone' => $timezone,
@@ -142,9 +165,15 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function create(Room $room): View
+    public function create(Room $room): View|RedirectResponse
     {
         $this->authorize('reserve', $room);
+
+        // Salle « sur demande » (La Pépite) : pas de réservation directe, on
+        // redirige vers le formulaire de demande spéciale / devis.
+        if ($room->on_request) {
+            return redirect()->route('special-requests.create', ['room' => $room->id]);
+        }
 
         return $this->reservationForm($room, null);
     }

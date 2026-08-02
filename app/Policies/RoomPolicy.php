@@ -77,6 +77,12 @@ class RoomPolicy
             return false;
         }
 
+        // Salle non réservable (La Pépite : La Garderie) : jamais réservable
+        // par les utilisateurs (les responsables gardent l'accès admin).
+        if (! $room->bookable && ! ($user && $user->can('manageReservations', $room))) {
+            return false;
+        }
+
         if ($room->is_public) {
             return true;
         }

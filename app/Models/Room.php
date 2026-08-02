@@ -33,12 +33,19 @@ class Room extends Model
         'longitude',
         'active',
         'is_public',
+        'on_request',
+        'bookable',
+        'booking_optional',
+        'equipments',
         'price_mode',
         'free_price_explanation',
         'price_short',
         'price_full_day',
         'price_half_day',
         'price_hourly',
+        'price_np_full_day',
+        'price_np_half_day',
+        'price_np_hourly',
         'max_hours_short',
         'max_hours_half_day',
         'always_short_after',
@@ -67,6 +74,10 @@ class Room extends Model
     protected $casts = [
         'active' => 'boolean',
         'is_public' => 'boolean',
+        'on_request' => 'boolean',
+        'bookable' => 'boolean',
+        'booking_optional' => 'boolean',
+        'equipments' => 'array',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
         'price_mode' => PriceModes::class,
@@ -81,6 +92,87 @@ class Room extends Model
         'disable_mailer' => 'boolean',
         'allowed_weekdays' => 'array',
     ];
+
+    /** Équipements proposables à la création d'une salle (La Pépite). */
+    public const EQUIPMENTS = ['wifi', 'visio', 'screen', 'flipchart', 'sound', 'pmr'];
+
+    /** Libellé traduit d'un équipement. */
+    public static function equipmentLabel(string $key): string
+    {
+        return match ($key) {
+            'wifi' => __('Wi-Fi'),
+            'visio' => __('Videoconferencing'),
+            'screen' => __('Screen / beamer'),
+            'flipchart' => __('Flip-chart'),
+            'sound' => __('Sound system'),
+            'pmr' => __('Wheelchair access'),
+            default => $key,
+        };
+    }
+
+    public function availabilityWindows(): HasMany
+    {
+        return $this->hasMany(RoomAvailabilityWindow::class);
+    }
+
+    /**
+     * La salle a-t-elle des fenêtres de disponibilité par jour (La Pépite) ?
+     */
+    public function hasAvailabilityWindows(): bool
+    {
+        return $this->availabilityWindows()->exists();
+    }
+
+    /**
+     * Le créneau [start, end] tombe-t-il dans une fenêtre de disponibilité ?
+     * RESTRICTION SEULE : sans fenêtre définie → toujours vrai (natif).
+     * Avec fenêtres : le créneau doit tenir entièrement dans une fenêtre du
+     * bon jour de semaine (même jour, pas de passage à minuit).
+     */
+    public function isWithinAvailabilityWindows(\Carbon\Carbon $start, \Carbon\Carbon $end): bool
+    {
+        $windows = $this->relationLoaded('availabilityWindows')
+            ? $this->availabilityWindows
+            : $this->availabilityWindows()->get();
+
+        if ($windows->isEmpty()) {
+            return true;
+        }
+
+        $tz = $this->getTimezone();
+        $s = $start->copy()->setTimezone($tz);
+        $e = $end->copy()->setTimezone($tz);
+
+        $weekday = $s->isoWeekday(); // 1..7
+        $dayStart = $s->copy()->startOfDay();
+        $startMin = (int) round(($s->timestamp - $dayStart->timestamp) / 60);
+        $endMin = (int) round(($e->timestamp - $dayStart->timestamp) / 60);
+
+        // Créneau à cheval sur un autre jour → refusé pour une salle à fenêtres.
+        if ($endMin > 24 * 60 || $endMin <= $startMin) {
+            return false;
+        }
+
+        foreach ($windows->where('weekday', $weekday) as $w) {
+            $ws = $this->timeToMinutes($w->start_time);
+            $we = $this->timeToMinutes($w->end_time);
+            if ($startMin >= $ws && $endMin <= $we) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function timeToMinutes(?string $time): int
+    {
+        if (! $time) {
+            return 0;
+        }
+        $p = explode(':', $time);
+
+        return ((int) ($p[0] ?? 0)) * 60 + ((int) ($p[1] ?? 0));
+    }
 
     public function getRouteKeyName(): string
     {

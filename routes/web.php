@@ -75,8 +75,8 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [UserController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [UserController::class, 'login']);
     // La Pépite : inscription libre désactivée. Les comptes sont créés par l'équipe.
-    Route::get('/register', fn () => redirect()->route('login'))->name('register');
-    Route::post('/register', fn () => abort(403));
+    Route::get('/register', [UserController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [UserController::class, 'register']);
     Route::get('/auth/{provider:slug}', [OidcController::class, 'redirect'])->name('auth.oidc.redirect');
 
     // Password reset routes
@@ -161,6 +161,12 @@ Route::controller(ReservationController::class)->middleware(['auth', 'verified']
     Route::put('/reservations/{reservation}', 'update')->name('reservations.update');
     Route::post('/reservations/{reservation}/confirm', 'directConfirm')->name('reservations.confirm');
     Route::post('/reservations/{reservation}/cancel', 'cancel')->name('reservations.cancel');
+});
+
+// Demandes spéciales (La Pépite) : salles sur demande, catering, hors horaires.
+Route::controller(\App\Http\Controllers\SpecialRequestController::class)->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/demande-speciale', 'create')->name('special-requests.create');
+    Route::post('/demande-speciale', 'store')->name('special-requests.store');
 });
 
 Route::controller(OwnerController::class)->middleware(['auth', 'verified'])->group(function () {

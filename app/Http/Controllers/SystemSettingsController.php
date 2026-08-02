@@ -49,8 +49,11 @@ class SystemSettingsController extends Controller
             'half_day_morning_end' => 'required|date_format:H:i|after:half_day_morning_start',
             'half_day_afternoon_start' => 'required|date_format:H:i',
             'half_day_afternoon_end' => 'required|date_format:H:i|after:half_day_afternoon_start',
+            'half_day_evening_start' => 'required|date_format:H:i',
+            'half_day_evening_end' => 'required|date_format:H:i|after:half_day_evening_start',
             'full_day_start' => 'required|date_format:H:i',
             'full_day_end' => 'required|date_format:H:i|after:full_day_start',
+            'member_discount_percent' => 'required|integer|min:0|max:100',
         ];
 
         $validated = $request->validate($rules);

@@ -394,6 +394,96 @@
                 </script>
             </div>
 
+            <!-- Disponibilité (La Pépite) : espaces communautaires -->
+            <div class="form-group">
+                <h3 class="form-group-title">{{ __('Availability (La Pépite)') }}</h3>
+
+                <fieldset class="form-element">
+                    <div class="form-field">
+                        <label class="flex items-center gap-2">
+                            <input type="hidden" name="bookable" value="0">
+                            <input type="checkbox" name="bookable" value="1" @checked(old('bookable', $room?->bookable ?? true))>
+                            <span class="font-medium">{{ __('This room can be booked by users') }}</span>
+                        </label>
+                        <small class="text-gray-600 block mt-1">{{ __('Uncheck for a space that is shown but never bookable (e.g. La Garderie).') }}</small>
+                    </div>
+                    <div class="form-field mt-2">
+                        <label class="flex items-center gap-2">
+                            <input type="hidden" name="booking_optional" value="0">
+                            <input type="checkbox" name="booking_optional" value="1" @checked(old('booking_optional', $room?->booking_optional))>
+                            <span class="font-medium">{{ __('Booking optional but advised') }}</span>
+                        </label>
+                        <small class="text-gray-600 block mt-1">{{ __('Shows a note that booking is optional (e.g. La Chill).') }}</small>
+                    </div>
+                </fieldset>
+
+                {{-- Fenêtres de dispo par jour : si vide, comportement natif (jours/plage globaux) --}}
+                <fieldset class="form-element mt-3">
+                    <legend class="text-sm font-medium mb-1">{{ __('Availability windows per weekday') }}</legend>
+                    <small class="text-gray-600 block mb-2">{{ __('Optional. If set, the room can only be booked within these windows (e.g. La Douce, or La Focus with privatised slots excluded). Leave empty for the standard behaviour.') }}</small>
+                    @php
+                        $weekdayLabels = [1 => __('Monday'), 2 => __('Tuesday'), 3 => __('Wednesday'), 4 => __('Thursday'), 5 => __('Friday'), 6 => __('Saturday'), 7 => __('Sunday')];
+                        $existingWindows = old('availability_windows', $room ? $room->availabilityWindows->map(fn($w) => ['weekday' => $w->weekday, 'start' => substr($w->start_time,0,5), 'end' => substr($w->end_time,0,5)])->all() : []);
+                    @endphp
+                    <div id="pep-windows-list">
+                        @foreach($existingWindows as $i => $w)
+                            <div class="pep-window-row" style="display:flex;gap:.5rem;align-items:center;margin-bottom:.4rem">
+                                <select name="availability_windows[{{ $i }}][weekday]">
+                                    @foreach($weekdayLabels as $val => $lbl)
+                                        <option value="{{ $val }}" @selected((int)($w['weekday'] ?? 0) === $val)>{{ $lbl }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="time" name="availability_windows[{{ $i }}][start]" value="{{ $w['start'] ?? '' }}">
+                                <span>–</span>
+                                <input type="time" name="availability_windows[{{ $i }}][end]" value="{{ $w['end'] ?? '' }}">
+                                <button type="button" class="btn btn-secondary pep-window-remove" style="padding:.2rem .5rem">✕</button>
+                            </div>
+                        @endforeach
+                    </div>
+                    <button type="button" id="pep-window-add" class="btn btn-secondary" style="margin-top:.3rem">{{ __('Add a window') }}</button>
+                </fieldset>
+                <script>
+                    (function () {
+                        const list = document.getElementById('pep-windows-list');
+                        const addBtn = document.getElementById('pep-window-add');
+                        const weekdays = @json($weekdayLabels);
+                        let idx = {{ count($existingWindows) }};
+                        function buildRow(i) {
+                            const row = document.createElement('div');
+                            row.className = 'pep-window-row';
+                            row.style.cssText = 'display:flex;gap:.5rem;align-items:center;margin-bottom:.4rem';
+                            let opts = '';
+                            for (const [val, lbl] of Object.entries(weekdays)) { opts += `<option value="${val}">${lbl}</option>`; }
+                            row.innerHTML = `<select name="availability_windows[${i}][weekday]">${opts}</select>`
+                                + `<input type="time" name="availability_windows[${i}][start]">`
+                                + `<span>–</span>`
+                                + `<input type="time" name="availability_windows[${i}][end]">`
+                                + `<button type="button" class="btn btn-secondary pep-window-remove" style="padding:.2rem .5rem">✕</button>`;
+                            return row;
+                        }
+                        addBtn.addEventListener('click', () => { list.appendChild(buildRow(idx++)); });
+                        list.addEventListener('click', (e) => {
+                            if (e.target.classList.contains('pep-window-remove')) { e.target.closest('.pep-window-row').remove(); }
+                        });
+                    })();
+                </script>
+            </div>
+
+            <!-- Équipements (La Pépite) -->
+            <div class="form-group">
+                <h3 class="form-group-title">{{ __('Equipment') }}</h3>
+                @php $roomEquipments = old('equipments', $room?->equipments ?? []); @endphp
+                <div class="form-element" style="display:flex;flex-wrap:wrap;gap:.75rem 1.5rem">
+                    @foreach(\App\Models\Room::EQUIPMENTS as $eq)
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="equipments[]" value="{{ $eq }}"
+                                @checked(in_array($eq, $roomEquipments))>
+                            <span>{{ \App\Models\Room::equipmentLabel($eq) }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+
             <!-- Tarification -->
             <div class="form-group">
                 <h3 class="form-group-title">{{ __('Pricing') }}</h3>
@@ -427,66 +517,68 @@
                     </div>
                 </fieldset>
 
-                {{-- Prix par salle (La Pépite). Les créneaux/durées sont globaux (réglages système). --}}
-                <p class="text-sm text-gray-600 mb-2">{{ __('Prices are specific to this room. Time windows (hourly max, half-day and full-day slots) are set globally in the system settings.') }}</p>
-
-                {{-- Prix horaire --}}
+                {{-- Salle « sur demande » : pas de prix affiché, réservation par devis --}}
                 <fieldset class="form-element">
                     <div class="form-field">
-                        <label for="price_hourly" class="form-element-title">{{ __('Hourly price') }}</label>
-                        <input
-                            type="number"
-                            id="price_hourly"
-                            name="price_hourly"
-                            step="0.01"
-                            min="0"
-                            value="{{ old('price_hourly', $room?->price_hourly ?? '') }}"
-                        >
-                        <small class="text-gray-600 block mt-1">{{ __('Charged per hour × number of hours booked (up to the global hourly max). Leave empty to disable.') }}</small>
-                        @error('price_hourly')
-                            <span class="text-red-600 text-sm">{{ $message }}</span>
-                        @enderror
+                        <label class="flex items-center gap-2">
+                            <input type="hidden" name="on_request" value="0">
+                            <input type="checkbox" name="on_request" value="1" id="on_request_checkbox"
+                                @checked(old('on_request', $room?->on_request))>
+                            <span class="font-medium">{{ __('On request only (no online price — booked via a special request / quote)') }}</span>
+                        </label>
+                        <small class="text-gray-600 block mt-1">{{ __('For rooms like La Big Room or La Place du Village. Hides the pricing below and the direct booking.') }}</small>
                     </div>
                 </fieldset>
 
-                {{-- Prix demi-journée --}}
-                <fieldset class="form-element">
-                    <div class="form-field">
-                        <label for="price_half_day" class="form-element-title">{{ __('Half day price') }}</label>
-                        <input
-                            type="number"
-                            id="price_half_day"
-                            name="price_half_day"
-                            step="0.01"
-                            min="0"
-                            value="{{ old('price_half_day', $room?->price_half_day ?? '') }}"
-                        >
-                        <small class="text-gray-600 block mt-1">{{ __('Flat price. Morning and afternoon windows are set globally. Leave empty to disable.') }}</small>
-                        @error('price_half_day')
-                            <span class="text-red-600 text-sm">{{ $message }}</span>
-                        @enderror
-                    </div>
-                </fieldset>
+                {{-- Prix par salle (La Pépite). Deux colonnes selon le statut du réservant.
+                     Les créneaux/durées sont globaux (réglages système). --}}
+                <div id="pep-pricing-block">
+                <p class="text-sm text-gray-600 mb-2">{{ __('Prices are specific to this room. Left column: non-profit organizations. Right column: for-profit organizations. Time windows are set globally in the system settings.') }}</p>
 
-                {{-- Prix journée complète --}}
-                <fieldset class="form-element">
-                    <div class="form-field">
-                        <label for="price_full_day" class="form-element-title">{{ __('Full day price') }}</label>
-                        <input
-                            type="number"
-                            id="price_full_day"
-                            name="price_full_day"
-                            step="0.01"
-                            min="0"
-                            value="{{ old('price_full_day', $room?->price_full_day ?? '') }}"
-                            required
-                        >
-                        <small class="text-gray-600 block mt-1">{{ __('Flat price. The full-day time window is set globally in the system settings.') }}</small>
-                        @error('price_full_day')
-                            <span class="text-red-600 text-sm">{{ $message }}</span>
-                        @enderror
-                    </div>
-                </fieldset>
+                <table class="pep-price-table" style="width:100%;border-collapse:collapse">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;padding:6px"></th>
+                            <th style="text-align:left;padding:6px">{{ __('Non-profit') }}</th>
+                            <th style="text-align:left;padding:6px">{{ __('For-profit') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding:6px">{{ __('Hourly price') }}</td>
+                            <td style="padding:6px"><input type="number" name="price_np_hourly" step="0.01" min="0" value="{{ old('price_np_hourly', $room?->price_np_hourly ?? '') }}" style="width:120px"></td>
+                            <td style="padding:6px"><input type="number" id="price_hourly" name="price_hourly" step="0.01" min="0" value="{{ old('price_hourly', $room?->price_hourly ?? '') }}" style="width:120px"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:6px">{{ __('Half day price') }}</td>
+                            <td style="padding:6px"><input type="number" name="price_np_half_day" step="0.01" min="0" value="{{ old('price_np_half_day', $room?->price_np_half_day ?? '') }}" style="width:120px"></td>
+                            <td style="padding:6px"><input type="number" id="price_half_day" name="price_half_day" step="0.01" min="0" value="{{ old('price_half_day', $room?->price_half_day ?? '') }}" style="width:120px"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:6px">{{ __('Full day price') }}</td>
+                            <td style="padding:6px"><input type="number" name="price_np_full_day" step="0.01" min="0" value="{{ old('price_np_full_day', $room?->price_np_full_day ?? '') }}" style="width:120px"></td>
+                            <td style="padding:6px"><input type="number" id="price_full_day" name="price_full_day" step="0.01" min="0" value="{{ old('price_full_day', $room?->price_full_day ?? '') }}" style="width:120px"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <small class="text-gray-600 block mt-1">{{ __('Hourly = price × hours (up to the global hourly max). Half-day = flat price for morning / afternoon / evening. Leave a cell empty to disable that mode. If the non-profit cell is empty, the for-profit price is used.') }}</small>
+                @error('price_full_day')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+                </div>
+
+                {{-- Bascule prix ⇄ sur demande --}}
+                <script>
+                    (function () {
+                        const onReq = document.getElementById('on_request_checkbox');
+                        const block = document.getElementById('pep-pricing-block');
+                        const sync = () => {
+                            const off = onReq.checked;
+                            block.style.opacity = off ? '.4' : '1';
+                            block.style.pointerEvents = off ? 'none' : 'auto';
+                        };
+                        onReq.addEventListener('change', sync);
+                        sync();
+                    })();
+                </script>
 
                 <fieldset class="form-element">
                     <div class="form-field">
