@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Owner;
 use App\Models\Room;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 
 /**
  * Configure les salles de La Pépite d'après le document validé par les
@@ -24,20 +26,24 @@ class ConfigureRooms extends Command
         $dry = (bool) $this->option('dry-run');
         $this->info($dry ? '— MODE APERÇU (aucune modification) —' : '— Application de la configuration —');
 
-        $matched = 0;
-        $missing = [];
+        $owner = Owner::query()->orderBy('id')->first();
+        if (! $owner) {
+            $this->error("Aucun propriétaire (Owner) en base. Crée d'abord un propriétaire, puis relance.");
+
+            return self::FAILURE;
+        }
+
+        $created = 0;
+        $updated = 0;
 
         foreach ($this->roomConfigs() as $cfg) {
-            $room = $this->findRoomByName($cfg['name']);
-            if (! $room) {
-                $missing[] = $cfg['name'];
-                continue;
-            }
-            $matched++;
-            $this->line("• <info>{$room->name}</info> ← « {$cfg['name']} »");
-
+            $name = $cfg['name'];
             $windows = $cfg['windows'] ?? [];
             unset($cfg['name'], $cfg['windows']);
+
+            $room = $this->findRoomByName($name);
+            $isNew = ! $room;
+            $this->line('• '.($isNew ? '<comment>À CRÉER</comment>' : '<info>MAJ</info>')." — {$name}");
 
             if ($dry) {
                 $summary = collect($cfg)->map(fn ($v, $k) => $k.'='.(is_array($v) ? implode('/', $v) : ($v === true ? 'oui' : ($v === false ? 'non' : $v))))->implode('  ');
@@ -48,8 +54,30 @@ class ConfigureRooms extends Command
                 continue;
             }
 
+            if ($isNew) {
+                $room = new Room;
+                $room->owner_id = $owner->id;
+                $room->name = $name;
+                $room->slug = $this->uniqueSlug($name);
+                // Champs obligatoires : adresse La Pépite (Lausanne) + enums par défaut.
+                $room->street = 'Avenue de la Gare 10';
+                $room->postal_code = '1003';
+                $room->city = 'Lausanne';
+                $room->country = 'Suisse';
+                $room->latitude = 46.51700000;
+                $room->longitude = 6.63300000;
+                $room->charter_mode = 'none';
+                $room->embed_calendar_mode = 'disabled';
+                $room->calendar_view_mode = 'slot';
+                $room->timezone = 'Europe/Zurich';
+                $created++;
+            } else {
+                $updated++;
+            }
+
             $room->fill($cfg);
             $room->save();
+            $this->matchedIds[] = $room->id;
 
             $room->availabilityWindows()->delete();
             foreach ($windows as $w) {
@@ -58,19 +86,16 @@ class ConfigureRooms extends Command
         }
 
         $this->newLine();
-        $this->info("Salles configurées : {$matched}");
-        if ($missing) {
-            $this->warn('Salles du document NON trouvées (nom à vérifier côté admin) :');
-            foreach ($missing as $m) {
-                $this->line("  - {$m}");
-            }
-        }
-        $extra = Room::whereNotIn('id', $this->matchedIds)->pluck('name');
-        if ($extra->isNotEmpty()) {
-            $this->newLine();
-            $this->comment('Salles non gérées par la commande — à configurer à la main (ex. espaces communautaires La Secrète, L\'Accueil, La Coworking, Cabine acoustique, La Cuisine) :');
-            foreach ($extra as $n) {
-                $this->line("  - {$n}");
+        $this->info($dry ? 'Aperçu terminé (rien modifié).' : "Salles créées : {$created} · mises à jour : {$updated}");
+
+        if (! $dry) {
+            $extra = Room::whereNotIn('id', $this->matchedIds)->pluck('name');
+            if ($extra->isNotEmpty()) {
+                $this->newLine();
+                $this->comment('Autres salles en base, non gérées par la commande (à configurer à la main : La Secrète, L\'Accueil, La Coworking, Cabine acoustique, La Cuisine…) :');
+                foreach ($extra as $n) {
+                    $this->line("  - {$n}");
+                }
             }
         }
 
@@ -94,6 +119,19 @@ class ConfigureRooms extends Command
         }
 
         return null;
+    }
+
+    /** Génère un slug unique à partir du nom. */
+    protected function uniqueSlug(string $name): string
+    {
+        $base = Str::slug($name) ?: 'salle';
+        $slug = $base;
+        $i = 2;
+        while (Room::where('slug', $slug)->exists()) {
+            $slug = $base.'-'.$i++;
+        }
+
+        return $slug;
     }
 
     /**
