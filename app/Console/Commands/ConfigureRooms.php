@@ -145,19 +145,25 @@ class ConfigureRooms extends Command
         // Salles privatisables (bi-tarif). Réservables en ligne lun–ven
         // 08:00–22:00 (créneau soir 18–22 possible). Week-ends = sur demande
         // (bouton « Demande spéciale »).
+        // Format : [nom, [np h/½j/j], [lucratif h/½j/j], [équipements], description]
         $priced = [
-            ['La Petite Sérieuse', [25, 60, 100], [35, 120, 200], ['screen', 'flipchart', 'wifi']],
-            ['La Grande Sérieuse', [35, 120, 200], [45, 160, 290], ['screen', 'flipchart', 'wifi']],
-            ['La Dynamique', [45, 120, 200], [55, 200, 380], ['wifi']],
-            ['La Focus', [20, 50, 90], [30, 100, 180], ['wifi']],
+            ['La Petite Sérieuse', [25, 60, 100], [35, 120, 200], ['screen', 'flipchart', 'wifi'],
+                "Salle de réunion. Table, chaises, écran/beamer, flip-chart.\n\n24 m² · 6–8 personnes"],
+            ['La Grande Sérieuse', [35, 120, 200], [45, 160, 290], ['screen', 'flipchart', 'wifi'],
+                "Grande salle de réunion. Tables, chaises, écran/beamer, flip-chart.\n\n40 m² · 8–10 personnes"],
+            ['La Dynamique', [45, 120, 200], [55, 200, 380], ['screen', 'wifi'],
+                "Espace séances, coworking libre, formations, yoga/pilates.\n\n25 m² · 10–12 personnes"],
+            ['La Focus', [20, 50, 90], [30, 100, 180], ['wifi'],
+                "Salle de réunion / coworking silencieux / espaces de travail individuels.\n\n28 m² · 3–5 personnes\n\nPrivatisée par la Pépite les mardis, mercredis et vendredis de 9h à 13h."],
         ];
 
         $configs = [];
-        foreach ($priced as [$name, $np, $lucr, $equip]) {
+        foreach ($priced as [$name, $np, $lucr, $equip, $desc]) {
             $configs[] = [
                 'name' => $name,
                 'active' => true, 'is_public' => true, 'on_request' => false,
-                'bookable' => true, 'booking_optional' => false,
+                'bookable' => true, 'booking_optional' => false, 'members_only' => false,
+                'description' => $desc,
                 'price_mode' => 'fixed',
                 'price_np_hourly' => $np[0], 'price_np_half_day' => $np[1], 'price_np_full_day' => $np[2],
                 'price_hourly' => $lucr[0], 'price_half_day' => $lucr[1], 'price_full_day' => $lucr[2],
@@ -181,7 +187,8 @@ class ConfigureRooms extends Command
         $configs[] = [
             'name' => 'La Chill',
             'active' => true, 'is_public' => true, 'on_request' => false,
-            'bookable' => true, 'booking_optional' => true,
+            'bookable' => true, 'booking_optional' => true, 'members_only' => false,
+            'description' => "Salon ouvert avec rideau (sans porte), coworking chill, réunion informelle. Tarif réduit — à privilégier par les coworkers Pépite si pas besoin d'équipements ni de confidentialité.\n\n24 m² · 8 personnes",
             'price_mode' => 'fixed',
             'price_np_hourly' => 15, 'price_np_half_day' => 40, 'price_np_full_day' => 60,
             'price_hourly' => 25, 'price_half_day' => 50, 'price_full_day' => 80,
@@ -191,11 +198,17 @@ class ConfigureRooms extends Command
         ];
 
         // Salles « sur demande » (devis) : Big Room, Place du Village, Atelier.
-        foreach (['La Big Room' => ['screen', 'sound', 'wifi'], 'La Place du Village' => ['wifi'], "L'Atelier" => ['wifi']] as $name => $equip) {
+        $onRequest = [
+            'La Big Room' => [['screen', 'sound', 'wifi'], "Espace modulable : formation, conférence, événement. Tables/chaises, séparations, écran/beamer.\n\n100 m² · 30–50 personnes"],
+            'La Place du Village' => [['wifi'], "Espace ouvert : café/repas, événements.\n\n100 m² · 20–40 personnes"],
+            "L'Atelier" => [['wifi'], "Petite salle de réunion / travail, 3 grands bureaux, espace atelier/réparation.\n\n24 m² · 3–6 personnes"],
+        ];
+        foreach ($onRequest as $name => [$equip, $desc]) {
             $configs[] = [
                 'name' => $name,
                 'active' => true, 'is_public' => true, 'on_request' => true,
-                'bookable' => true, 'booking_optional' => false,
+                'bookable' => true, 'booking_optional' => false, 'members_only' => false,
+                'description' => $desc,
                 'price_mode' => 'fixed', 'price_full_day' => 0,
                 'equipments' => $equip,
                 'allowed_weekdays' => ['1', '2', '3', '4', '5'],
@@ -212,6 +225,7 @@ class ConfigureRooms extends Command
             'name' => 'La Douce',
             'active' => true, 'is_public' => true, 'on_request' => false,
             'bookable' => true, 'booking_optional' => false, 'members_only' => true,
+            'description' => "Espace repos / réunions informelles / appels téléphoniques individuels. Lits enfants, poufs. 1 bureau isolé.\n\n28 m² · 1–5 personnes",
             'price_mode' => 'fixed',
             'price_np_hourly' => 0, 'price_np_half_day' => 0, 'price_np_full_day' => 0,
             'price_hourly' => 0, 'price_half_day' => 0, 'price_full_day' => 0,
@@ -225,11 +239,36 @@ class ConfigureRooms extends Command
             'name' => 'La Garderie',
             'active' => true, 'is_public' => true, 'on_request' => false,
             'bookable' => false, 'booking_optional' => false, 'members_only' => true,
+            'description' => "Salle dédiée aux enfants : accueil, espace jeux.\n\n60 m²",
             'price_mode' => 'fixed', 'price_full_day' => 0,
             'equipments' => [],
             'allowed_weekdays' => ['1', '2', '3', '4', '5'],
             'windows' => $communityWindows,
         ];
+
+        // Autres espaces communautaires (gratuits, réservés aux membres, horaires
+        // généraux ; pas de fenêtres spécifiques dans le document).
+        $community = [
+            ['La Secrète', "Espace de réunion pour 2 personnes ou pour téléphoner.\n\n5 m² · 1–2 personnes", ['wifi']],
+            ["L'Accueil", "Espace discussion / appels, 2 tables hautes avec 4 chaises, coin lecture.", ['wifi']],
+            ['La Coworking', "Places de travail individuelles.\n\n60 m² · 12 personnes", ['wifi']],
+            ['Cabine acoustique', "Bulle insonorisée pour téléphoner.\n\n1 personne", []],
+            ['La Cuisine', "Cuisine équipée, vaisselle.", []],
+        ];
+        foreach ($community as [$name, $desc, $equip]) {
+            $configs[] = [
+                'name' => $name,
+                'active' => true, 'is_public' => true, 'on_request' => false,
+                'bookable' => true, 'booking_optional' => false, 'members_only' => true,
+                'description' => $desc,
+                'price_mode' => 'fixed',
+                'price_np_hourly' => 0, 'price_np_half_day' => 0, 'price_np_full_day' => 0,
+                'price_hourly' => 0, 'price_half_day' => 0, 'price_full_day' => 0,
+                'equipments' => $equip,
+                'allowed_weekdays' => ['1', '2', '3', '4', '5'],
+                'day_start_time' => '08:00', 'day_end_time' => '22:00',
+            ];
+        }
 
         return $configs;
     }
