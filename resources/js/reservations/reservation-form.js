@@ -318,14 +318,35 @@ function pepTimeToHours(str) {
     return (parseInt(p[0], 10) || 0) + ((parseInt(p[1], 10) || 0)) / 60;
 }
 
+// La Pépite : contexte tarifaire (statut du réservant). Pour un connecté il est
+// figé (compte) ; pour un invité il est piloté par sa déclaration dans le form.
+function pepContext() {
+    const s = window.RoomConfig.settings;
+    if (!s.is_guest) {
+        return { orgType: s.fixed_org_type, isMember: !!s.fixed_is_member };
+    }
+    const org = document.querySelector('input[name="org_type"]:checked')?.value || 'for_profit';
+    const isMember = !!document.getElementById('pep_is_member')?.checked;
+    return { orgType: org, isMember };
+}
+
+// Grille de prix active selon le contexte (non-lucratif → price_np, sinon lucratif).
+function pepPrices() {
+    const s = window.RoomConfig.settings;
+    const np = pepContext().orgType === 'non_profit';
+    const pick = (m) => np ? ((s.prices_np?.[m] ?? s.prices_lp?.[m])) : (s.prices_lp?.[m]);
+    return { hourly: pick('hourly'), half_day: pick('half_day'), full_day: pick('full_day') };
+}
+
 // La Pépite : aperçu de prix par CRÉNEAU (miroir du moteur serveur PricingService).
 // Chaque segment est classé selon les fenêtres globales, facturé au prix de la salle.
 function getEventPrice(start, end) {
     const s = window.RoomConfig.settings;
     const late_end_hour = s.allow_late_end_hour;
-    const priceHourly = s.price_hourly;
-    const priceHalf = s.price_half_day;
-    const priceFull = s.price_full_day;
+    const P = pepPrices();
+    const priceHourly = P.hourly;
+    const priceHalf = P.half_day;
+    const priceFull = P.full_day;
     const hourlyMax = s.hourly_max_hours;
 
     const mS = pepTimeToHours(s.half_day_morning_start), mE = pepTimeToHours(s.half_day_morning_end);
@@ -462,11 +483,12 @@ function updateTotalCost() {
     }
 
     const settings = window.RoomConfig.settings;
-    const memberPct = settings.member_discount_percent || 0;
+    const ctx = pepContext();
+    const memberPct = ctx.isMember ? (settings.member_discount_percent || 0) : 0;
 
     // Heure offerte membre (quota mensuel) : gratuité horaire avant la remise -10 %.
-    const freeAvail = settings.member_free_minutes_remaining || 0;
-    const hourlyRate = settings.price_hourly;
+    const freeAvail = ctx.isMember ? (settings.member_free_minutes_remaining || 0) : 0;
+    const hourlyRate = pepPrices().hourly;
     const totalHourlyMin = window.ResEvents.reduce((sum, ev) => sum + (ev.hourlyMinutes || 0), 0);
     const free_cost_span = document.getElementById("pep-free-cost");
     let freeAmount = 0;
@@ -740,6 +762,18 @@ function initFormValidation() {
     }
 }
 
+// La Pépite : quand un invité déclare son statut (org / membre), on recalcule
+// tous les prix en direct.
+function initPepDeclaration() {
+    const recompute = () => {
+        window.ResEvents.forEach((ev) => updateCost(ev));
+        updateTotalCost();
+    };
+    document.querySelectorAll('input[name="org_type"]').forEach((r) => r.addEventListener('change', recompute));
+    const mem = document.getElementById('pep_is_member');
+    if (mem) mem.addEventListener('change', recompute);
+}
+
 // Export for use in cancel modal
 window.showLoaderModal = showLoaderModal;
 window.hideLoaderModal = hideLoaderModal;
@@ -756,6 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initUpdateDiscounts(); // Add event listeners to row form elements AND do an initial update
     initUpdateSpecial(); // Add event listeners for donation and special discount
     initFillContactInfo();
+    initPepDeclaration(); // La Pépite : recalcul live selon la déclaration invité
     initFormValidation(); // Validate events before form submission
     initAvailabilityCheck().then(function() { // Download calendar slots
         window.ResEvents.forEach((ev) => { // for each event, update corresponding arrays, then update cost

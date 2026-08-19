@@ -44,11 +44,10 @@ Route::bind('reservation', function (string $value) {
 });
 
 Route::get('/', function () {
-    // La Pépite : un visiteur non connecté est envoyé vers la connexion,
-    // pas vers la liste des salles (rien n'est public pour l'instant).
-    return auth()->check()
-        ? redirect(route('rooms.index'))
-        : redirect(route('login'));
+    // La Pépite : tout le monde (y compris les externes non connectés) arrive
+    // directement sur la liste des salles pour réserver. La connexion reste
+    // possible en haut, et est demandée au moment de finaliser la réservation.
+    return redirect(route('rooms.index'));
 });
 
 // Initial setup routes (protected by controller - requires DB_CONFIGURED=false OR global_admin)

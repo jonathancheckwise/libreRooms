@@ -78,6 +78,29 @@
         {{-- 1. Contact --}}
         @include('reservations.partials.contact',['contacts'=>$contacts,'tenant'=>$reservation?->tenant])
 
+        {{-- 1bis. Déclaration de statut (La Pépite, invités) : détermine le tarif, MàJ en direct --}}
+        @guest
+        <div class="form-group" id="pep-status-group">
+            <h3 class="form-group-title">{{ __('Your status (sets your rate)') }}</h3>
+            <div class="form-element">
+                <label class="form-element-title">{{ __('Type of organization') }} *</label>
+                <div style="display:flex;flex-direction:column;gap:.4rem">
+                    <label class="flex items-center gap-2"><input type="radio" name="org_type" value="non_profit" @checked(old('org_type')==='non_profit')> {{ __('Non-profit organization') }}</label>
+                    <label class="flex items-center gap-2"><input type="radio" name="org_type" value="for_profit" @checked(old('org_type','for_profit')==='for_profit')> {{ __('For-profit organization') }}</label>
+                </div>
+                @error('org_type')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+            </div>
+            <div class="form-element mt-2">
+                <label class="flex items-center gap-2">
+                    <input type="hidden" name="is_pepite_member" value="0">
+                    <input type="checkbox" name="is_pepite_member" value="1" id="pep_is_member" @checked(old('is_pepite_member'))>
+                    <span>{{ __('I am a member of La Pépite') }}</span>
+                </label>
+                <small class="text-gray-600 block">{{ __('Members: 1 free hour per month and −10% (verified by the team).') }}</small>
+            </div>
+        </div>
+        @endguest
+
         {{-- 2. Discounts --}}
         @include('reservations.partials.discounts',[
             'discounts' => $room->discounts->where('active', true),
@@ -315,6 +338,28 @@
         @if ($isAdmin)
             @include('reservations.partials.custom-message', ['customMessage' => $reservation?->custom_message])
         @endif
+
+        {{-- Compte obligatoire pour finaliser (La Pépite, invités) --}}
+        @guest
+        <div class="form-group" id="pep-account-group">
+            <h3 class="form-group-title">{{ __('Finalise: create your account') }}</h3>
+            <p class="text-sm text-gray-600 mb-2">
+                {{ __('A quick account lets you and the team follow your booking and billing. The email you entered above is used.') }}
+                {{ __('Already have an account?') }} <a href="{{ route('login') }}">{{ __('Log in') }}</a>.
+            </p>
+            <div class="form-element-row">
+                <div class="form-field">
+                    <label for="password" class="form-element-title">{{ __('Password') }} *</label>
+                    <input type="password" id="password" name="password" required autocomplete="new-password">
+                    @error('password')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+                </div>
+                <div class="form-field">
+                    <label for="password_confirmation" class="form-element-title">{{ __('Confirm password') }} *</label>
+                    <input type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password">
+                </div>
+            </div>
+        </div>
+        @endguest
 
         <div class="btn-group">
             <a class="btn btn-secondary" href="{{ url()->previous() }}">{{ __('Cancel') }}</a>
