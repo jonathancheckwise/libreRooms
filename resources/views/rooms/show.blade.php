@@ -41,6 +41,14 @@
                         </a>
                     @endif
                 @endcan
+                {{-- Salle réservée aux membres (La Pépite) : cadenas + CTA pour les non-connectés --}}
+                @guest
+                    @if($room->members_only && $room->bookable)
+                        <a href="{{ route('register') }}" class="page-submenu-item page-submenu-action" title="{{ __('Reserved for members') }}">
+                            🔒 {{ __('Become a member to book') }}
+                        </a>
+                    @endif
+                @endguest
             @endif
             @can('update', $room)
                 <span class="page-submenu-separator"></span>

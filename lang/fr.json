@@ -1143,5 +1143,11 @@
     "Finalise: create your account": "Finaliser : créez votre compte",
     "A quick account lets you and the team follow your booking and billing. The email you entered above is used.": "Un compte rapide vous permet, à vous et à l'équipe, de suivre votre réservation et sa facturation. L'email saisi ci-dessus est utilisé.",
     "Log in": "Se connecter",
-    "An account already exists with this email. Please log in first (top right), then book.": "Un compte existe déjà avec cet email. Connectez-vous d'abord (en haut à droite), puis réservez."
+    "An account already exists with this email. Please log in first (top right), then book.": "Un compte existe déjà avec cet email. Connectez-vous d'abord (en haut à droite), puis réservez.",
+    "Reserved for members": "Réservé aux membres",
+    "Become a member to book": "Devenir membre pour réserver",
+    "Reserved for members — become a member": "Réservé aux membres — devenir membre",
+    "This room is reserved for members. Create your account to book it.": "Cette salle est réservée aux membres. Créez votre compte pour la réserver.",
+    "Members only (not bookable by external guests)": "Réservé aux membres (non réservable par les externes)",
+    "Non-logged-in visitors see a padlock and a « Become a member » link (e.g. community spaces: La Douce, La Coworking…).": "Les visiteurs non connectés voient un cadenas et un lien « Devenir membre » (ex. espaces communautaires : La Douce, La Coworking…)."
 }

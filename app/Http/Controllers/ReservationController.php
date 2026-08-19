@@ -182,6 +182,13 @@ class ReservationController extends Controller
 
     public function create(Room $room): View|RedirectResponse
     {
+        // Salle réservée aux membres (La Pépite) : un non-connecté est invité à
+        // créer un compte plutôt que de recevoir un 403 sec.
+        if ($room->members_only && $room->bookable && auth()->guest()) {
+            return redirect()->route('register')
+                ->with('info', __('This room is reserved for members. Create your account to book it.'));
+        }
+
         $this->authorize('reserve', $room);
 
         // Salle « sur demande » (La Pépite) : pas de réservation directe, on

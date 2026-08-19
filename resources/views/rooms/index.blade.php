@@ -153,6 +153,11 @@
                                                 <x-action-icon action="book" />
                                             </a>
                                         @endcan
+                                        @guest
+                                            @if($room->members_only && $room->bookable)
+                                                <a href="{{ route('register') }}" class="link-primary" title="{{ __('Reserved for members — become a member') }}">🔒</a>
+                                            @endif
+                                        @endguest
                                     @endif
                                     @can('manageUsers', $room)
                                         <a href="{{ route('rooms.users.index', [$room] + redirect_back_params()) }}" class="link-primary" title="{{ __('Users') }}">
@@ -262,6 +267,11 @@
                                                 <x-action-icon action="book" />
                                             </a>
                                         @endcan
+                                        @guest
+                                            @if($room->members_only && $room->bookable)
+                                                <a href="{{ route('register') }}" class="link-primary" title="{{ __('Reserved for members — become a member') }}">🔒</a>
+                                            @endif
+                                        @endguest
                                     @endif
                                     @can('manageUsers', $room)
                                         <a href="{{ route('rooms.users.index', [$room] + redirect_back_params()) }}" class="link-primary" title="{{ __('Users') }}">
