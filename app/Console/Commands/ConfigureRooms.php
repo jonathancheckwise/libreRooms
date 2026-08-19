@@ -211,7 +211,7 @@ class ConfigureRooms extends Command
         $configs[] = [
             'name' => 'La Douce',
             'active' => true, 'is_public' => true, 'on_request' => false,
-            'bookable' => true, 'booking_optional' => false,
+            'bookable' => true, 'booking_optional' => false, 'members_only' => true,
             'price_mode' => 'fixed',
             'price_np_hourly' => 0, 'price_np_half_day' => 0, 'price_np_full_day' => 0,
             'price_hourly' => 0, 'price_half_day' => 0, 'price_full_day' => 0,
@@ -224,7 +224,7 @@ class ConfigureRooms extends Command
         $configs[] = [
             'name' => 'La Garderie',
             'active' => true, 'is_public' => true, 'on_request' => false,
-            'bookable' => false, 'booking_optional' => false,
+            'bookable' => false, 'booking_optional' => false, 'members_only' => true,
             'price_mode' => 'fixed', 'price_full_day' => 0,
             'equipments' => [],
             'allowed_weekdays' => ['1', '2', '3', '4', '5'],

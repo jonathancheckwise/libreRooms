@@ -415,6 +415,14 @@
                         </label>
                         <small class="text-gray-600 block mt-1">{{ __('Shows a note that booking is optional (e.g. La Chill).') }}</small>
                     </div>
+                    <div class="form-field mt-2">
+                        <label class="flex items-center gap-2">
+                            <input type="hidden" name="members_only" value="0">
+                            <input type="checkbox" name="members_only" value="1" @checked(old('members_only', $room?->members_only))>
+                            <span class="font-medium">{{ __('Members only (not bookable by external guests)') }}</span>
+                        </label>
+                        <small class="text-gray-600 block mt-1">{{ __('Non-logged-in visitors see a padlock and a « Become a member » link (e.g. community spaces: La Douce, La Coworking…).') }}</small>
+                    </div>
                 </fieldset>
 
                 {{-- Fenêtres de dispo par jour : si vide, comportement natif (jours/plage globaux) --}}

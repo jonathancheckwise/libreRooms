@@ -88,6 +88,8 @@ class RoomRules
             // Salle non réservable (La Garderie) / réservation facultative (La Chill).
             'bookable' => ['boolean'],
             'booking_optional' => ['boolean'],
+            // Salle réservée aux membres (cadenas pour les non-connectés).
+            'members_only' => ['boolean'],
             // Fenêtres de disponibilité par jour (ISO 1=lun..7=dim).
             'availability_windows' => ['nullable', 'array'],
             'availability_windows.*.weekday' => ['nullable', 'integer', 'between:1,7'],

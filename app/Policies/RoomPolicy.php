@@ -83,6 +83,12 @@ class RoomPolicy
             return false;
         }
 
+        // Salle réservée aux membres (La Pépite) : un visiteur non connecté ne
+        // peut pas réserver (cadenas + CTA « Devenir membre »).
+        if ($room->members_only && ! $user) {
+            return false;
+        }
+
         if ($room->is_public) {
             return true;
         }
