@@ -1137,5 +1137,11 @@
     "Time slot": "Créneau",
     "Pick a day: the booking covers this room's available slot for that day. For several days, make one booking per day.": "Choisissez un jour : la réservation couvre le créneau de disponibilité de la salle pour ce jour-là. Pour plusieurs jours, faites une réservation par jour.",
     "Slot booked:": "Créneau réservé :",
-    "No slot available on this day for this room.": "Aucun créneau disponible ce jour-là pour cette salle."
+    "No slot available on this day for this room.": "Aucun créneau disponible ce jour-là pour cette salle.",
+    "Your status (sets your rate)": "Votre statut (détermine votre tarif)",
+    "Members: 1 free hour per month and −10% (verified by the team).": "Membres : 1 heure offerte par mois et −10 % (vérifié par l'équipe).",
+    "Finalise: create your account": "Finaliser : créez votre compte",
+    "A quick account lets you and the team follow your booking and billing. The email you entered above is used.": "Un compte rapide vous permet, à vous et à l'équipe, de suivre votre réservation et sa facturation. L'email saisi ci-dessus est utilisé.",
+    "Log in": "Se connecter",
+    "An account already exists with this email. Please log in first (top right), then book.": "Un compte existe déjà avec cet email. Connectez-vous d'abord (en haut à droite), puis réservez."
 }

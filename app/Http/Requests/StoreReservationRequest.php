@@ -7,6 +7,7 @@ use App\Validation\CustomFieldValuesRules;
 use App\Validation\ReservationEventsValidator;
 use App\Validation\ReservationRules;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 
 class StoreReservationRequest extends FormRequest
@@ -57,6 +58,14 @@ class StoreReservationRequest extends FormRequest
                 $rules,
                 ReservationRules::adminRules(),
             );
+        }
+
+        // La Pépite : un invité doit créer un compte pour finaliser (statut +
+        // mot de passe). L'unicité de l'email est vérifiée dans le contrôleur.
+        if (! $this->user()) {
+            $rules['org_type'] = ['required', 'in:non_profit,for_profit'];
+            $rules['is_pepite_member'] = ['boolean'];
+            $rules['password'] = ['required', 'confirmed', Password::min(12)];
         }
 
         return $rules;

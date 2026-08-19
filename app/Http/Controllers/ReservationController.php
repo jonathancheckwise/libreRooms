@@ -11,9 +11,12 @@ use App\Models\Contact;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\SystemSettings;
+use App\Models\User;
 use App\Services\Reservation\ReservationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class ReservationController extends Controller
@@ -28,18 +31,22 @@ class ReservationController extends Controller
         // Créneaux globaux (La Pépite) pour l'aperçu de prix côté client
         $pep = app(SystemSettings::class);
 
-        // Tarif du bon tier selon le statut du réservant connecté (aperçu).
-        // Le serveur reste autoritaire (snapshot à l'enregistrement).
+        // Aperçu de prix (La Pépite). On envoie les DEUX grilles (sans/avec but
+        // lucratif) + le contexte : pour un connecté, le statut est figé (compte) ;
+        // pour un invité, il est piloté en direct par sa déclaration dans le
+        // formulaire. Le serveur reste autoritaire (snapshot à l'enregistrement).
         $authUser = auth()->user();
         $isNonProfit = $authUser?->org_type === 'non_profit';
         $tier = fn (string $mode) => $isNonProfit
             ? ($room->{"price_np_$mode"} ?? $room->{"price_$mode"})
             : $room->{"price_$mode"};
-        $memberPct = $authUser?->is_pepite_member ? (int) $pep->member_discount_percent : 0;
-        // Minutes offertes restantes ce mois-ci (aperçu ; serveur autoritaire).
-        $freeMinutesRemaining = $authUser?->is_pepite_member
-            ? app(\App\Services\Reservation\PricingService::class)->memberFreeMinutesRemaining($authUser->id, now())
-            : 0;
+        // Minutes offertes restantes ce mois-ci : connecté = réel ; invité (compte
+        // à créer) = quota mensuel plein (60).
+        $freeMinutesRemaining = $authUser
+            ? ($authUser->is_pepite_member
+                ? app(\App\Services\Reservation\PricingService::class)->memberFreeMinutesRemaining($authUser->id, now())
+                : 60)
+            : 60;
 
         // Prepare room configuration for JavaScript
         $roomConfig = [
@@ -54,7 +61,15 @@ class ReservationController extends Controller
                 // La Pépite : tarifs (tier réservant) + créneaux globaux + remise membre
                 'price_hourly' => $tier('hourly'),
                 'price_half_day' => $tier('half_day'),
-                'member_discount_percent' => $memberPct,
+                // Contexte tarifaire : invité vs connecté
+                'is_guest' => ! $authUser,
+                'fixed_org_type' => $authUser?->org_type,
+                'fixed_is_member' => (bool) $authUser?->is_pepite_member,
+                // Les deux grilles pour la MàJ en direct côté invité
+                'prices_np' => ['hourly' => $room->price_np_hourly, 'half_day' => $room->price_np_half_day, 'full_day' => $room->price_np_full_day],
+                'prices_lp' => ['hourly' => $room->price_hourly, 'half_day' => $room->price_half_day, 'full_day' => $room->price_full_day],
+                // Remise membre = réglage brut (le JS l'applique si le réservant est membre)
+                'member_discount_percent' => (int) $pep->member_discount_percent,
                 'member_free_minutes_remaining' => $freeMinutesRemaining,
                 'hourly_max_hours' => (int) $pep->hourly_max_hours,
                 'half_day_morning_start' => substr($pep->half_day_morning_start, 0, 5),
@@ -296,11 +311,33 @@ class ReservationController extends Controller
     public function store(StoreReservationRequest $request, Room $room, ReservationService $service): RedirectResponse
     {
         $request->validated();
-        $reservation = $service->createFromRequest(
-            $request,
-            $room,
-            auth()->user()
-        );
+
+        $user = auth()->user();
+
+        // La Pépite : un externe finalise en créant un compte (statut + mot de
+        // passe déjà validés). Son statut détermine le tarif appliqué.
+        if (! $user) {
+            $email = $request->input('email');
+            if (User::where('email', $email)->exists()) {
+                return back()->withInput()->withErrors([
+                    'password' => __('An account already exists with this email. Please log in first (top right), then book.'),
+                ]);
+            }
+            $name = trim($request->input('first_name').' '.$request->input('last_name'))
+                ?: ($request->input('entity_name') ?: $email);
+            $user = User::create([
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make($request->input('password')),
+                'org_type' => $request->input('org_type'),
+                'is_pepite_member' => $request->boolean('is_pepite_member'),
+                'email_verified_at' => now(),
+            ]);
+            Auth::login($user);
+            $request->session()->regenerate();
+        }
+
+        $reservation = $service->createFromRequest($request, $room, $user);
 
         $msg = $reservation->status === ReservationStatus::PENDING ?
             __('New reservation created successfully - pending confirmation.') :
