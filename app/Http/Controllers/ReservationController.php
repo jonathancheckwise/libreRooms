@@ -40,13 +40,14 @@ class ReservationController extends Controller
         $tier = fn (string $mode) => $isNonProfit
             ? ($room->{"price_np_$mode"} ?? $room->{"price_$mode"})
             : $room->{"price_$mode"};
-        // Minutes offertes restantes ce mois-ci : connecté = réel ; invité (compte
-        // à créer) = quota mensuel plein (60).
-        $freeMinutesRemaining = $authUser
-            ? ($authUser->is_pepite_member
-                ? app(\App\Services\Reservation\PricingService::class)->memberFreeMinutesRemaining($authUser->id, now())
-                : 60)
-            : 60;
+        // Heure offerte : uniquement pour un MEMBRE DÉJÀ CONNECTÉ, en OPT-IN (case
+        // à cocher), et selon le mois DE LA RÉSERVATION. On envoie les mois déjà
+        // épuisés pour que la case ne soit pas proposée ces mois-là.
+        $pricingService = app(\App\Services\Reservation\PricingService::class);
+        $canUseFreeHour = (bool) ($authUser && $authUser->is_pepite_member);
+        $freeHourUsedMonths = $canUseFreeHour
+            ? $pricingService->memberFreeHourUsedMonths($authUser->id)
+            : [];
 
         // Prepare room configuration for JavaScript
         $roomConfig = [
@@ -70,7 +71,9 @@ class ReservationController extends Controller
                 'prices_lp' => ['hourly' => $room->price_hourly, 'half_day' => $room->price_half_day, 'full_day' => $room->price_full_day],
                 // Remise membre = réglage brut (le JS l'applique si le réservant est membre)
                 'member_discount_percent' => (int) $pep->member_discount_percent,
-                'member_free_minutes_remaining' => $freeMinutesRemaining,
+                // Heure offerte : opt-in membre connecté, dispo selon le mois de la résa.
+                'can_use_free_hour' => $canUseFreeHour,
+                'free_hour_used_months' => $freeHourUsedMonths,
                 'hourly_max_hours' => (int) $pep->hourly_max_hours,
                 'half_day_morning_start' => substr($pep->half_day_morning_start, 0, 5),
                 'half_day_morning_end' => substr($pep->half_day_morning_end, 0, 5),
@@ -320,6 +323,13 @@ class ReservationController extends Controller
         $request->validated();
 
         $user = auth()->user();
+
+        // La Pépite : l'heure offerte est réservée aux membres DÉJÀ connectés
+        // (on ne peut pas vérifier le crédit d'un invité) → on la neutralise pour
+        // un invité, même s'il forçait la case.
+        if (! $user) {
+            $request->merge(['use_free_hour' => false]);
+        }
 
         // La Pépite : un externe finalise en créant un compte (statut + mot de
         // passe déjà validés). Son statut détermine le tarif appliqué.

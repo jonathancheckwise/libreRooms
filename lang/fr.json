@@ -1150,5 +1150,8 @@
     "This room is reserved for members. Create your account to book it.": "Cette salle est réservée aux membres. Créez votre compte pour la réserver.",
     "Members only (not bookable by external guests)": "Réservé aux membres (non réservable par les externes)",
     "Non-logged-in visitors see a padlock and a « Become a member » link (e.g. community spaces: La Douce, La Coworking…).": "Les visiteurs non connectés voient un cadenas et un lien « Devenir membre » (ex. espaces communautaires : La Douce, La Coworking…).",
-    "Duration": "Durée"
+    "Duration": "Durée",
+    "Use my free hour (1 h/month)": "Je profite de mon heure offerte (1 h/mois)",
+    "Free hour already used for this month.": "Heure offerte déjà utilisée pour ce mois-là.",
+    "1 free hour available this month.": "1 heure offerte disponible ce mois-là."
 }

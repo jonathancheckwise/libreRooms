@@ -180,6 +180,18 @@
                         <label for="pep-hour-duration" class="form-element-title">{{ __('Duration') }}</label>
                         <select id="pep-hour-duration"></select>
                     </div>
+                    @auth
+                        @if(auth()->user()->is_pepite_member)
+                            <div class="form-field" id="pep-free-hour-field" style="min-width:100%">
+                                <label class="flex items-center gap-2">
+                                    <input type="hidden" name="use_free_hour" value="0">
+                                    <input type="checkbox" name="use_free_hour" value="1" id="pep_use_free_hour">
+                                    <span>{{ __('Use my free hour (1 h/month)') }}</span>
+                                </label>
+                                <small id="pep-free-hour-note" class="text-gray-600 block"></small>
+                            </div>
+                        @endif
+                    @endauth
                 </div>
             @endif
             <p id="pep-mode-hint" class="text-sm text-gray-600 mt-1"></p>
@@ -284,6 +296,26 @@
                 s.readOnly = true; e.readOnly = true;
                 fire(s); fire(e);
                 const hintEl=document.getElementById('pep-mode-hint'); if(hintEl) hintEl.textContent = hintTxt[mode] || '';
+                updateFreeHourAvailability();
+            }
+
+            // Heure offerte : dispo selon le MOIS DE LA RÉSERVATION (pas le mois
+            // courant). Si déjà utilisée ce mois-là → case désactivée.
+            function updateFreeHourAvailability(){
+                const cb = document.getElementById('pep_use_free_hour');
+                if (!cb) return;
+                const note = document.getElementById('pep-free-hour-note');
+                const date = dateEl().value;
+                const used = (window.RoomConfig.settings.free_hour_used_months) || [];
+                if (!date) { cb.disabled = true; if (note) note.textContent = ''; }
+                else if (used.includes(date.slice(0,7))) {
+                    cb.checked = false; cb.disabled = true;
+                    if (note) note.textContent = @json(__('Free hour already used for this month.'));
+                } else {
+                    cb.disabled = false;
+                    if (note) note.textContent = @json(__('1 free hour available this month.'));
+                }
+                cb.dispatchEvent(new Event('change', {bubbles:true}));
             }
 
             // Remplit « heure de début » (plage horaire de la salle) et « durée »

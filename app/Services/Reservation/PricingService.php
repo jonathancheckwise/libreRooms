@@ -229,6 +229,39 @@ class PricingService
     }
 
     /**
+     * Mois (format 'YYYY-MM') où le membre a DÉJÀ épuisé son heure offerte
+     * (≥ 60 min consommées). Sert à l'aperçu : on ne propose la case que si le
+     * mois de la réservation n'y figure pas.
+     *
+     * @return array<int, string>
+     */
+    public function memberFreeHourUsedMonths(?int $userId): array
+    {
+        if (! $userId) {
+            return [];
+        }
+
+        $reservations = \App\Models\Reservation::query()
+            ->where('booked_by_user_id', $userId)
+            ->where('status', '!=', 'cancelled')
+            ->where('free_minutes_applied', '>', 0)
+            ->with('events')
+            ->get();
+
+        $byMonth = [];
+        foreach ($reservations as $res) {
+            $first = $res->events->sortBy('start')->first();
+            if (! $first) {
+                continue;
+            }
+            $m = Carbon::parse($first->start)->format('Y-m');
+            $byMonth[$m] = ($byMonth[$m] ?? 0) + (int) $res->free_minutes_applied;
+        }
+
+        return array_values(array_keys(array_filter($byMonth, fn ($v) => $v >= 60)));
+    }
+
+    /**
      * Calcule l'heure offerte membre pour une réservation à l'heure.
      * Retourne [minutesOffertes, ligneRemise|null].
      */

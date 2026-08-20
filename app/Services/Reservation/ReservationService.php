@@ -56,10 +56,13 @@ class ReservationService
         $discountIds = $request->input('discounts', []);
         [$sumDiscounts, $discountsData] = $this->pricing->calculateSumDiscounts($room, $discountIds, $fullPrice);
 
-        // Heure offerte membre (quota mensuel) : gratuité sur les heures, avant la remise -10 %.
+        // Heure offerte membre (quota mensuel) : gratuité sur les heures, avant la
+        // remise -10 %. OPT-IN : le membre coche « Je profite de mon heure offerte »
+        // (pas pour les invités, à qui la case n'est pas proposée) ; dispo vérifiée
+        // sur le mois DE LA RÉSERVATION (pas le mois courant).
         $freeMinutes = 0;
         $freeAmount = 0.0;
-        if ($isMember && $hourlyMinutes > 0 && ! empty($eventsWithPrices)) {
+        if ($isMember && $request->boolean('use_free_hour') && $hourlyMinutes > 0 && ! empty($eventsWithPrices)) {
             $monthAnchor = $eventsWithPrices[0]['start']->copy();
             $available = $this->pricing->memberFreeMinutesRemaining($user?->id, $monthAnchor);
             [$freeMinutes, $freeLine] = $this->pricing->memberFreeHour(
