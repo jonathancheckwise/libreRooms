@@ -1149,5 +1149,6 @@
     "Reserved for members — become a member": "Réservé aux membres — devenir membre",
     "This room is reserved for members. Create your account to book it.": "Cette salle est réservée aux membres. Créez votre compte pour la réserver.",
     "Members only (not bookable by external guests)": "Réservé aux membres (non réservable par les externes)",
-    "Non-logged-in visitors see a padlock and a « Become a member » link (e.g. community spaces: La Douce, La Coworking…).": "Les visiteurs non connectés voient un cadenas et un lien « Devenir membre » (ex. espaces communautaires : La Douce, La Coworking…)."
+    "Non-logged-in visitors see a padlock and a « Become a member » link (e.g. community spaces: La Douce, La Coworking…).": "Les visiteurs non connectés voient un cadenas et un lien « Devenir membre » (ex. espaces communautaires : La Douce, La Coworking…).",
+    "Duration": "Durée"
 }
