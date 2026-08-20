@@ -170,6 +170,17 @@
                     <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="evening"> {{ __('Evening half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['evening_start'] }}–{{ $pepWindows['evening_end'] }})</span></label>
                     <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="full"> {{ __('Full day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['full_start'] }}–{{ $pepWindows['full_end'] }})</span></label>
                 </div>
+                {{-- Mode « à l'heure » : heure de début + durée en heures (pas d'édition à la minute) --}}
+                <div class="form-element" id="pep-hourly-panel" style="display:none;flex-direction:row;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+                    <div class="form-field">
+                        <label for="pep-hour-start" class="form-element-title">{{ __('Start time') }}</label>
+                        <select id="pep-hour-start"></select>
+                    </div>
+                    <div class="form-field">
+                        <label for="pep-hour-duration" class="form-element-title">{{ __('Duration') }}</label>
+                        <select id="pep-hour-duration"></select>
+                    </div>
+                </div>
             @endif
             <p id="pep-mode-hint" class="text-sm text-gray-600 mt-1"></p>
         </div>
@@ -192,6 +203,19 @@
             function currentMode(){ const r=document.querySelector('input[name="pep_mode"]:checked'); return r?r.value:null; }
 
             function fire(el){ el.dispatchEvent(new Event('input', {bubbles:true})); }
+
+            // La Pépite : réservation par CRÉNEAU. On masque les champs date/heure
+            // bruts (pilotés par le sélecteur ci-dessus), le bouton « Ajouter une
+            // date » (une réservation = un créneau, un jour) et la suppression.
+            function hidePepRaw() {
+                document.querySelectorAll('#events-container .event-start, #events-container .event-end').forEach((inp) => {
+                    const ff = inp.closest('.form-field'); if (ff) ff.style.display = 'none';
+                    inp.required = false; // masqué → la validation JS (initFormValidation) prend le relais
+                });
+                document.querySelectorAll('#events-container .event-remove').forEach((b) => { b.style.display = 'none'; });
+                const add = document.getElementById('add-event'); if (add) add.style.display = 'none';
+            }
+            document.addEventListener('DOMContentLoaded', hidePepRaw);
 
             // Salle à fenêtres (La Pépite) : on choisit le jour, le créneau = la fenêtre.
             const WINDOWED = @json($isWindowed);
@@ -241,44 +265,47 @@
             function apply(){
                 const mode = currentMode(); const date = dateEl().value;
                 const s = firstStart(), e = firstEnd();
+                const hp = document.getElementById('pep-hourly-panel');
+                if (hp) hp.style.display = (mode === 'hourly') ? 'flex' : 'none';
                 if (!s || !e || !mode || !date) return;
-                let start, end, lock = true;
+                let start, end;
                 if (mode==='morning'){ start=W.morning_start; end=W.morning_end; }
                 else if (mode==='afternoon'){ start=W.afternoon_start; end=W.afternoon_end; }
                 else if (mode==='evening'){ start=W.evening_start; end=W.evening_end; }
                 else if (mode==='full'){ start=W.full_start; end=W.full_end; }
-                else { start=W.full_start; end=addMinutes(W.full_start,60); lock=false; }
+                else { // à l'heure : heure de début + durée (en heures)
+                    const hs = document.getElementById('pep-hour-start');
+                    const hd = document.getElementById('pep-hour-duration');
+                    start = (hs && hs.value) ? hs.value : W.full_start;
+                    const dur = (hd && hd.value) ? parseInt(hd.value, 10) : 1;
+                    end = addMinutes(start, dur * 60);
+                }
                 s.value = toDT(date,start); e.value = toDT(date,end);
-                s.readOnly = lock; e.readOnly = lock;
-                s.style.background = lock ? '#f3f4f6' : ''; e.style.background = lock ? '#f3f4f6' : '';
+                s.readOnly = true; e.readOnly = true;
                 fire(s); fire(e);
                 const hintEl=document.getElementById('pep-mode-hint'); if(hintEl) hintEl.textContent = hintTxt[mode] || '';
             }
 
-            // Bride la durée en mode "à l'heure" pour ne pas dépasser le max
-            function clampHourly(target){
-                if (currentMode()!=='hourly') return;
-                const s = firstStart(), e = firstEnd();
-                if (!s.value || !e.value) return;
-                const sd = new Date(s.value), ed = new Date(e.value);
-                const diffMin = (ed - sd)/60000;
-                if (diffMin > W.hourly_max*60){
-                    const capped = new Date(sd.getTime() + W.hourly_max*3600*1000);
-                    const pad=n=>String(n).padStart(2,'0');
-                    e.value = `${capped.getFullYear()}-${pad(capped.getMonth()+1)}-${pad(capped.getDate())}T${pad(capped.getHours())}:${pad(capped.getMinutes())}`;
-                    const hintEl=document.getElementById('pep-mode-hint');
-                    if(hintEl) hintEl.textContent = @json(__('Maximum :h h in hourly mode — pick a half-day or full-day for longer.', ['h' => $pepWindows['hourly_max']]));
-                    fire(e);
-                }
+            // Remplit « heure de début » (plage horaire de la salle) et « durée »
+            // (1 h jusqu'au max), et recalcule à chaque changement.
+            function initHourly(){
+                const st = window.RoomConfig.settings;
+                const startH = parseInt((st.day_start_time || '08:00').split(':')[0], 10);
+                const endH = parseInt((st.day_end_time || '22:00').split(':')[0], 10);
+                const startSel = document.getElementById('pep-hour-start');
+                const durSel = document.getElementById('pep-hour-duration');
+                if (!startSel || !durSel) return;
+                startSel.innerHTML = ''; durSel.innerHTML = '';
+                for (let h = startH; h < endH; h++) { startSel.insertAdjacentHTML('beforeend', `<option value="${String(h).padStart(2,'0')}:00">${h}h00</option>`); }
+                for (let d = 1; d <= W.hourly_max; d++) { durSel.insertAdjacentHTML('beforeend', `<option value="${d}">${d} h</option>`); }
+                startSel.addEventListener('change', apply);
+                durSel.addEventListener('change', apply);
             }
 
             document.addEventListener('DOMContentLoaded', function(){
+                initHourly();
                 document.querySelectorAll('input[name="pep_mode"]').forEach(r=>r.addEventListener('change', apply));
                 const d = dateEl(); if (d) d.addEventListener('change', apply);
-                const cont = document.getElementById('events-container');
-                if (cont) cont.addEventListener('input', function(ev){
-                    if (ev.target.matches('.event-end,.event-start')) clampHourly(ev.target);
-                });
             });
         })();
         </script>
