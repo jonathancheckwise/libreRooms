@@ -486,8 +486,10 @@ function updateTotalCost() {
     const ctx = pepContext();
     const memberPct = ctx.isMember ? (settings.member_discount_percent || 0) : 0;
 
-    // Heure offerte membre (quota mensuel) : gratuité horaire avant la remise -10 %.
-    const freeAvail = ctx.isMember ? (settings.member_free_minutes_remaining || 0) : 0;
+    // Heure offerte membre : OPT-IN (case cochée), membre connecté, mois dispo.
+    const freeCb = document.getElementById('pep_use_free_hour');
+    const useFreeHour = ctx.isMember && freeCb && freeCb.checked && !freeCb.disabled;
+    const freeAvail = useFreeHour ? 60 : 0;
     const hourlyRate = pepPrices().hourly;
     const totalHourlyMin = window.ResEvents.reduce((sum, ev) => sum + (ev.hourlyMinutes || 0), 0);
     const free_cost_span = document.getElementById("pep-free-cost");
@@ -772,6 +774,8 @@ function initPepDeclaration() {
     document.querySelectorAll('input[name="org_type"]').forEach((r) => r.addEventListener('change', recompute));
     const mem = document.getElementById('pep_is_member');
     if (mem) mem.addEventListener('change', recompute);
+    const freeCb = document.getElementById('pep_use_free_hour');
+    if (freeCb) freeCb.addEventListener('change', recompute);
 }
 
 // Export for use in cancel modal
