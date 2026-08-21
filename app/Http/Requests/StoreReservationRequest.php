@@ -68,6 +68,19 @@ class StoreReservationRequest extends FormRequest
             $rules['password'] = ['required', 'confirmed', Password::min(12)];
         }
 
+        // La Pépite : validation obligatoire des CGU du lieu avant de réserver
+        // (les responsables/admins qui saisissent pour un tiers en sont exemptés).
+        if (! $this->user()?->can('manageReservations', $room)) {
+            $rules['accept_terms'] = ['accepted'];
+        }
+
         return $rules;
+    }
+
+    public function messages(): array
+    {
+        return [
+            'accept_terms.accepted' => __('You must accept the venue\'s terms of use to book.'),
+        ];
     }
 }

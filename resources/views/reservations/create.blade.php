@@ -425,6 +425,17 @@
         </div>
         @endguest
 
+        {{-- CGU du lieu : validation obligatoire avant de réserver (La Pépite) --}}
+        @if($isCreate && ! $isAdmin)
+        <div class="form-group" id="pep-terms-group">
+            <label class="flex items-start gap-2" style="cursor:pointer">
+                <input type="checkbox" name="accept_terms" value="1" required @checked(old('accept_terms')) style="margin-top:.25rem">
+                <span>{{ __('I accept the venue\'s terms of use (CGU), available on the website.') }} *</span>
+            </label>
+            @error('accept_terms')<span class="text-red-600 text-sm block mt-1">{{ $message }}</span>@enderror
+        </div>
+        @endif
+
         <div class="btn-group">
             <a class="btn btn-secondary" href="{{ url()->previous() }}">{{ __('Cancel') }}</a>
         @if ($isCreate)

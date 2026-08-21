@@ -989,6 +989,8 @@
     "Saturday": "Samedi",
     "Sunday": "Dimanche",
     "Bookable hours": "Heures réservables",
+    "I accept the venue's terms of use (CGU), available on the website.": "Je valide les conditions générales d'utilisation (CGU) du lieu, consultables sur le site.",
+    "You must accept the venue's terms of use to book.": "Vous devez valider les CGU du lieu pour réserver.",
     "Slots": "Créneaux",
     "Morning": "Matin",
     "Afternoon": "Après-midi",
