@@ -131,28 +131,58 @@
                 </div>
             @endif
 
-            <!-- Disponibilité (La Pépite) -->
+            <!-- Disponibilité (La Pépite) : adaptée par salle -->
             @php
                 $roomWindows = $room->availabilityWindows->sortBy(['weekday','start_time']);
                 $weekdayNames = [1 => __('Monday'), 2 => __('Tuesday'), 3 => __('Wednesday'), 4 => __('Thursday'), 5 => __('Friday'), 6 => __('Saturday'), 7 => __('Sunday')];
+                $wdInts = array_map('intval', $room->allowed_weekdays ?? []); sort($wdInts);
+                if ($wdInts === [1,2,3,4,5]) { $daysLabel = $weekdayNames[1].'–'.$weekdayNames[5]; }
+                elseif ($wdInts === [1,2,3,4,5,6]) { $daysLabel = $weekdayNames[1].'–'.$weekdayNames[6]; }
+                elseif (count($wdInts)) { $daysLabel = implode(', ', array_map(fn($d) => $weekdayNames[$d] ?? $d, $wdInts)); }
+                else { $daysLabel = __('Every day'); }
+                $sett = \App\Models\SystemSettings::first();
+                $slots = [];
+                if ($sett) {
+                    if ($sett->half_day_morning_start && $sett->half_day_morning_end) $slots[] = __('Morning').' '.substr($sett->half_day_morning_start,0,5).'–'.substr($sett->half_day_morning_end,0,5);
+                    if ($sett->half_day_afternoon_start && $sett->half_day_afternoon_end) $slots[] = __('Afternoon').' '.substr($sett->half_day_afternoon_start,0,5).'–'.substr($sett->half_day_afternoon_end,0,5);
+                    if ($sett->half_day_evening_start && $sett->half_day_evening_end) $slots[] = __('Evening').' '.substr($sett->half_day_evening_start,0,5).'–'.substr($sett->half_day_evening_end,0,5);
+                }
+                $showWeekendNote = $room->bookable && ! $room->members_only && ! $room->on_request && $roomWindows->isEmpty();
             @endphp
-            @if(! $room->bookable || $room->booking_optional || $roomWindows->isNotEmpty())
+            @if($room->active && (! $room->bookable || $room->booking_optional || $roomWindows->isNotEmpty() || $room->day_start_time || count($wdInts)))
                 <div class="bg-white rounded-lg shadow p-6">
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Availability') }}</h2>
                     @unless($room->bookable)
-                        <p class="text-sm" style="color:#b45309">🔒 {{ __('This space is not bookable online. Its opening hours are shown for information only.') }}</p>
+                        <p class="text-sm mb-2" style="color:#b45309">🔒 {{ __('This space is not bookable online. Its opening hours are shown for information only.') }}</p>
                     @endunless
                     @if($room->booking_optional)
-                        <p class="text-sm text-gray-600">ℹ️ {{ __('Booking is optional but advised if you need a quiet, reserved space.') }}</p>
+                        <p class="text-sm text-gray-600 mb-2">ℹ️ {{ __('Booking is optional but advised if you need a quiet, reserved space.') }}</p>
                     @endif
+
                     @if($roomWindows->isNotEmpty())
-                        <ul class="mt-2 text-gray-700" style="list-style:none;padding:0;margin:0">
+                        {{-- Horaires par jour (La Douce, La Garderie, La Focus) --}}
+                        <ul class="text-gray-700" style="list-style:none;padding:0;margin:0">
                             @foreach($roomWindows->groupBy('weekday') as $wd => $wins)
-                                <li>{{ $weekdayNames[$wd] ?? $wd }} :
+                                <li><span class="font-medium">{{ $weekdayNames[$wd] ?? $wd }}</span> :
                                     {{ $wins->map(fn($w) => substr($w->start_time,0,5).'–'.substr($w->end_time,0,5))->implode(', ') }}
                                 </li>
                             @endforeach
                         </ul>
+                    @else
+                        {{-- Horaire uniforme (salles privatisables) --}}
+                        <p class="text-gray-700">
+                            <span class="font-medium">{{ $daysLabel }}</span>@if($room->day_start_time || $room->day_end_time) · {{ substr((string)$room->day_start_time,0,5) ?: '00:00' }}–{{ substr((string)$room->day_end_time,0,5) ?: '24:00' }}@endif
+                        </p>
+                        @if(! empty($slots))
+                            <p class="text-sm text-gray-600 mt-1">{{ __('Slots') }} : {{ implode(' · ', $slots) }} · {{ __('Full day') }} {{ substr((string)$sett?->full_day_start,0,5) ?: '09:00' }}–{{ substr((string)$sett?->full_day_end,0,5) ?: '17:00' }}</p>
+                        @endif
+                    @endif
+
+                    @if($room->custom_message)
+                        <p class="text-sm mt-3" style="color:#b45309">⚠️ {{ $room->custom_message }}</p>
+                    @endif
+                    @if($showWeekendNote)
+                        <p class="text-xs text-gray-500 mt-3">{{ __('Weekends: on request only.') }}</p>
                     @endif
                 </div>
             @endif
@@ -380,7 +410,7 @@
             @endif
 
             <!-- Booking rules -->
-            @if($room->reservation_cutoff_days || $room->reservation_advance_limit || !$room->openedEveryday() || $room->day_start_time || $room->day_end_time)
+            @if($room->reservation_cutoff_days || $room->reservation_advance_limit)
                 <div class="bg-white rounded-lg shadow p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Booking rules') }}</h3>
                     <dl class="space-y-2 text-sm">
@@ -396,22 +426,7 @@
                                 <dd class="text-gray-900">{{ $room->reservation_advance_limit }} {{ __('days in advance') }}</dd>
                             </div>
                         @endif
-                        @if(!$room->openedEveryday())
-                            <div class="flex justify-between">
-                                <dt class="text-gray-600">{{ __('Bookable days') }}</dt>
-                                <dd class="text-gray-900 text-right">{{ $room->allowed_weekdays ? implode(', ', $room->allowedWeekdayNames()) : __('None.days') }}</dd>
-                            </div>
-                        @endif
-                        @if($room->day_start_time || $room->day_end_time)
-                            <div class="flex justify-between">
-                                <dt class="text-gray-600">{{ __('Bookable hours') }}</dt>
-                                <dd class="text-gray-900">
-                                    {{ $room->day_start_time ? substr($room->day_start_time, 0, 5) : '00:00' }}
-                                    -
-                                    {{ $room->day_end_time ? substr($room->day_end_time, 0, 5) : '24:00' }}
-                                </dd>
-                            </div>
-                        @endif
+                        {{-- Jours/heures réservables : voir le bloc « Disponibilité » ci-dessus (adapté par salle). --}}
                     </dl>
                 </div>
             @endif

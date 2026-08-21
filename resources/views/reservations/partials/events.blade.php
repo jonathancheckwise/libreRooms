@@ -1,20 +1,22 @@
 <div class="form-group" id="events-form-group">
     <h3 class="form-group-title">{{ __('Reservation dates and times') }} *</h3>
-    @if(! $room->openedEveryday())
-        <div class="form-element flex justify-between">
-            <dt class="text-gray-600">{{ __('Bookable days') }}</dt>
-            <dd class="text-gray-900 text-right">{{ $room->allowed_weekdays ? implode(', ', $room->allowedWeekdayNames()) : __('None.days') }}</dd>
-        </div>
-    @endif
-    @if($day_start_time || $day_end_time)
-        <div class="form-element flex justify-between">
-            <dt class="text-gray-600">{{ __('Bookable hours') }}</dt>
-            <dd class="text-gray-900">
-                {{ $day_start_time ? substr($day_start_time, 0, 5) : '00:00' }}
-                -
-                {{ $day_end_time ? substr($day_end_time, 0, 5) : '00:00' }}
-            </dd>
-        </div>
+    @if($room->availabilityWindows->isEmpty())
+        @if(! $room->openedEveryday())
+            <div class="form-element flex justify-between">
+                <dt class="text-gray-600">{{ __('Bookable days') }}</dt>
+                <dd class="text-gray-900 text-right">{{ $room->allowed_weekdays ? implode(', ', $room->allowedWeekdayNames()) : __('None.days') }}</dd>
+            </div>
+        @endif
+        @if($day_start_time || $day_end_time)
+            <div class="form-element flex justify-between">
+                <dt class="text-gray-600">{{ __('Bookable hours') }}</dt>
+                <dd class="text-gray-900">
+                    {{ $day_start_time ? substr($day_start_time, 0, 5) : '00:00' }}
+                    -
+                    {{ $day_end_time ? substr($day_end_time, 0, 5) : '00:00' }}
+                </dd>
+            </div>
+        @endif
     @endif
     @error('events')
         <span class="text-red-600 text-sm block mb-2">{{ $message }}</span>
