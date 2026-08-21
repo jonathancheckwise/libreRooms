@@ -249,7 +249,9 @@ class ConfigureRooms extends Command
             'price_hourly' => 0, 'price_half_day' => 0, 'price_full_day' => 0,
             'equipments' => ['wifi'],
             'allowed_weekdays' => ['1', '2', '3', '4', '5'],
-            'day_start_time' => null, 'day_end_time' => null,
+            // Enveloppe de ses fenêtres (9-17) : le mode « à l'heure » propose
+            // 9h-16h ; les fenêtres par jour restreignent encore (mar/mer/ven = 13-17).
+            'day_start_time' => '09:00', 'day_end_time' => '17:00',
             'windows' => $communityWindows,
         ];
         // La Garderie : NON réservable, horaires affichés.
