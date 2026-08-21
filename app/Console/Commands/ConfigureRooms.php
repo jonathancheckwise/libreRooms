@@ -33,6 +33,24 @@ class ConfigureRooms extends Command
             return self::FAILURE;
         }
 
+        // Créneaux globaux (La Pépite) : matin 9-13, après-midi 13-17,
+        // soir 17-21, journée 9-17.
+        $this->line('• <info>Créneaux globaux</info> : matin 9-13 · après-midi 13-17 · soir 17-21 · journée 9-17');
+        if (! $dry) {
+            $s = \App\Models\SystemSettings::first();
+            if ($s) {
+                $s->half_day_morning_start = '09:00';
+                $s->half_day_morning_end = '13:00';
+                $s->half_day_afternoon_start = '13:00';
+                $s->half_day_afternoon_end = '17:00';
+                $s->half_day_evening_start = '17:00';
+                $s->half_day_evening_end = '21:00';
+                $s->full_day_start = '09:00';
+                $s->full_day_end = '17:00';
+                $s->save();
+            }
+        }
+
         $created = 0;
         $updated = 0;
 
@@ -169,7 +187,7 @@ class ConfigureRooms extends Command
                 'price_hourly' => $lucr[0], 'price_half_day' => $lucr[1], 'price_full_day' => $lucr[2],
                 'equipments' => $equip,
                 'allowed_weekdays' => ['1', '2', '3', '4', '5'],
-                'day_start_time' => '08:00', 'day_end_time' => '22:00',
+                'day_start_time' => '09:00', 'day_end_time' => '21:00',
             ];
         }
 
@@ -194,7 +212,7 @@ class ConfigureRooms extends Command
             'price_hourly' => 25, 'price_half_day' => 50, 'price_full_day' => 80,
             'equipments' => ['wifi'],
             'allowed_weekdays' => ['1', '2', '3', '4', '5'],
-            'day_start_time' => '08:00', 'day_end_time' => '22:00',
+            'day_start_time' => '09:00', 'day_end_time' => '21:00',
         ];
 
         // Salles « sur demande » (devis) : Big Room, Place du Village, Atelier.
@@ -266,7 +284,7 @@ class ConfigureRooms extends Command
                 'price_hourly' => 0, 'price_half_day' => 0, 'price_full_day' => 0,
                 'equipments' => $equip,
                 'allowed_weekdays' => ['1', '2', '3', '4', '5'],
-                'day_start_time' => '08:00', 'day_end_time' => '22:00',
+                'day_start_time' => '09:00', 'day_end_time' => '21:00',
             ];
         }
 
