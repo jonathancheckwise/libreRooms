@@ -426,7 +426,7 @@
         @endguest
 
         {{-- CGU du lieu : validation obligatoire avant de réserver (La Pépite) --}}
-        @if($isCreate && ! $isAdmin)
+        @if($isCreate)
         <div class="form-group" id="pep-terms-group">
             <label class="flex items-start gap-2" style="cursor:pointer">
                 <input type="checkbox" name="accept_terms" value="1" required @checked(old('accept_terms')) style="margin-top:.25rem">
