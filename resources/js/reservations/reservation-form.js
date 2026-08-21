@@ -516,6 +516,7 @@ function updateTotalCost() {
 
     // Remise membre La Pépite (-10 %) sur le prix restant (après heure offerte).
     const member_cost_span = document.getElementById("pep-member-cost");
+    const member_note = document.getElementById("pep-member-note");
     let memberDiscount = 0;
     const memberBase = initPrice - freeAmount;
     if (memberPct > 0 && memberBase > 0) {
@@ -524,8 +525,10 @@ function updateTotalCost() {
             member_cost_span.textContent = currency(-memberDiscount);
             showDOM(member_cost_span.parentElement.parentElement);
         }
-    } else if (member_cost_span) {
-        hideDOM(member_cost_span.parentElement.parentElement);
+        if (member_note) showDOM(member_note);
+    } else {
+        if (member_cost_span) hideDOM(member_cost_span.parentElement.parentElement);
+        if (member_note) hideDOM(member_note);
     }
 
     const final_cost = initPrice - sumDiscounts - freeAmount - memberDiscount - (special_discount || 0) + (donation || 0);
