@@ -59,6 +59,9 @@ class ConfigureRooms extends Command
             $windows = $cfg['windows'] ?? [];
             unset($cfg['name'], $cfg['windows']);
 
+            // Nettoie tout message résiduel (données de seed) sauf si on en pose un.
+            $cfg['custom_message'] = $cfg['custom_message'] ?? null;
+
             $room = $this->findRoomByName($name);
             $isNew = ! $room;
             $this->line('• '.($isNew ? '<comment>À CRÉER</comment>' : '<info>MAJ</info>')." — {$name}");
@@ -191,12 +194,19 @@ class ConfigureRooms extends Command
             ];
         }
 
-        // La Focus : privatisée par la Pépite mar/mer/ven 9h-13h. Réservation
-        // NORMALE (pas « jour seul ») ; les responsables refusent ces créneaux
-        // à la validation. On ajoute une note dans la description.
+        // La Focus : privatisée par la Pépite mar/mer/ven 9h-13h. On pose des
+        // fenêtres réelles pour rendre ces matinées non réservables (les autres
+        // créneaux restent ouverts), + une note explicative.
         foreach ($configs as &$c) {
             if ($c['name'] === 'La Focus') {
-                $c['custom_message'] = "Salle privatisée par la Pépite les mardis, mercredis et vendredis de 9h à 13h : merci de ne pas réserver ces créneaux.";
+                $c['custom_message'] = "Salle privatisée par la Pépite les mardis, mercredis et vendredis de 9h à 13h : ces matinées ne sont pas réservables.";
+                $c['windows'] = [
+                    [1, '09:00', '21:00'],                        // lundi : journée complète
+                    [2, '13:00', '21:00'],                        // mardi : matin privatisé
+                    [3, '13:00', '21:00'],                        // mercredi : matin privatisé
+                    [4, '09:00', '21:00'],                        // jeudi : journée complète
+                    [5, '13:00', '21:00'],                        // vendredi : matin privatisé
+                ];
             }
         }
         unset($c);
