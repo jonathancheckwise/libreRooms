@@ -44,7 +44,8 @@ class ReservationController extends Controller
         // à cocher), et selon le mois DE LA RÉSERVATION. On envoie les mois déjà
         // épuisés pour que la case ne soit pas proposée ces mois-là.
         $pricingService = app(\App\Services\Reservation\PricingService::class);
-        $canUseFreeHour = (bool) ($authUser && $authUser->is_pepite_member);
+        // Heure offerte : membre OU responsable (admin), même non coché « membre ».
+        $canUseFreeHour = (bool) ($authUser && ($authUser->is_pepite_member || $authUser->can('manageReservations', $room)));
         $freeHourUsedMonths = $canUseFreeHour
             ? $pricingService->memberFreeHourUsedMonths($authUser->id)
             : [];

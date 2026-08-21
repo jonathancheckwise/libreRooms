@@ -97,6 +97,7 @@ class PricingService
         $price = 0.0;
         $parts = [];
         $hourlyMinutes = 0.0; // minutes facturées au tarif horaire (pour l'heure offerte membre)
+        $totalMinutes = 0.0;  // minutes réservées tous modes confondus (heure offerte étendue aux forfaits)
 
         foreach ($segments as $segment) {
             $s = $segment['start'];
@@ -105,24 +106,30 @@ class PricingService
 
             if ($priceFullDay !== null && $isWindow($s, $e, $fullStart, $fullEnd)) {
                 $price += $priceFullDay;
+                $totalMinutes += $duration * 60;
                 $parts[] = __('Full day booking');
             } elseif ($priceHalfDay !== null && $isWindow($s, $e, $morningStart, $morningEnd)) {
                 $price += $priceHalfDay;
+                $totalMinutes += $duration * 60;
                 $parts[] = __('Morning half-day');
             } elseif ($priceHalfDay !== null && $isWindow($s, $e, $afternoonStart, $afternoonEnd)) {
                 $price += $priceHalfDay;
+                $totalMinutes += $duration * 60;
                 $parts[] = __('Afternoon half-day');
             } elseif ($priceHalfDay !== null && $isWindow($s, $e, $eveningStart, $eveningEnd)) {
                 $price += $priceHalfDay;
+                $totalMinutes += $duration * 60;
                 $parts[] = __('Evening half-day');
             } elseif ($priceHourly !== null && $duration <= $hourlyMax + 0.001) {
                 $hours = round($duration, 2);
                 $price += $priceHourly * $hours;
                 $hourlyMinutes += $duration * 60;
+                $totalMinutes += $duration * 60;
                 $parts[] = __('Hourly booking').' ('.$this->formatHours($hours).'h)';
             } elseif ($priceFullDay !== null) {
                 // Repli : créneau non reconnu -> tarif journée
                 $price += $priceFullDay;
+                $totalMinutes += $duration * 60;
                 $parts[] = __('Full day booking');
             }
         }
@@ -138,6 +145,7 @@ class PricingService
             'label' => implode(', ', $labelParts),
             'price' => $price,
             'hourly_minutes' => $hourlyMinutes,
+            'total_minutes' => $totalMinutes,
         ];
     }
 
@@ -262,21 +270,27 @@ class PricingService
     }
 
     /**
-     * Calcule l'heure offerte membre pour une réservation à l'heure.
+     * Calcule l'heure offerte (crédit d'1 h) pour une réservation, tous modes
+     * confondus (à l'heure OU forfait). La valeur = tarif horaire de la salle ×
+     * minutes offertes / 60, plafonnée à $priceCap (le prix de la réservation).
+     * $eligible = membre OU responsable ; $bookedMinutes = minutes réservées.
      * Retourne [minutesOffertes, ligneRemise|null].
      */
-    public function memberFreeHour(bool $isMember, ?int $hourlyRate, float $hourlyMinutes, int $freeMinutesAvailable): array
+    public function memberFreeHour(bool $eligible, ?int $hourlyRate, float $bookedMinutes, int $freeMinutesAvailable, ?float $priceCap = null): array
     {
-        if (! $isMember || ! $hourlyRate || $hourlyMinutes <= 0 || $freeMinutesAvailable <= 0) {
+        if (! $eligible || ! $hourlyRate || $bookedMinutes <= 0 || $freeMinutesAvailable <= 0) {
             return [0, null];
         }
 
-        $freeMinutes = (int) min(60, $freeMinutesAvailable, $hourlyMinutes);
+        $freeMinutes = (int) min(60, $freeMinutesAvailable, $bookedMinutes);
         if ($freeMinutes <= 0) {
             return [0, null];
         }
 
         $amount = round($hourlyRate * $freeMinutes / 60, 2);
+        if ($priceCap !== null) {
+            $amount = min($amount, round($priceCap, 2)); // ne jamais dépasser le prix
+        }
 
         return [$freeMinutes, [0, __('Free hour (member)'), $amount]];
     }
