@@ -46,8 +46,11 @@ class ReservationService
         $orgType = $user?->org_type;
         $isMember = (bool) $user?->is_pepite_member;
 
+        // Heure offerte : membre OU responsable (admin), même s'il n'est pas coché « membre ».
+        $canFreeHour = $isMember || (bool) $user?->can('manageReservations', $room);
+
         // Calculate prices first (we need full_price before creating reservation)
-        [$eventsWithPrices, $fullPrice, $hourlyMinutes] = $this->getEventsWithPrices($request->input('events'), $room, $orgType);
+        [$eventsWithPrices, $fullPrice, $hourlyMinutes, $totalMinutes] = $this->getEventsWithPrices($request->input('events'), $room, $orgType);
 
         // Refuse les créneaux hors fenêtres de disponibilité (La Pépite).
         $this->assertWithinAvailabilityWindows($room, $eventsWithPrices);
@@ -62,11 +65,11 @@ class ReservationService
         // sur le mois DE LA RÉSERVATION (pas le mois courant).
         $freeMinutes = 0;
         $freeAmount = 0.0;
-        if ($isMember && $request->boolean('use_free_hour') && $hourlyMinutes > 0 && ! empty($eventsWithPrices)) {
+        if ($canFreeHour && $request->boolean('use_free_hour') && $totalMinutes > 0 && ! empty($eventsWithPrices)) {
             $monthAnchor = $eventsWithPrices[0]['start']->copy();
             $available = $this->pricing->memberFreeMinutesRemaining($user?->id, $monthAnchor);
             [$freeMinutes, $freeLine] = $this->pricing->memberFreeHour(
-                $isMember, $this->pricing->hourlyRate($room, $orgType), $hourlyMinutes, $available
+                $canFreeHour, $this->pricing->hourlyRate($room, $orgType), $totalMinutes, $available, $fullPrice
             );
             if ($freeLine) {
                 $freeAmount = $freeLine[2];
@@ -334,7 +337,7 @@ class ReservationService
         $isMember = (bool) $reservation->reservant_is_member;
 
         // Calculate prices for all events in request
-        [$eventsWithPrices, $fullPrice, $hourlyMinutes] = $this->getEventsWithPrices($request->input('events'), $room, $orgType);
+        [$eventsWithPrices, $fullPrice, $hourlyMinutes, $totalMinutes] = $this->getEventsWithPrices($request->input('events'), $room, $orgType);
 
         // Refuse les créneaux hors fenêtres de disponibilité (La Pépite).
         $this->assertWithinAvailabilityWindows($room, $eventsWithPrices);
@@ -343,12 +346,12 @@ class ReservationService
         $discountIds = $request->input('discounts', []);
         [$sumDiscounts, $discountsData] = $this->pricing->calculateSumDiscounts($room, $discountIds, $fullPrice);
 
-        // Heure offerte : on réutilise les minutes déjà figées (bornées aux heures actuelles).
+        // Heure offerte : on réutilise les minutes déjà figées (bornées au temps réservé actuel).
         $freeAmount = 0.0;
-        $freeMinutes = (int) min($reservation->free_minutes_applied, $hourlyMinutes);
-        if ($isMember && $freeMinutes > 0) {
+        $freeMinutes = (int) min($reservation->free_minutes_applied, $totalMinutes);
+        if ($freeMinutes > 0) {
             [$freeMinutes, $freeLine] = $this->pricing->memberFreeHour(
-                $isMember, $this->pricing->hourlyRate($room, $orgType), $hourlyMinutes, $freeMinutes
+                true, $this->pricing->hourlyRate($room, $orgType), $totalMinutes, $freeMinutes, $fullPrice
             );
             if ($freeLine) {
                 $freeAmount = $freeLine[2];
@@ -595,6 +598,7 @@ class ReservationService
     {
         $fullPrice = 0;
         $hourlyMinutes = 0.0;
+        $totalMinutes = 0.0;
         $eventsWithPrices = [];
         $timezone = $room->getTimezone();
 
@@ -617,6 +621,7 @@ class ReservationService
 
             $fullPrice += $totalPrice;
             $hourlyMinutes += $eventPricing['hourly_minutes'] ?? 0;
+            $totalMinutes += $eventPricing['total_minutes'] ?? 0;
 
             $eventsWithPrices[] = [
                 'uid' => $uid,
@@ -628,7 +633,7 @@ class ReservationService
             ];
         }
 
-        return [$eventsWithPrices, $fullPrice, $hourlyMinutes];
+        return [$eventsWithPrices, $fullPrice, $hourlyMinutes, $totalMinutes];
     }
 
     protected function createOrFindContact(FormRequest $request, ?User $user): Contact

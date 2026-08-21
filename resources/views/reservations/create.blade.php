@@ -185,20 +185,21 @@
                         <label for="pep-hour-duration" class="form-element-title">{{ __('Duration') }}</label>
                         <select id="pep-hour-duration"></select>
                     </div>
-                    @auth
-                        @if(auth()->user()->is_pepite_member)
-                            <div class="form-field" id="pep-free-hour-field" style="min-width:100%">
-                                <label class="flex items-center gap-2">
-                                    <input type="hidden" name="use_free_hour" value="0">
-                                    <input type="checkbox" name="use_free_hour" value="1" id="pep_use_free_hour">
-                                    <span>{{ __('Use my free hour (1 h/month)') }}</span>
-                                </label>
-                                <small id="pep-free-hour-note" class="text-gray-600 block"></small>
-                            </div>
-                        @endif
-                    @endauth
                 </div>
             @endif
+            {{-- Heure offerte : membre OU responsable, disponible pour TOUS les modes (à l'heure et forfaits). --}}
+            @auth
+                @if($isAdmin || auth()->user()->is_pepite_member)
+                    <div class="form-element" id="pep-free-hour-field" style="margin-top:.5rem">
+                        <label class="flex items-center gap-2">
+                            <input type="hidden" name="use_free_hour" value="0">
+                            <input type="checkbox" name="use_free_hour" value="1" id="pep_use_free_hour">
+                            <span>{{ __('Use my free hour (1 h/month)') }}</span>
+                        </label>
+                        <small id="pep-free-hour-note" class="text-gray-600 block"></small>
+                    </div>
+                @endif
+            @endauth
             <p id="pep-mode-hint" class="text-sm text-gray-600 mt-1"></p>
         </div>
         <script>

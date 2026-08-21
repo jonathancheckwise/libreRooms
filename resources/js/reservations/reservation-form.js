@@ -365,24 +365,25 @@ function getEventPrice(start, end) {
 
     const segments = splitByDay(start, end, late_end_hour);
     let price = 0;
-    let hourlyMinutes = 0; // minutes au tarif horaire (pour l'heure offerte membre)
+    let hourlyMinutes = 0; // minutes au tarif horaire
+    let totalMinutes = 0;  // minutes réservées tous modes (heure offerte étendue aux forfaits)
     const parts = [];
 
     segments.forEach((seg) => {
         const a = seg.start, b = seg.end, dur = b - a;
         if (priceFull != null && match(a, fS) && match(b, fE)) {
-            price += priceFull; parts.push(L.full);
+            price += priceFull; totalMinutes += dur * 60; parts.push(L.full);
         } else if (priceHalf != null && match(a, mS) && match(b, mE)) {
-            price += priceHalf; parts.push(L.morning);
+            price += priceHalf; totalMinutes += dur * 60; parts.push(L.morning);
         } else if (priceHalf != null && match(a, aS) && match(b, aE)) {
-            price += priceHalf; parts.push(L.afternoon);
+            price += priceHalf; totalMinutes += dur * 60; parts.push(L.afternoon);
         } else if (priceHalf != null && match(a, eS) && match(b, eE)) {
-            price += priceHalf; parts.push(L.evening);
+            price += priceHalf; totalMinutes += dur * 60; parts.push(L.evening);
         } else if (priceHourly != null && dur <= hourlyMax + 0.001) {
             const h = Math.round(dur * 100) / 100;
-            price += priceHourly * h; hourlyMinutes += dur * 60; parts.push(L.hourly + ' (' + h + 'h)');
+            price += priceHourly * h; hourlyMinutes += dur * 60; totalMinutes += dur * 60; parts.push(L.hourly + ' (' + h + 'h)');
         } else if (priceFull != null) {
-            price += priceFull; parts.push(L.full);
+            price += priceFull; totalMinutes += dur * 60; parts.push(L.full);
         }
     });
 
@@ -396,7 +397,7 @@ function getEventPrice(start, end) {
             : segments[0].date)
         : '';
     const label = dateStr + ' (' + labelParts.join(', ') + ')';
-    return [label, price, hourlyMinutes];
+    return [label, price, hourlyMinutes, totalMinutes];
 }
 
 function getOptionsPrice(options) {
@@ -432,13 +433,15 @@ function updateCost(ev) {
     if (!canCalculateCost) {
         ev.price = 0;
         ev.hourlyMinutes = 0;
+        ev.totalMinutes = 0;
         ev.eventRow.querySelector(".event-info-text").textContent = "";
         return;
     }
-    const [label, price, hourlyMinutes] = getEventPrice(ev.start, ev.end);
+    const [label, price, hourlyMinutes, totalMinutes] = getEventPrice(ev.start, ev.end);
     const [options_label, options_price] = getOptionsPrice(ev.options);
     ev.price = price + options_price;
     ev.hourlyMinutes = hourlyMinutes || 0;
+    ev.totalMinutes = totalMinutes || 0;
     let full_label = options_label ? label + " - " + options_label : label;
     full_label += ": " + currency(ev.price);
     ev.eventRow.querySelector(".event-info-text").textContent = full_label;
@@ -486,17 +489,21 @@ function updateTotalCost() {
     const ctx = pepContext();
     const memberPct = ctx.isMember ? (settings.member_discount_percent || 0) : 0;
 
-    // Heure offerte membre : OPT-IN (case cochée), membre connecté, mois dispo.
+    // Heure offerte : OPT-IN (case cochée), membre OU responsable, mois dispo.
+    // S'applique à TOUS les modes (à l'heure et forfaits) : on déduit l'équivalent
+    // d'1 h (tarif horaire de la salle), plafonné au prix de la réservation.
     const freeCb = document.getElementById('pep_use_free_hour');
-    const useFreeHour = ctx.isMember && freeCb && freeCb.checked && !freeCb.disabled;
+    const canFree = !!settings.can_use_free_hour;
+    const useFreeHour = canFree && freeCb && freeCb.checked && !freeCb.disabled;
     const freeAvail = useFreeHour ? 60 : 0;
     const hourlyRate = pepPrices().hourly;
-    const totalHourlyMin = window.ResEvents.reduce((sum, ev) => sum + (ev.hourlyMinutes || 0), 0);
+    const totalBookedMin = window.ResEvents.reduce((sum, ev) => sum + (ev.totalMinutes || 0), 0);
     const free_cost_span = document.getElementById("pep-free-cost");
     let freeAmount = 0;
-    if (memberPct > 0 && freeAvail > 0 && hourlyRate && totalHourlyMin > 0) {
-        const freeMin = Math.min(60, freeAvail, totalHourlyMin);
+    if (freeAvail > 0 && hourlyRate && totalBookedMin > 0) {
+        const freeMin = Math.min(60, freeAvail, totalBookedMin);
         freeAmount = Math.round(hourlyRate * freeMin / 60 * 100) / 100;
+        freeAmount = Math.min(freeAmount, initPrice); // ne pas dépasser le total
     }
     if (free_cost_span) {
         if (freeAmount > 0) {
