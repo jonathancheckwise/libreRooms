@@ -147,7 +147,12 @@
                 'full_end' => substr($pep->full_day_end, 0, 5),
             ];
             // Salle à fenêtres de disponibilité (La Pépite) : réservation « au jour ».
-            $isWindowed = $room->availabilityWindows->isNotEmpty();
+            // La Pépite : les espaces communautaires (La Douce…) utilisent le
+            // MÊME sélecteur de mode que les autres salles (demi-journées / à
+            // l'heure) ; leurs fenêtres de disponibilité par jour bloquent
+            // automatiquement les créneaux hors horaires (via isNonBookable +
+            // serveur). Donc plus de mode « jour seul ».
+            $isWindowed = false;
         @endphp
         <div class="form-group" id="pep-mode-group" data-windowed="{{ $isWindowed ? '1' : '0' }}">
             <h3 class="form-group-title">{{ __('Booking mode') }}</h3>
