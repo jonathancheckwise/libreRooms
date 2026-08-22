@@ -1148,7 +1148,7 @@
     "Slot booked:": "Créneau réservé :",
     "No slot available on this day for this room.": "Aucun créneau disponible ce jour-là pour cette salle.",
     "Your status (sets your rate)": "Votre statut (détermine votre tarif)",
-    "Members: 1 free hour per month and −10% (verified by the team).": "Membres : 1 heure offerte par mois et −10 % (vérifié par l'équipe).",
+    "Members: 1 free hour per month and −10% (verified by the team).": "Membres : 1 heure offerte par mois et −10 % sur les réservations.",
     "Finalise: create your account": "Finaliser : créez votre compte",
     "A quick account lets you and the team follow your booking and billing. The email you entered above is used.": "Un compte rapide vous permet, à vous et à l'équipe, de suivre votre réservation et sa facturation. L'email saisi ci-dessus est utilisé.",
     "Log in": "Se connecter",
@@ -1162,5 +1162,17 @@
     "Duration": "Durée",
     "Use my free hour (1 h/month)": "Je profite de mon heure offerte (1 h/mois)",
     "Free hour already used for this month.": "Heure offerte déjà utilisée pour ce mois-là.",
-    "1 free hour available this month.": "1 heure offerte disponible ce mois-là."
+    "1 free hour available this month.": "1 heure offerte disponible ce mois-là.",
+    "Previous month": "Mois précédent",
+    "Next month": "Mois suivant",
+    "Selected date": "Date choisie",
+    "Already booked": "Déjà réservé",
+    "Start by choosing a date in the calendar.": "Commencez par choisir une date dans le calendrier.",
+    "Mon": "Lun",
+    "Tue": "Mar",
+    "Wed": "Mer",
+    "Thu": "Jeu",
+    "Fri": "Ven",
+    "Sat": "Sam",
+    "Sun": "Dim"
 }

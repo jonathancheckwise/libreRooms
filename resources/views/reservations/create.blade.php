@@ -153,12 +153,31 @@
             // automatiquement les créneaux hors horaires (via isNonBookable +
             // serveur). Donc plus de mode « jour seul ».
             $isWindowed = false;
+            // Aujourd'hui dans le fuseau de la salle : borne basse du calendrier.
+            $pepToday = \Carbon\Carbon::now($room->timezone ?? config('app.timezone'))->toDateString();
+            $pepDows = [__('Mon'), __('Tue'), __('Wed'), __('Thu'), __('Fri'), __('Sat'), __('Sun')];
         @endphp
         <div class="form-group" id="pep-mode-group" data-windowed="{{ $isWindowed ? '1' : '0' }}">
             <h3 class="form-group-title">{{ __('Booking mode') }}</h3>
             <div class="form-element">
-                <label for="pep-date" class="form-element-title">{{ __('Date') }}</label>
-                <input type="date" id="pep-date">
+                <label for="pep-date" class="form-element-title">{{ __('Date') }} *</label>
+                <input type="date" id="pep-date" min="{{ $pepToday }}">
+                {{-- Calendrier toujours déplié : sans date choisie, aucun prix ne peut
+                     s'afficher, et rien ne le signalait. --}}
+                <div class="pep-cal" id="pep-cal" data-today="{{ $pepToday }}">
+                    <div class="pep-cal-head">
+                        <button type="button" class="pep-cal-nav" id="pep-cal-prev" aria-label="{{ __('Previous month') }}">‹</button>
+                        <span class="pep-cal-title" id="pep-cal-title"></span>
+                        <button type="button" class="pep-cal-nav" id="pep-cal-next" aria-label="{{ __('Next month') }}">›</button>
+                    </div>
+                    <div class="pep-cal-dows" id="pep-cal-dows"></div>
+                    <div class="pep-cal-grid" id="pep-cal-grid"></div>
+                    <div class="pep-cal-legend">
+                        <span><i class="pep-dot pep-dot-sel"></i>{{ __('Selected date') }}</span>
+                        <span><i class="pep-dot pep-dot-busy"></i>{{ __('Already booked') }}</span>
+                    </div>
+                </div>
+                <p class="pep-warn" id="pep-date-warning">{{ __('Start by choosing a date in the calendar.') }}</p>
             </div>
             @if($isWindowed)
                 {{-- On choisit uniquement le jour : le créneau = la fenêtre de dispo de ce jour --}}
@@ -202,6 +221,34 @@
             @endauth
             <p id="pep-mode-hint" class="text-sm text-gray-600 mt-1"></p>
         </div>
+        <style>
+            /* Mini-calendrier de choix du jour (La Pépite). Toujours déplié.
+               Sélecteurs d'identifiant : la feuille de style de l'application
+               impose sinon ses propres couleurs et largeurs aux <button>. */
+            #pep-cal { margin-top:.6rem; max-width:22rem; border:1px solid #e5e7eb; border-radius:.6rem; padding:.6rem; background:#fff; }
+            #pep-cal .pep-cal-head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:.4rem; }
+            #pep-cal .pep-cal-title { font-weight:600; text-transform:capitalize; font-size:.95rem; color:#111827; }
+            #pep-cal .pep-cal-nav { border:1px solid #e5e7eb; background:#fff; color:#374151; border-radius:.4rem; width:1.9rem; height:1.9rem; min-width:0; padding:0; line-height:1; cursor:pointer; font-size:1.05rem; }
+            #pep-cal .pep-cal-nav:hover:not(:disabled) { background:#f9fafb; }
+            #pep-cal .pep-cal-nav:disabled { opacity:.35; cursor:default; }
+            #pep-cal .pep-cal-dows, #pep-cal .pep-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+            #pep-cal .pep-cal-dows span { text-align:center; font-size:.68rem; color:#6b7280; padding:.2rem 0; }
+            #pep-cal .pep-day { position:relative; height:2.4rem; width:100%; min-width:0; border:none; background:none; border-radius:50%; cursor:pointer; font-size:.85rem; font-weight:400; color:#111827; padding:0; }
+            #pep-cal .pep-day:hover:not(:disabled) { background:#f3f4f6; }
+            #pep-cal .pep-day:disabled { color:#d1d5db; cursor:default; background:none; }
+            #pep-cal .pep-day.is-empty { visibility:hidden; }
+            #pep-cal .pep-day.is-today { font-weight:700; }
+            #pep-cal .pep-day.is-selected { background:#F2A83C; color:#2D2318; font-weight:700; }
+            #pep-cal .pep-day .pep-day-dot { position:absolute; left:50%; transform:translateX(-50%); bottom:.3rem; width:.3rem; height:.3rem; border-radius:50%; background:#C2410C; }
+            #pep-cal .pep-day.is-selected .pep-day-dot { background:#2D2318; }
+            #pep-cal .pep-cal-legend { display:flex; gap:1rem; flex-wrap:wrap; margin-top:.5rem; font-size:.7rem; color:#6b7280; }
+            #pep-cal .pep-cal-legend span { display:inline-flex; align-items:center; gap:.3rem; }
+            #pep-cal .pep-dot { width:.5rem; height:.5rem; border-radius:50%; display:inline-block; }
+            #pep-cal .pep-dot-sel { background:#F2A83C; }
+            #pep-cal .pep-dot-busy { background:#C2410C; }
+            #pep-date-warning { margin-top:.5rem; font-size:.85rem; color:#B45309; }
+            #pep-date-warning.is-hidden { display:none; }
+        </style>
         <script>
         (function () {
             const W = @json($pepWindows);
@@ -274,10 +321,114 @@
                     }
                 }
                 document.addEventListener('DOMContentLoaded', function () {
+                    // Les déclarations de fonction sont remontées : pepCalInit reste
+                    // disponible malgré le return ci-dessous.
+                    pepCalInit();
                     const d = dateEl(); if (d) d.addEventListener('change', applyWindowed);
                     const addBtn = document.getElementById('add-event'); if (addBtn) addBtn.style.display = 'none';
                 });
                 return;
+            }
+
+
+            /* ---------------------------------------------------------------
+               Mini-calendrier : jours passés non cliquables, pastille sur les
+               jours déjà réservés, cercle plein sur la sélection.
+               --------------------------------------------------------------- */
+            const PEP_DOWS = @json($pepDows);
+            const PEP_LOCALE = @json(str_replace('_', '-', app()->getLocale()));
+
+            function pepCalInit() {
+                const box = document.getElementById('pep-cal');
+                const grid = document.getElementById('pep-cal-grid');
+                const dows = document.getElementById('pep-cal-dows');
+                const title = document.getElementById('pep-cal-title');
+                const prev = document.getElementById('pep-cal-prev');
+                const next = document.getElementById('pep-cal-next');
+                const input = dateEl();
+                if (!box || !grid || !input) return;
+
+                const today = box.dataset.today;                 // AAAA-MM-JJ
+                const busy = new Set();                          // jours déjà réservés
+                let view = new Date((input.value || today) + 'T12:00:00');
+                view.setDate(1);
+
+                dows.innerHTML = PEP_DOWS.map(d => '<span>' + d + '</span>').join('');
+
+                const iso = (d) => d.getFullYear() + '-' +
+                    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(d.getDate()).padStart(2, '0');
+
+                function render() {
+                    title.textContent = view.toLocaleDateString(PEP_LOCALE, { month: 'long', year: 'numeric' });
+                    // On ne recule pas avant le mois courant.
+                    const firstOfThisMonth = today.slice(0, 7);
+                    prev.disabled = iso(view).slice(0, 7) <= firstOfThisMonth;
+
+                    const start = (new Date(view).getDay() + 6) % 7;   // lundi = 0
+                    const nbDays = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+                    let html = '';
+                    for (let i = 0; i < start; i++) { html += '<button type="button" class="pep-day is-empty" disabled></button>'; }
+                    for (let d = 1; d <= nbDays; d++) {
+                        const cell = new Date(view.getFullYear(), view.getMonth(), d);
+                        const key = iso(cell);
+                        const past = key < today;
+                        const cls = ['pep-day'];
+                        if (past) cls.push('is-past');
+                        if (key === today) cls.push('is-today');
+                        if (key === input.value) cls.push('is-selected');
+                        html += '<button type="button" class="' + cls.join(' ') + '" data-date="' + key + '"'
+                              + (past ? ' disabled' : '') + '>' + d
+                              + (busy.has(key) ? '<span class="pep-day-dot"></span>' : '')
+                              + '</button>';
+                    }
+                    grid.innerHTML = html;
+                    grid.querySelectorAll('.pep-day[data-date]:not([disabled])').forEach(function (b) {
+                        b.addEventListener('click', function () {
+                            input.value = b.dataset.date;
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                            render();
+                        });
+                    });
+                }
+
+                prev.addEventListener('click', function () { view.setMonth(view.getMonth() - 1); render(); });
+                next.addEventListener('click', function () { view.setMonth(view.getMonth() + 1); render(); });
+                input.addEventListener('change', function () {
+                    // Saisie clavier d'une date passée : on la refuse.
+                    if (input.value && input.value < today) { input.value = ''; }
+                    if (input.value) { view = new Date(input.value + 'T12:00:00'); view.setDate(1); }
+                    render();
+                    pepUpdateDateWarning();
+                });
+
+                render();
+                pepUpdateDateWarning();
+
+                // Jours déjà réservés : on interroge la même source que le calendrier
+                // de disponibilité, indépendamment du module compilé.
+                const route = window.RoomConfig && window.RoomConfig.settings && window.RoomConfig.settings.availability_route;
+                if (route) {
+                    fetch(route).then(r => r.json()).then(function (data) {
+                        const events = (data && data.events) || data || [];
+                        events.forEach(function (ev) {
+                            if (!ev || !ev.start) return;
+                            const from = new Date(ev.start), to = new Date(ev.end || ev.start);
+                            for (let c = new Date(from); c <= to; c.setDate(c.getDate() + 1)) {
+                                busy.add(iso(c));
+                                if (c.getTime() === to.getTime()) break;
+                            }
+                        });
+                        render();
+                    }).catch(function () { /* pastilles indisponibles : le calendrier reste utilisable */ });
+                }
+            }
+
+            function pepUpdateDateWarning() {
+                const w = document.getElementById('pep-date-warning');
+                if (!w) return;
+                const d = dateEl();
+                w.classList.toggle('is-hidden', !!(d && d.value));
             }
 
             function apply(){
@@ -285,7 +436,16 @@
                 const s = firstStart(), e = firstEnd();
                 const hp = document.getElementById('pep-hourly-panel');
                 if (hp) hp.style.display = (mode === 'hourly') ? 'flex' : 'none';
-                if (!s || !e || !mode || !date) return;
+                pepUpdateDateWarning();
+                if (!date) {
+                    // Sans date, aucun créneau ni prix ne peut être calculé : on le dit,
+                    // au lieu de laisser l'utilisateur devant un prix qui ne vient pas.
+                    if (s && e) { s.value = ''; e.value = ''; fire(s); fire(e); }
+                    const h = document.getElementById('pep-mode-hint');
+                    if (h) h.textContent = @json(__('Start by choosing a date in the calendar.'));
+                    return;
+                }
+                if (!s || !e || !mode) return;
                 let start, end;
                 if (mode==='morning'){ start=W.morning_start; end=W.morning_end; }
                 else if (mode==='afternoon'){ start=W.afternoon_start; end=W.afternoon_end; }
@@ -342,6 +502,7 @@
 
             document.addEventListener('DOMContentLoaded', function(){
                 initHourly();
+                pepCalInit();
                 document.querySelectorAll('input[name="pep_mode"]').forEach(r=>r.addEventListener('change', apply));
                 const d = dateEl(); if (d) d.addEventListener('change', apply);
             });
