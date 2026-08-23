@@ -34,6 +34,14 @@ return new class extends Migration
             // Adresse publique des CG, consultable AVANT de cocher la case.
             $table->string('terms_url')->nullable();
         });
+
+        // Valeurs de La Pépite, pour éviter une saisie manuelle après déploiement.
+        // Sans terms_url, la case s'affiche sans lien et le blocage « ouvrir avant
+        // de cocher » ne s'applique pas : autant les poser tout de suite.
+        \Illuminate\Support\Facades\DB::table('system_settings')->update([
+            'terms_version' => '2026-08-23',
+            'terms_url' => 'https://pepite-lausanne.ch/conditions-generales.pdf',
+        ]);
     }
 
     public function down(): void
