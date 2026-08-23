@@ -1071,5 +1071,17 @@
     "Bookable days": "Bookable days",
     "More info": "More info",
     "Book this room": "Book this room",
-    "None.days": "None"
+    "None.days": "None",
+    "Previous month": "Previous month",
+    "Next month": "Next month",
+    "Selected date": "Selected date",
+    "Already booked": "Already booked",
+    "Start by choosing a date in the calendar.": "Start by choosing a date in the calendar.",
+    "Mon": "Mon",
+    "Tue": "Tue",
+    "Wed": "Wed",
+    "Thu": "Thu",
+    "Fri": "Fri",
+    "Sat": "Sat",
+    "Sun": "Sun"
 }
