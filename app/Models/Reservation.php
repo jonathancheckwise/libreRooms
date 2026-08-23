@@ -36,7 +36,6 @@ class Reservation extends Model
         // Trace de l'acceptation des CG, figée à la création
         'terms_accepted_at',
         'terms_version',
-        'terms_ip',
         'cancelled_at',
     ];
 

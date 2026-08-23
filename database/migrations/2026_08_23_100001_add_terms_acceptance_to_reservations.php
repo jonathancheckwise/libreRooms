@@ -20,9 +20,12 @@ return new class extends Migration
             // Horodatage de l'acceptation (UTC, comme le reste des dates).
             $table->timestamp('terms_accepted_at')->nullable()->after('confirmed_by');
             // Version des CG acceptée, telle qu'affichée au réservant.
+            // L'art. 1.6 énumère ce qui est enregistré : date et heure, identité et
+            // email du réservataire, référence de la réservation, version des CG.
+            // L'identité, l'email et la référence sont déjà portés par la
+            // réservation et son contact. Pas d'adresse IP : elle n'est pas
+            // annoncée dans les CG, et on n'enregistre pas plus que ce qu'on dit.
             $table->string('terms_version', 40)->nullable()->after('terms_accepted_at');
-            // Adresse IP d'où vient l'acceptation (IPv6 compris).
-            $table->string('terms_ip', 45)->nullable()->after('terms_version');
         });
 
         Schema::table('system_settings', function (Blueprint $table) {
@@ -36,7 +39,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('reservations', function (Blueprint $table) {
-            $table->dropColumn(['terms_accepted_at', 'terms_version', 'terms_ip']);
+            $table->dropColumn(['terms_accepted_at', 'terms_version']);
         });
         Schema::table('system_settings', function (Blueprint $table) {
             $table->dropColumn(['terms_version', 'terms_url']);

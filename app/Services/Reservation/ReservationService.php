@@ -117,7 +117,6 @@ class ReservationService
                 'terms_version' => $request->boolean('accept_terms')
                     ? (app(\App\Models\SystemSettings::class)->terms_version ?: null)
                     : null,
-                'terms_ip' => $request->boolean('accept_terms') ? $request->ip() : null,
             ]);
 
             // Connect CalDAV (safe even if disabled)

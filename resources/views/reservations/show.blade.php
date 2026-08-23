@@ -353,18 +353,15 @@
                             </dd>
                         </div>
                     @endif
-                    {{-- Preuve d'acceptation des CG : date, version et provenance.
-                         Réservée aux responsables (l'IP est une donnée personnelle). --}}
-                    @if($reservation->terms_accepted_at && $canManage)
+                    {{-- Preuve d'acceptation des CG (art. 1.6) : date, heure et version.
+                         Visible aussi du réservataire : c'est sa preuve autant que la nôtre. --}}
+                    @if($reservation->terms_accepted_at)
                         <div class="flex justify-between">
                             <dt class="text-gray-500">{{ __('Terms accepted on') }}</dt>
                             <dd class="text-gray-900 font-medium">
                                 {{ $reservation->terms_accepted_at->format('d.m.Y H:i') }}
                                 @if($reservation->terms_version)
                                     <span class="text-gray-500">({{ __('version') }} {{ $reservation->terms_version }})</span>
-                                @endif
-                                @if($reservation->terms_ip)
-                                    <span class="block text-xs text-gray-500">{{ __('from IP') }} {{ $reservation->terms_ip }}</span>
                                 @endif
                             </dd>
                         </div>
