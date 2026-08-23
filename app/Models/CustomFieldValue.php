@@ -68,10 +68,12 @@ class CustomFieldValue extends Model
                 return [$this->value];
             case CustomFieldTypes::RADIO:
             case CustomFieldTypes::SELECT:
-                return [$this->options[$this->value]];
+                // Champ facultatif laissé vide : pas de libellé à afficher.
+                return isset($this->options[$this->value]) ? [$this->options[$this->value]] : [];
             case CustomFieldTypes::CHECKBOX:
-                return array_map(fn ($value) => $this->options[$value],
-                                $this->value);
+                // Aucune case cochée : la valeur est null, pas un tableau vide.
+                return array_map(fn ($value) => $this->options[$value] ?? $value,
+                                is_array($this->value) ? $this->value : []);
             default:
                 return [];
         }

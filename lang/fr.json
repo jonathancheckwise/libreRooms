@@ -1174,5 +1174,15 @@
     "Thu": "Jeu",
     "Fri": "Ven",
     "Sat": "Sam",
-    "Sun": "Dim"
+    "Sun": "Dim",
+    "I have read and accept the :link of La Pépite.": "J'ai lu et j'accepte les :link de la Pépite.",
+    "general terms of booking and use of the spaces": "conditions générales de réservation et d'utilisation des espaces",
+    "I have read and accept the general terms of booking and use of the spaces of La Pépite.": "J'ai lu et j'accepte les conditions générales de réservation et d'utilisation des espaces de la Pépite.",
+    "Version in force:": "Version en vigueur :",
+    "Terms accepted on": "Conditions acceptées le",
+    "version": "version",
+    "from IP": "depuis l'IP",
+    "You must accept the general terms and conditions to book.": "Vous devez accepter les conditions générales pour réserver.",
+    "Available at any time on the website.": "Consultables à tout moment sur le site.",
+    "The general terms have just opened in a new tab. Read them, then tick the box.": "Les conditions générales viennent de s'ouvrir dans un nouvel onglet. Prenez-en connaissance, puis cochez la case."
 }

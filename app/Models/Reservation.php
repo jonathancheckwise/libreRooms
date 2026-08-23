@@ -33,6 +33,9 @@ class Reservation extends Model
         'custom_message',
         'confirmed_at',
         'confirmed_by',
+        // Trace de l'acceptation des CG, figée à la création
+        'terms_accepted_at',
+        'terms_version',
         'cancelled_at',
     ];
 
@@ -45,6 +48,7 @@ class Reservation extends Model
         'donation' => 'decimal:2',
         'confirmed_at' => 'datetime',
         'cancelled_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
     ];
 
     public function room(): BelongsTo

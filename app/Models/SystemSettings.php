@@ -37,6 +37,9 @@ class SystemSettings extends Model
         'half_day_afternoon_end',
         'full_day_start',
         'full_day_end',
+        // Conditions générales (La Pépite)
+        'terms_version',
+        'terms_url',
     ];
 
     public function mailSettings(): MailSettingsDTO {

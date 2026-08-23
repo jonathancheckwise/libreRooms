@@ -587,15 +587,71 @@
         </div>
         @endguest
 
-        {{-- CGU du lieu : validation obligatoire avant de réserver (La Pépite) --}}
+        {{-- Conditions générales : acceptation obligatoire avant de réserver (La Pépite).
+             Case JAMAIS pré-cochée, et lien consultable AVANT de cocher : une case
+             déjà remplie ne vaut pas acceptation. L'horodatage, la version et l'IP
+             sont enregistrés sur la réservation (voir ReservationService). --}}
         @if($isCreate)
-        <div class="form-group" id="pep-terms-group">
+        @php
+            $pepTerms = app(\App\Models\SystemSettings::class);
+            $pepTermsUrl = $pepTerms->terms_url;
+            $pepTermsVersion = $pepTerms->terms_version;
+        @endphp
+        <div class="form-group" id="pep-terms-group" @if($pepTermsUrl) data-terms-url="{{ $pepTermsUrl }}" @endif>
             <label class="flex items-start gap-2" style="cursor:pointer">
-                <input type="checkbox" name="accept_terms" value="1" required @checked(old('accept_terms')) style="margin-top:.25rem">
-                <span>{{ __('I accept the venue\'s terms of use (CGU), available on the website.') }} *</span>
+                <input type="checkbox" name="accept_terms" id="pep-accept-terms" value="1" required @checked(old('accept_terms')) style="margin-top:.25rem">
+                <span>
+                    @if($pepTermsUrl)
+                        {!! __('I have read and accept the :link of La Pépite.', ['link' => '<a id="pep-terms-link" href="'.e($pepTermsUrl).'" target="_blank" rel="noopener">'.__('general terms of booking and use of the spaces').'</a>']) !!}
+                    @else
+                        {{ __('I have read and accept the general terms of booking and use of the spaces of La Pépite.') }}
+                    @endif
+                    *
+                </span>
             </label>
+            <small class="text-gray-600 block mt-1">
+                {{ __('Available at any time on the website.') }}
+                @if($pepTermsVersion) {{ __('Version in force:') }} {{ $pepTermsVersion }} @endif
+            </small>
+            <p id="pep-terms-hint" class="text-sm mt-1" style="display:none;color:#B45309"></p>
             @error('accept_terms')<span class="text-red-600 text-sm block mt-1">{{ $message }}</span>@enderror
         </div>
+        <script>
+        // On ne peut pas cocher sans avoir ouvert les CG. Le premier clic sur la
+        // case les ouvre dans un nouvel onglet au lieu de cocher ; le clic suivant
+        // coche. Cliquer soi-même sur le lien lève aussi la condition.
+        (function () {
+            var groupe = document.getElementById('pep-terms-group');
+            if (!groupe) return;
+            var url = groupe.dataset.termsUrl;
+            if (!url) return;                       // sans lien publié, pas de blocage
+            var caseCG = document.getElementById('pep-accept-terms');
+            var lien = document.getElementById('pep-terms-link');
+            var indice = document.getElementById('pep-terms-hint');
+            var ouvertes = caseCG.checked;          // retour d'erreur : déjà consultées
+
+            function dire(texte) {
+                indice.textContent = texte;
+                indice.style.display = texte ? '' : 'none';
+            }
+            if (lien) {
+                lien.addEventListener('click', function () {
+                    ouvertes = true;
+                    dire('');
+                });
+            }
+            caseCG.addEventListener('click', function (e) {
+                // Au moment du clic, « checked » porte déjà le nouvel état :
+                // false quand on décoche, ce qui reste toujours permis.
+                if (!caseCG.checked) { dire(''); return; }
+                if (ouvertes) { return; }
+                e.preventDefault();                 // la case ne se coche pas encore
+                window.open(url, '_blank', 'noopener');
+                ouvertes = true;
+                dire(@json(__('The general terms have just opened in a new tab. Read them, then tick the box.')));
+            });
+        })();
+        </script>
         @endif
 
         <div class="btn-group">
