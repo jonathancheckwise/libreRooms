@@ -587,13 +587,31 @@
         </div>
         @endguest
 
-        {{-- CGU du lieu : validation obligatoire avant de réserver (La Pépite) --}}
+        {{-- Conditions générales : acceptation obligatoire avant de réserver (La Pépite).
+             Case JAMAIS pré-cochée, et lien consultable AVANT de cocher : une case
+             déjà remplie ne vaut pas acceptation. L'horodatage, la version et l'IP
+             sont enregistrés sur la réservation (voir ReservationService). --}}
         @if($isCreate)
+        @php
+            $pepTerms = app(\App\Models\SystemSettings::class);
+            $pepTermsUrl = $pepTerms->terms_url;
+            $pepTermsVersion = $pepTerms->terms_version;
+        @endphp
         <div class="form-group" id="pep-terms-group">
             <label class="flex items-start gap-2" style="cursor:pointer">
                 <input type="checkbox" name="accept_terms" value="1" required @checked(old('accept_terms')) style="margin-top:.25rem">
-                <span>{{ __('I accept the venue\'s terms of use (CGU), available on the website.') }} *</span>
+                <span>
+                    @if($pepTermsUrl)
+                        {!! __('I have read and accept the :link of La Pépite.', ['link' => '<a href="'.e($pepTermsUrl).'" target="_blank" rel="noopener">'.__('general terms of booking and use of the spaces').'</a>']) !!}
+                    @else
+                        {{ __('I have read and accept the general terms of booking and use of the spaces of La Pépite.') }}
+                    @endif
+                    *
+                </span>
             </label>
+            @if($pepTermsVersion)
+                <small class="text-gray-600 block mt-1">{{ __('Version in force:') }} {{ $pepTermsVersion }}</small>
+            @endif
             @error('accept_terms')<span class="text-red-600 text-sm block mt-1">{{ $message }}</span>@enderror
         </div>
         @endif

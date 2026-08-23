@@ -110,6 +110,14 @@ class ReservationService
                 'custom_message' => $request->input('custom_message'),
                 'confirmed_at' => $isConfirmed ? now() : null,
                 'confirmed_by' => $isConfirmed ? $user?->id : null,
+                // Acceptation des CG : horodatée, versionnée et tracée au moment
+                // de la réservation. La case est obligatoire (règle « accepted »
+                // dans StoreReservationRequest) : si on arrive ici, elle est cochée.
+                'terms_accepted_at' => $request->boolean('accept_terms') ? now() : null,
+                'terms_version' => $request->boolean('accept_terms')
+                    ? (app(\App\Models\SystemSettings::class)->terms_version ?: null)
+                    : null,
+                'terms_ip' => $request->boolean('accept_terms') ? $request->ip() : null,
             ]);
 
             // Connect CalDAV (safe even if disabled)

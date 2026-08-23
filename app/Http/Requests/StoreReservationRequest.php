@@ -78,7 +78,7 @@ class StoreReservationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'accept_terms.accepted' => __('You must accept the venue\'s terms of use to book.'),
+            'accept_terms.accepted' => __('You must accept the general terms and conditions to book.'),
         ];
     }
 }
