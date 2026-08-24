@@ -39,6 +39,29 @@ class Reservation extends Model
         'cancelled_at',
     ];
 
+    /**
+     * Adresse du PDF des CG dans LA VERSION ACCEPTÉE par le réservataire.
+     *
+     * Le fichier courant est remplacé à chaque révision : y renvoyer ferait
+     * pointer une vieille confirmation vers un texte que la personne n'a jamais
+     * accepté. On vise donc le fichier daté, que l'art. 18.2 impose d'archiver.
+     * conditions-generales.pdf → conditions-generales-2026-08-23.pdf
+     */
+    public function termsDocumentUrl(): ?string
+    {
+        $base = app(SystemSettings::class)->terms_url;
+        if (! $base) {
+            return null;
+        }
+        if (! $this->terms_version) {
+            return $base;
+        }
+
+        return preg_match('/^(.*)\.pdf$/i', $base, $m)
+            ? $m[1].'-'.$this->terms_version.'.pdf'
+            : $base;
+    }
+
     protected $casts = [
         'status' => ReservationStatus::class,
         'reservant_is_member' => 'boolean',
