@@ -500,7 +500,17 @@
                 durSel.addEventListener('change', apply);
             }
 
+            // En modification, le champ date part vide alors que la réservation a
+            // déjà un créneau : toucher un mode effacerait les heures existantes.
+            // On le pré-remplit depuis l'événement en place.
+            function pepPrefillDate() {
+                const d = dateEl(), s = firstStart();
+                if (!d || d.value || !s || !s.value) return;
+                d.value = String(s.value).slice(0, 10);
+            }
+
             document.addEventListener('DOMContentLoaded', function(){
+                pepPrefillDate();
                 initHourly();
                 pepCalInit();
                 document.querySelectorAll('input[name="pep_mode"]').forEach(r=>r.addEventListener('change', apply));
@@ -663,8 +673,13 @@
         @endif
         @if ($isAdmin && $isCreate)
             <button type="submit" class="btn btn-confirm" name="action" value="confirm">{{ __('Confirm request directly') }}</button>
-        @elseif ($isAdmin && $isEdit)
-            <button type="submit" class="btn btn-confirm" name="action" value="confirm">{{ __('Confirm request') }}</button>
+        @endif
+        {{-- On ne valide plus depuis ce formulaire : « Valider » y enregistrait
+             aussi tous les champs, si bien qu'un jour modifié par mégarde partait
+             dans la confirmation. La validation se fait depuis la fiche, qui est
+             en lecture seule et ne touche pas aux données. --}}
+        @if ($isAdmin && $isEdit)
+            <a class="btn btn-secondary" href="{{ route('reservations.show', $reservation) }}">{{ __('Back to the request to confirm it') }}</a>
         @endif
         @if($isEdit && $reservation->status !== App\Enums\ReservationStatus::CANCELLED)
             <button type="button" onclick="openCancelModal()" class="btn btn-delete">

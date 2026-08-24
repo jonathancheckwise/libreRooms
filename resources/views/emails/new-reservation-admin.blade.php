@@ -27,6 +27,6 @@
     <p>{{ __('Please review the request to confirm or reject it:') }}</p>
 
     <p>
-        <a href="{{ route('reservations.edit', $reservation) }}" class="btn">{{ __('View the request') }}</a>
+        <a href="{{ route('reservations.show', $reservation) }}" class="btn">{{ __('View the request') }}</a>
     </p>
 @endsection
