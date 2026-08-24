@@ -64,6 +64,21 @@
         <a href="{{ route('reservations.invoice.pdf', $reservation->hash) }}" class="btn">{{ __('Download the invoice') }}</a>
     </p>
 
+    {{-- Art. 1.5 des CG : la confirmation rappelle, à titre informatif, la
+         version acceptée lors de la demande. Le lien vise le fichier daté, pas
+         le fichier courant qui sera remplacé à la prochaine révision. --}}
+    @if ($reservation->terms_accepted_at && $reservation->terms_version)
+        <p style="font-size: 14px; color: #6b7280;">
+            {{ __('For the record: you accepted the general terms of booking and use of the spaces on :date, in their version of :version.', [
+                'date' => $reservation->terms_accepted_at->format('d.m.Y') . ' ' . __('at') . ' ' . $reservation->terms_accepted_at->format('H:i'),
+                'version' => $reservation->terms_version,
+            ]) }}
+            @if ($reservation->termsDocumentUrl())
+                <a href="{{ $reservation->termsDocumentUrl() }}">{{ __('Read this version') }}</a>
+            @endif
+        </p>
+    @endif
+
     <p>{{ __('For any questions, feel free to contact us by replying to this email.') }}</p>
 
     <p>{{ __('Best regards,') }}</p>
