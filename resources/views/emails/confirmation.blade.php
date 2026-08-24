@@ -9,6 +9,27 @@
         {{ __('Your reservation of the room :room has been confirmed.', ['room' => $room->name]) }}
     </p>
 
+    {{-- Une demande validée telle quelle et une demande retouchée avant validation
+         ne se lisent pas pareil : on le dit d'entrée, avec le détail. --}}
+    @php($modifications = $reservation->changesBeforeConfirmation())
+    @if($modifications->isNotEmpty())
+        <div class="highlight-box" style="border-left: 4px solid #d97706;">
+            <strong>{{ __('Your request was modified before being confirmed.') }}</strong>
+            <ul style="margin: 8px 0 0 0;">
+                @foreach($modifications as $change)
+                    <li style="margin-bottom: 6px;">
+                        <strong>{{ $change->fieldLabel() }}</strong><br>
+                        {{ __('before:') }} <span style="text-decoration: line-through; color: #6b7280;">{{ $change->old_value !== null && $change->old_value !== '' ? $change->old_value : __('(empty)') }}</span><br>
+                        {{ __('after:') }} {{ $change->new_value !== null && $change->new_value !== '' ? $change->new_value : __('(empty)') }}
+                    </li>
+                @endforeach
+            </ul>
+            <p style="margin: 8px 0 0 0; font-size: 14px;">
+                {{ __('If this does not match what you expected, reply to this email.') }}
+            </p>
+        </div>
+    @endif
+
     <div class="highlight-box">
         <strong>{{ $reservation->title }}</strong>
         @if($reservation->description)

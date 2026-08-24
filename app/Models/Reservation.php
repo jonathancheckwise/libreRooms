@@ -102,6 +102,28 @@ class Reservation extends Model
         return $this->hasMany(CustomFieldValue::class);
     }
 
+    /**
+     * Journal des modifications, de la plus récente à la plus ancienne.
+     *
+     * Surtout pas « changes » : Eloquent réserve ce nom pour les attributs
+     * modifiés lors du dernier enregistrement, et la relation ne serait jamais
+     * atteinte.
+     */
+    public function modifications(): HasMany
+    {
+        return $this->hasMany(ReservationChange::class)->latest('id');
+    }
+
+    /** Modifications intervenues depuis la demande et avant la validation. */
+    public function changesBeforeConfirmation()
+    {
+        $journal = $this->modifications;
+
+        return $this->confirmed_at
+            ? $journal->filter(fn ($ch) => $ch->created_at <= $this->confirmed_at)
+            : $journal;
+    }
+
     public function events(): HasMany
     {
         return $this->hasMany(ReservationEvent::class);

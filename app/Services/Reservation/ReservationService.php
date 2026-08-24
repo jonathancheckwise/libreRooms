@@ -7,6 +7,7 @@ use App\Models\Contact;
 use App\Models\CustomFieldValue;
 use App\Models\Invoice;
 use App\Models\Reservation;
+use App\Models\ReservationChange;
 use App\Models\ReservationEvent;
 use App\Models\Room;
 use App\Models\User;
@@ -332,9 +333,44 @@ class ReservationService
     /**
      * Update reservation data without changing status.
      */
+    /**
+     * Photographie des champs dont une modification concerne le réservant.
+     * Volontairement lisible : ce relevé est destiné à être lu, pas comparé
+     * champ à champ par une machine.
+     */
+    protected function changeSnapshot(Reservation $reservation): array
+    {
+        return [
+            'dates' => $reservation->events->sortBy('start')
+                ->map(fn ($e) => $e->dateString())->implode(' · '),
+            'title' => (string) $reservation->title,
+            'description' => (string) $reservation->description,
+            'price' => number_format((float) $reservation->finalPrice(), 2, '.', ''),
+        ];
+    }
+
+    /** Consigne les écarts entre deux relevés. */
+    protected function recordChanges(Reservation $reservation, ?User $user, array $avant, array $apres): void
+    {
+        foreach ($apres as $champ => $valeur) {
+            if (($avant[$champ] ?? null) === $valeur) {
+                continue;
+            }
+            ReservationChange::create([
+                'reservation_id' => $reservation->id,
+                'user_id' => $user?->id,
+                'field' => $champ,
+                'old_value' => $avant[$champ] ?? null,
+                'new_value' => $valeur,
+            ]);
+        }
+    }
+
     protected function updateReservationData(FormRequest $request, Reservation $reservation, User $user, bool $confirm = false): Reservation
     {
         $contact = $this->createOrFindContact($request, $user);
+        // Relevé AVANT toute écriture : c'est notre point de comparaison.
+        $avantModification = $this->changeSnapshot($reservation->loadMissing('events'));
         $room = $reservation->room;
         $wasCancelled = $reservation->status === ReservationStatus::CANCELLED;
 
@@ -481,6 +517,9 @@ class ReservationService
             'tenant',
             'events',
         ]);
+
+        // Relevé APRÈS écriture : on consigne les écarts avec l'état d'avant.
+        $this->recordChanges($reservation, $user, $avantModification, $this->changeSnapshot($reservation));
 
         // Update prebook PDF if WebDAV enabled and status is PENDING
         if ($room->usesWebdav() && $reservation->status === ReservationStatus::PENDING) {

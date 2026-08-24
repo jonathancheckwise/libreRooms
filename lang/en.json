@@ -1097,5 +1097,13 @@
     "For the record: you accepted the general terms of booking and use of the spaces on :date, in their version of :version.": "For the record: you accepted the general terms of booking and use of the spaces on :date, in their version of :version.",
     "Read this version": "Read this version",
     "at": "at",
-    "Back to the request to confirm it": "Back to the request to confirm it"
+    "Back to the request to confirm it": "Back to the request to confirm it",
+    "Changes made": "Changes made",
+    "Dates and times": "Dates and times",
+    "(empty)": "(empty)",
+    "Your request was modified before being confirmed.": "Your request was modified before being confirmed.",
+    "If this does not match what you expected, reply to this email.": "If this does not match what you expected, reply to this email.",
+    "[Modified]": "[Modified]",
+    "before:": "before:",
+    "after:": "after:"
 }
