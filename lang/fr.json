@@ -1188,5 +1188,13 @@
     "For the record: you accepted the general terms of booking and use of the spaces on :date, in their version of :version.": "Pour rappel : vous avez accepté les conditions générales de réservation et d'utilisation des espaces le :date, dans leur version du :version.",
     "Read this version": "Consulter cette version",
     "at": "à",
-    "Back to the request to confirm it": "Revenir à la demande pour la valider"
+    "Back to the request to confirm it": "Revenir à la demande pour la valider",
+    "Changes made": "Modifications apportées",
+    "Dates and times": "Dates et horaires",
+    "(empty)": "(vide)",
+    "Your request was modified before being confirmed.": "Votre demande a été modifiée avant d'être validée.",
+    "If this does not match what you expected, reply to this email.": "Si cela ne correspond pas à ce que vous attendiez, répondez à ce message.",
+    "[Modified]": "[Modifiée]",
+    "before:": "avant :",
+    "after:": "après :"
 }

@@ -68,12 +68,18 @@ class MailService
             'owner' => $owner,
             'tenant' => $tenant,
             'invoice' => $reservation->invoice,
-        ], function ($message) use ($room, $owner, $tenant) {
+        ], function ($message) use ($room, $owner, $tenant, $reservation) {
+            // Une demande retouchée avant validation se signale dès l'objet :
+            // c'est la seule ligne qu'on lit à coup sûr.
+            $objet = ucfirst($room->name).' - '.__('Reservation confirmation and invoice (automatic email)');
+            if ($reservation->changesBeforeConfirmation()->isNotEmpty()) {
+                $objet = __('[Modified]').' '.$objet;
+            }
             $message->from($owner->mailSettings()->user, $owner->contact->display_name())
                 ->to($this->redirectIfDebug($tenant->bothEmailsUnique()))
                 ->cc($this->redirectIfDebug($owner->contact->email), $owner->contact->display_name())
                 ->replyTo($owner->contact->email, $owner->contact->display_name())
-                ->subject(ucfirst($room->name).' - '.__('Reservation confirmation and invoice (automatic email)'));
+                ->subject($objet);
         });
     }
 

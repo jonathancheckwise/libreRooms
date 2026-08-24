@@ -176,6 +176,29 @@
                 </div>
             </div>
 
+            {{-- Journal des modifications faites par l'équipe. Visible du
+                 réservant aussi : c'est sa réservation qui a changé. --}}
+            @if($reservation->modifications->isNotEmpty())
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Changes made') }}</h3>
+                    <ul class="space-y-4 text-sm">
+                        @foreach($reservation->modifications as $change)
+                            <li>
+                                <div class="text-gray-500">
+                                    {{ $change->created_at->format('d.m.Y H:i') }}
+                                    @if($change->user) · {{ $change->user->name }} @endif
+                                </div>
+                                <div class="font-medium text-gray-900">{{ $change->fieldLabel() }}</div>
+                                <div class="text-gray-600">
+                                    <div>{{ __('before:') }} <span style="text-decoration: line-through;">{{ $change->old_value !== null && $change->old_value !== '' ? $change->old_value : __('(empty)') }}</span></div>
+                                    <div class="text-gray-900">{{ __('after:') }} {{ $change->new_value !== null && $change->new_value !== '' ? $change->new_value : __('(empty)') }}</div>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <!-- Admin actions -->
             @if($canCancel || $canEdit || $canConfirm)
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
