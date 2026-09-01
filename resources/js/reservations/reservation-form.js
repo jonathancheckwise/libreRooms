@@ -325,7 +325,7 @@ function pepContext() {
     if (!s.is_guest) {
         return { orgType: s.fixed_org_type, isMember: !!s.fixed_is_member };
     }
-    const org = document.querySelector('input[name="org_type"]:checked')?.value || 'for_profit';
+    const org = document.getElementById('pep-org-type')?.value || 'for_profit';
     const isMember = !!document.getElementById('pep_is_member')?.checked;
     return { orgType: org, isMember };
 }
@@ -781,11 +781,55 @@ function initPepDeclaration() {
         window.ResEvents.forEach((ev) => updateCost(ev));
         updateTotalCost();
     };
-    document.querySelectorAll('input[name="org_type"]').forEach((r) => r.addEventListener('change', recompute));
-    const mem = document.getElementById('pep_is_member');
-    if (mem) mem.addEventListener('change', recompute);
+
+    // Menu déroulant « Je suis » : pilote le tarif (org_type) et le statut membre.
+    // - organisation NP / lucrative → case « membre » facultative
+    // - coworkeur·se de la Pépite   → membre auto (−10 % + heure offerte), et
+    //   choix de la grille (NP / lucratif) via un sous-bloc.
+    const sel = document.getElementById('pep-structure');
+    const orgHidden = document.getElementById('pep-org-type');
+    const coworkerTarif = document.getElementById('pep-coworker-tarif');
+    const memberField = document.getElementById('pep-member-field');
+    const memberCb = document.getElementById('pep_is_member');
+    const coworkerNote = document.getElementById('pep-coworker-note');
+
+    let prevStructure = sel ? sel.value : '';
+    const applyStructure = (isInit = false) => {
+        if (!sel || !orgHidden) return;
+        const v = sel.value;
+        if (v === 'coworker') {
+            if (coworkerTarif) coworkerTarif.hidden = false;
+            if (coworkerNote) coworkerNote.hidden = false;
+            if (memberField) memberField.hidden = true;
+            if (memberCb) memberCb.checked = true; // coworkeur·se = membre
+            orgHidden.value = document.querySelector('input[name="coworker_tarif"]:checked')?.value || '';
+        } else {
+            if (coworkerTarif) coworkerTarif.hidden = true;
+            if (coworkerNote) coworkerNote.hidden = true;
+            if (memberField) memberField.hidden = false;
+            // En quittant « coworkeur » pour une organisation, on retire la coche
+            // membre forcée (évite un −10 % accidentel). Pas à l'init : on préserve
+            // le choix de la personne après une erreur de validation (old()).
+            if (!isInit && prevStructure === 'coworker' && memberCb) memberCb.checked = false;
+            orgHidden.value = v === 'np' ? 'non_profit' : (v === 'fp' ? 'for_profit' : '');
+        }
+        prevStructure = v;
+        recompute();
+    };
+
+    if (sel) sel.addEventListener('change', () => applyStructure(false));
+    document.querySelectorAll('input[name="coworker_tarif"]').forEach((r) =>
+        r.addEventListener('change', () => {
+            if (orgHidden && sel && sel.value === 'coworker') orgHidden.value = r.value;
+            recompute();
+        }),
+    );
+    if (memberCb) memberCb.addEventListener('change', recompute);
     const freeCb = document.getElementById('pep_use_free_hour');
     if (freeCb) freeCb.addEventListener('change', recompute);
+
+    // État initial (utile après un rechargement avec old() sur erreur de validation).
+    applyStructure(true);
 }
 
 // Export for use in cancel modal
