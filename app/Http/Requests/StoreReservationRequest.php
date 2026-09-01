@@ -37,6 +37,25 @@ class StoreReservationRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         ContactRules::prepare($this);
+
+        // La Pépite : le menu « Je suis » d'un invité pilote le tarif et le statut
+        // membre. On fixe côté serveur (autorité) plutôt que de faire confiance au JS.
+        if (! $this->user()) {
+            $structure = $this->input('pep_structure');
+            if ($structure === 'coworker') {
+                // Coworkeur·se = membre ; sa grille (NP/lucratif) est le tarif choisi.
+                $this->merge([
+                    'org_type' => in_array($this->input('coworker_tarif'), ['non_profit', 'for_profit'], true)
+                        ? $this->input('coworker_tarif')
+                        : null,
+                    'is_pepite_member' => true,
+                ]);
+            } elseif ($structure === 'np') {
+                $this->merge(['org_type' => 'non_profit']);
+            } elseif ($structure === 'fp') {
+                $this->merge(['org_type' => 'for_profit']);
+            }
+        }
     }
 
     /**
@@ -63,6 +82,9 @@ class StoreReservationRequest extends FormRequest
         // La Pépite : un invité doit créer un compte pour finaliser (statut +
         // mot de passe). L'unicité de l'email est vérifiée dans le contrôleur.
         if (! $this->user()) {
+            $rules['pep_structure'] = ['required', 'in:np,fp,coworker'];
+            // Un·e coworkeur·se doit préciser sa grille (le tarif alimente org_type).
+            $rules['coworker_tarif'] = ['required_if:pep_structure,coworker', 'in:non_profit,for_profit'];
             $rules['org_type'] = ['required', 'in:non_profit,for_profit'];
             $rules['is_pepite_member'] = ['boolean'];
             $rules['password'] = ['required', 'confirmed', Password::min(12)];
@@ -79,6 +101,9 @@ class StoreReservationRequest extends FormRequest
     {
         return [
             'accept_terms.accepted' => __('You must accept the general terms and conditions to book.'),
+            'pep_structure.required' => __('Please tell us who you are (this sets your rate).'),
+            'coworker_tarif.required_if' => __('Please choose your billing rate (non-profit or for-profit).'),
+            'org_type.required' => __('Please choose your billing rate (non-profit or for-profit).'),
         ];
     }
 }

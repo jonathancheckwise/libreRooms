@@ -211,6 +211,25 @@ class MailService
         });
     }
 
+    /**
+     * Accusé de réception envoyé au demandeur d'une demande spéciale (devis).
+     * Sans lui, la personne n'a aucune trace que sa demande est bien partie.
+     */
+    public function sendSpecialRequestConfirmation(SpecialRequest $request, Owner $owner): void
+    {
+        $this->configureMailer($owner);
+
+        Mail::send('emails.special-request-confirmation', [
+            'request' => $request,
+            'owner' => $owner,
+        ], function ($message) use ($owner, $request) {
+            $message->from($owner->mailSettings()->user, $owner->contact->display_name())
+                ->to($this->redirectIfDebug($request->email), $request->name)
+                ->replyTo($owner->contact->email, $owner->contact->display_name())
+                ->subject(__('We have received your request'));
+        });
+    }
+
     protected function configureMailer($owner): void
     {
         // Use centralized mailer configuration from SettingsService

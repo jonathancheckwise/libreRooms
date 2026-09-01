@@ -83,21 +83,46 @@
         <div class="form-group" id="pep-status-group">
             <h3 class="form-group-title">{{ __('Your status (sets your rate)') }}</h3>
             <div class="form-element">
-                <label class="form-element-title">{{ __('Type of organization') }} *</label>
-                <div style="display:flex;flex-direction:column;gap:.4rem">
-                    <label class="flex items-center gap-2"><input type="radio" name="org_type" value="non_profit" @checked(old('org_type')==='non_profit')> {{ __('Non-profit organization') }}</label>
-                    <label class="flex items-center gap-2"><input type="radio" name="org_type" value="for_profit" @checked(old('org_type','for_profit')==='for_profit')> {{ __('For-profit organization') }}</label>
-                </div>
-                @error('org_type')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+                <label class="form-element-title" for="pep-structure">{{ __('I am') }} *</label>
+                <select name="pep_structure" id="pep-structure" class="form-select" required>
+                    <option value="" @selected(! in_array(old('pep_structure'), ['np', 'fp', 'coworker'], true))>{{ __('— Select —') }}</option>
+                    <option value="np" @selected(old('pep_structure')==='np')>{{ __('A non-profit organization') }}</option>
+                    <option value="fp" @selected(old('pep_structure')==='fp')>{{ __('A for-profit organization') }}</option>
+                    <option value="coworker" @selected(old('pep_structure')==='coworker')>{{ __('A La Pépite coworker') }}</option>
+                </select>
+                @error('pep_structure')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
             </div>
-            <div class="form-element mt-2">
+
+            {{-- Coworkeur·se : membre, mais précise sa grille (non lucratif / lucratif) --}}
+            <div class="form-element mt-2" id="pep-coworker-tarif" hidden>
+                <label class="form-element-title">{{ __('Your billing rate') }} *</label>
+                <div style="display:flex;flex-direction:column;gap:.4rem">
+                    <label class="flex items-center gap-2"><input type="radio" name="coworker_tarif" value="non_profit" @checked(old('coworker_tarif')==='non_profit')> {{ __('Non-profit rate') }}</label>
+                    <label class="flex items-center gap-2"><input type="radio" name="coworker_tarif" value="for_profit" @checked(old('coworker_tarif')==='for_profit')> {{ __('For-profit rate') }}</label>
+                </div>
+            </div>
+
+            {{-- org_type effectif, écrit par le JS d'après le menu ci-dessus --}}
+            <input type="hidden" name="org_type" id="pep-org-type" value="{{ old('org_type') }}">
+            @error('org_type')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+
+            {{-- Case membre : masquée pour un·e coworkeur·se (déjà membre) --}}
+            <div class="form-element mt-2" id="pep-member-field">
                 <label class="flex items-center gap-2">
                     <input type="hidden" name="is_pepite_member" value="0">
                     <input type="checkbox" name="is_pepite_member" value="1" id="pep_is_member" @checked(old('is_pepite_member'))>
-                    <span>{{ __('I am a member of La Pépite') }}</span>
+                    <span>{{ __('I am a member of La Pépite') }}<sup>*</sup> <span class="text-gray-600">({{ __('−10% rule') }})</span></span>
                 </label>
                 <small class="text-gray-600 block">{{ __('Members: 1 free hour per month and −10% (verified by the team).') }}</small>
+                <a href="{{ asset('adhesion-pepite.pdf') }}" target="_blank" rel="noopener" class="text-sm" style="color:#2563eb;text-decoration:underline">
+                    <sup>*</sup> {{ __('I want to become a member — see the membership programme') }}
+                </a>
             </div>
+
+            {{-- Note affichée pour un·e coworkeur·se : membre automatique --}}
+            <p id="pep-coworker-note" class="text-sm mt-2" style="color:#059669;font-weight:600" hidden>
+                ✓ {{ __('La Pépite coworker = member: the −10% member rate is applied automatically. Your monthly free hour is then available from your member account.') }}
+            </p>
         </div>
         @endguest
 

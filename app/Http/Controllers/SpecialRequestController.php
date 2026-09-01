@@ -55,7 +55,8 @@ class SpecialRequestController extends Controller
 
         $specialRequest = SpecialRequest::create($validated);
 
-        // Notifie l'équipe (propriétaire de la salle, ou propriétaire par défaut).
+        // Notifie l'équipe (propriétaire de la salle, ou propriétaire par défaut)
+        // et envoie un accusé de réception au demandeur.
         $room = $specialRequest->room;
         $owner = $room?->owner ?? Owner::query()->orderBy('id')->first();
         if ($owner && ! ($room && $room->disable_mailer)) {
@@ -64,6 +65,17 @@ class SpecialRequestController extends Controller
             } catch (\Throwable $e) {
                 report($e); // La demande est enregistrée même si l'email échoue.
             }
+            try {
+                $mail->sendSpecialRequestConfirmation($specialRequest, $owner);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        } else {
+            \Log::warning('Demande spéciale sans notification : aucun propriétaire/mailer.', [
+                'special_request_id' => $specialRequest->id,
+                'room_id' => $room?->id,
+                'disable_mailer' => (bool) $room?->disable_mailer,
+            ]);
         }
 
         return redirect()->route('special-requests.create')
