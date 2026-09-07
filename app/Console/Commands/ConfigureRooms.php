@@ -168,11 +168,11 @@ class ConfigureRooms extends Command
         // (bouton « Demande spéciale »).
         // Format : [nom, [np h/½j/j], [lucratif h/½j/j], [équipements], description]
         $priced = [
-            ['La Petite Sérieuse', [25, 60, 100], [35, 120, 200], ['screen', 'flipchart', 'wifi'],
+            ['La Petite Sérieuse', [25, 60, 100], [35, 120, 240], ['screen', 'flipchart', 'wifi'],
                 "Salle de réunion. Table, chaises, écran/beamer, flip-chart.\n\n24 m² · 6–8 personnes"],
-            ['La Grande Sérieuse', [35, 120, 200], [45, 160, 290], ['screen', 'flipchart', 'wifi'],
+            ['La Grande Sérieuse', [35, 80, 140], [45, 160, 290], ['screen', 'flipchart', 'wifi'],
                 "Grande salle de réunion. Tables, chaises, écran/beamer, flip-chart.\n\n40 m² · 8–10 personnes"],
-            ['La Dynamique', [45, 120, 200], [55, 200, 380], ['screen', 'wifi'],
+            ['La Dynamique', [45, 100, 180], [55, 180, 340], ['screen', 'wifi'],
                 "Espace séances, coworking libre, formations, yoga/pilates.\n\n25 m² · 10–12 personnes"],
             ['La Focus', [20, 50, 90], [30, 100, 180], ['wifi'],
                 "Salle de réunion / coworking silencieux / espaces de travail individuels.\n\n28 m² · 3–5 personnes\n\nPrivatisée par la Pépite les mardis, mercredis et vendredis de 9h à 13h."],
@@ -218,7 +218,7 @@ class ConfigureRooms extends Command
             'bookable' => true, 'booking_optional' => true, 'members_only' => false,
             'description' => "Salon ouvert avec rideau (sans porte), coworking chill, réunion informelle. Tarif réduit — à privilégier par les coworkers Pépite si pas besoin d'équipements ni de confidentialité.\n\n24 m² · 8 personnes",
             'price_mode' => 'fixed',
-            'price_np_hourly' => 15, 'price_np_half_day' => 40, 'price_np_full_day' => 60,
+            'price_np_hourly' => 15, 'price_np_half_day' => 20, 'price_np_full_day' => 60,
             'price_hourly' => 25, 'price_half_day' => 50, 'price_full_day' => 80,
             'equipments' => ['wifi'],
             'allowed_weekdays' => ['1', '2', '3', '4', '5'],
