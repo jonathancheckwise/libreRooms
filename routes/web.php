@@ -147,6 +147,7 @@ Route::controller(RoomController::class)->group(function () {
 // destination des QR codes affichés dans le lieu.
 Route::controller(\App\Http\Controllers\PlanningController::class)->group(function () {
     Route::get('/planning', 'index')->name('planning.index');
+    Route::get('/planning/demo', 'demo')->name('planning.demo');
     Route::get('/planning/events', 'events')->name('planning.events');
     Route::get('/planning/affiches', 'posters')->name('planning.posters');
 });

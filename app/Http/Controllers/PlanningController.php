@@ -45,6 +45,61 @@ class PlanningController extends Controller
     }
 
     /**
+     * Aperçu de DÉMO : mêmes vues, mais avec des salles et un planning
+     * FACTICES (en mémoire, rien en base) pour montrer le rendu quand il y a
+     * des réservations. N'affecte ni les vraies salles ni le planning public.
+     */
+    public function demo(): View
+    {
+        $palette = self::PALETTE;
+
+        $fake = [
+            ['name' => 'Salle Démo', 'status' => 'partial', 'busyCount' => 2, 'occupiedNow' => true],
+            ['name' => 'Atelier Créatif', 'status' => 'free', 'busyCount' => 0, 'occupiedNow' => false],
+            ['name' => 'Grande Salle Événement', 'status' => 'full', 'busyCount' => 3, 'occupiedNow' => true],
+            ['name' => 'Bulle Focus', 'status' => 'partial', 'busyCount' => 1, 'occupiedNow' => false],
+            ['name' => 'Espace Coworking', 'status' => 'free', 'busyCount' => 0, 'occupiedNow' => false],
+            ['name' => 'Petite Réunion', 'status' => 'full', 'busyCount' => 4, 'occupiedNow' => false],
+            ['name' => 'Studio Créa', 'status' => 'closed', 'busyCount' => 0, 'occupiedNow' => false],
+            ['name' => 'Salle Zen', 'status' => 'free', 'busyCount' => 0, 'occupiedNow' => false],
+        ];
+
+        $cards = collect($fake)->map(fn ($r, $i) => array_merge($r, [
+            'room' => (object) ['name' => $r['name'], 'slug' => 'demo-'.$i],
+            'color' => $palette[$i % count($palette)],
+        ]));
+
+        // Faux créneaux répartis sur la semaine courante (lun→ven).
+        $tz = config('app.timezone', 'Europe/Zurich');
+        $monday = Carbon::now($tz)->startOfWeek();
+        $plan = [ // [jour 0=lun, heure début, durée h, index salle]
+            [0, 9, 2, 0], [0, 14, 3, 2], [0, 10, 4, 5],
+            [1, 9, 8, 2], [1, 13, 2, 3], [1, 11, 1, 0],
+            [2, 8, 2, 5], [2, 15, 2, 2],
+            [3, 9, 3, 0], [3, 14, 2, 5], [3, 10, 5, 2],
+            [4, 9, 4, 3], [4, 13, 4, 5],
+        ];
+        $events = [];
+        foreach ($plan as [$d, $h, $dur, $ri]) {
+            $start = $monday->copy()->addDays($d)->setTime($h, 0);
+            $events[] = [
+                'title' => $fake[$ri]['name'],
+                'start' => $start->format('Y-m-d\TH:i:sP'),
+                'end' => $start->copy()->addHours($dur)->format('Y-m-d\TH:i:sP'),
+                'color' => $palette[$ri % count($palette)],
+                'extendedProps' => ['room' => $fake[$ri]['name']],
+            ];
+        }
+
+        return view('planning.index', [
+            'cards' => $cards,
+            'palette' => $palette,
+            'demo' => true,
+            'demoEvents' => $events,
+        ]);
+    }
+
+    /**
      * Feuille d'affiches imprimables : un QR par salle (→ sa fiche) + un QR
      * global (→ le planning), à poser sur les portes et à l'entrée.
      */
