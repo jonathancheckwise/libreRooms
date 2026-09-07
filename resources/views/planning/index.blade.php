@@ -20,6 +20,13 @@
 @section('content')
 <div class="max-w-6xl mx-auto py-8 px-4" id="planning-root">
 
+    @if($demo ?? false)
+        <div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:.6rem 1rem;margin-bottom:1.25rem;font-weight:600">
+            👁️ {{ __('Preview with sample data — these rooms and bookings are fake.') }}
+            <a href="{{ route('planning.index') }}" style="color:#2563eb;font-weight:600">{{ __('See the real planning') }}</a>
+        </div>
+    @endif
+
     <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem">
         <div>
             <h1 style="font-size:1.6rem;font-weight:700;margin:0">{{ __('Rooms planning') }}</h1>
@@ -40,7 +47,7 @@
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;margin-bottom:2rem">
         @foreach($cards as $card)
             @php $room = $card['room']; $c = $statusColor[$card['status']]; @endphp
-            <a href="{{ route('rooms.show', $room) }}"
+            <a href="{{ ($demo ?? false) ? '#' : route('rooms.show', $room) }}"
                class="planning-card" data-slug="{{ $room->slug }}"
                style="display:block;background:#fff;border:1px solid #e5e7eb;border-left:6px solid {{ $c }};border-radius:10px;padding:.85rem 1rem;text-decoration:none;color:inherit">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem">
@@ -109,6 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!el || !window.FullCalendar) return;
 
     var hidden = new Set(); // salles masquées par la légende
+    var DEMO_EVENTS = @js($demoEvents ?? null); // aperçu de démo : events factices
     var calendar = new FullCalendar.Calendar(el, {
         initialView: 'timeGridWeek',
         locale: @js(str_replace('_', '-', app()->getLocale())),
@@ -130,13 +138,11 @@ document.addEventListener('DOMContentLoaded', function () {
             day: @js(__('Day')),
         },
         events: function (info, success, failure) {
+            var keep = function (ev) { return !hidden.has(ev.extendedProps && ev.extendedProps.room); };
+            if (DEMO_EVENTS) { success(DEMO_EVENTS.filter(keep)); return; }
             fetch('{{ route('planning.events') }}')
                 .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    success((data.events || []).filter(function (ev) {
-                        return !hidden.has(ev.extendedProps && ev.extendedProps.room);
-                    }));
-                })
+                .then(function (data) { success((data.events || []).filter(keep)); })
                 .catch(failure);
         },
         eventDisplay: 'block',
