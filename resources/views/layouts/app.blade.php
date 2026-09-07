@@ -32,6 +32,7 @@
         @endauth
 
         <div class="nav-menu" id="nav-menu">
+            <a href="{{ route('planning.index') }}" class="nav-link">{{ __('Planning') }}</a>
             @auth
                 <a href="{{ route('reservations.index') }}" class="nav-link">{{ __('Reservations') }}</a>
                 <a href="{{ route('contacts.index') }}" class="nav-link">{{ __('Contacts') }}</a>
