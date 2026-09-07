@@ -143,6 +143,13 @@ Route::controller(RoomController::class)->group(function () {
     Route::get('/rooms/{room:slug}/available', 'available')->name('rooms.available');
 });
 
+// Planning d'une salle (vue jour, publique) — destination des QR par salle.
+Route::get('/rooms/{room:slug}/planning', [\App\Http\Controllers\PlanningController::class, 'room'])
+    ->name('rooms.planning');
+// Affiche PDF d'une salle (QR à imprimer).
+Route::get('/rooms/{room:slug}/affiche.pdf', [\App\Http\Controllers\PlanningController::class, 'roomPoster'])
+    ->name('rooms.poster');
+
 // Planning public (La Pépite) : vue d'ensemble des salles, sans connexion,
 // destination des QR codes affichés dans le lieu.
 Route::controller(\App\Http\Controllers\PlanningController::class)->group(function () {
@@ -150,6 +157,7 @@ Route::controller(\App\Http\Controllers\PlanningController::class)->group(functi
     Route::get('/planning/demo', 'demo')->name('planning.demo');
     Route::get('/planning/events', 'events')->name('planning.events');
     Route::get('/planning/affiches', 'posters')->name('planning.posters');
+    Route::get('/planning/affiche.pdf', 'globalPoster')->name('planning.poster');
 });
 
 Route::controller(RoomUserController::class)->middleware(['auth', 'verified'])->group(function () {

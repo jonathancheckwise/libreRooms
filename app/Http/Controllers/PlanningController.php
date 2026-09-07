@@ -5,7 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Room;
 use App\Services\Availability\AvailabilityService;
 use Carbon\Carbon;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 /**
@@ -100,8 +105,20 @@ class PlanningController extends Controller
     }
 
     /**
-     * Feuille d'affiches imprimables : un QR par salle (→ sa fiche) + un QR
-     * global (→ le planning), à poser sur les portes et à l'entrée.
+     * Planning d'une salle : vue du jour (grille horaire) directement, avec
+     * navigation jour/semaine. Publique — destination du QR de la salle.
+     */
+    public function room(Room $room): View
+    {
+        abort_unless($room->active && $room->is_public, 404);
+        $room->load(['availabilityWindows', 'unavailabilities', 'owner.contact']);
+
+        return view('rooms.planning', ['room' => $room]);
+    }
+
+    /**
+     * Feuille d'affiches imprimables (HTML) : un QR par salle + un QR global.
+     * Chaque QR renvoie vers son affiche PDF, prête à imprimer.
      */
     public function posters(): View
     {
@@ -111,6 +128,61 @@ class PlanningController extends Controller
             ->get();
 
         return view('planning.posters', ['rooms' => $rooms]);
+    }
+
+    /** Affiche PDF A4 d'une salle (QR → planning de la salle). */
+    public function roomPoster(Room $room): Response
+    {
+        abort_unless($room->active && $room->is_public, 404);
+
+        $html = view('pdf.qr-poster', [
+            'title' => $room->name,
+            'subtitle' => __('La Pépite'),
+            'qr' => $this->qrDataUri(route('rooms.planning', $room)),
+            'hint' => __('Scan to see availability and book this room'),
+        ])->render();
+
+        return $this->streamPdf($html, 'affiche-'.$room->slug.'.pdf');
+    }
+
+    /** Affiche PDF A4 globale (QR → planning de toutes les salles). */
+    public function globalPoster(): Response
+    {
+        $html = view('pdf.qr-poster', [
+            'title' => __('All rooms'),
+            'subtitle' => __('La Pépite'),
+            'qr' => $this->qrDataUri(route('planning.index')),
+            'hint' => __('Scan to see live availability and book'),
+        ])->render();
+
+        return $this->streamPdf($html, 'affiche-planning.pdf');
+    }
+
+    /** QR code d'une URL en data URI PNG (endroid, déjà installé). */
+    private function qrDataUri(string $url): string
+    {
+        return Builder::create()
+            ->writer(new PngWriter())
+            ->data($url)
+            ->size(700)
+            ->margin(16)
+            ->build()
+            ->getDataUri();
+    }
+
+    /** Rend une chaîne HTML en PDF A4 (dompdf) et la renvoie inline. */
+    private function streamPdf(string $html, string $filename): Response
+    {
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return response($dompdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
     }
 
     /**

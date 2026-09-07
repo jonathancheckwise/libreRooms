@@ -1241,5 +1241,9 @@
     "Scan to see live availability and book": "Scannez pour voir la disponibilité en direct et réserver",
     "Scan to see availability and book this room": "Scannez pour voir la disponibilité et réserver cette salle",
     "Preview with sample data — these rooms and bookings are fake.": "Aperçu avec des données d'exemple — ces salles et réservations sont fictives.",
-    "See the real planning": "Voir le vrai planning"
+    "See the real planning": "Voir le vrai planning",
+    "Open printable PDF": "Ouvrir l'affiche PDF à imprimer",
+    "Printable PDF": "Affiche PDF",
+    "All posters": "Toutes les affiches",
+    "Today's schedule. Pick a free slot to book.": "Le planning du jour. Choisissez un créneau libre pour réserver."
 }
