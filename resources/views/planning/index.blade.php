@@ -34,11 +34,13 @@
         </div>
         {{-- QR global : à afficher / imprimer pour l'entrée --}}
         <div style="display:flex;align-items:center;gap:.75rem;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:.75rem 1rem">
-            <div id="planning-qr" data-url="{{ route('planning.index') }}" aria-label="QR"></div>
+            <a id="planning-qr" href="{{ route('planning.poster') }}" target="_blank" rel="noopener"
+               data-url="{{ route('planning.index') }}" title="{{ __('Open printable PDF') }}" style="line-height:0"></a>
             <div style="font-size:.85rem;line-height:1.3">
                 <strong>{{ __('Scan to view') }}</strong><br>
                 <span style="color:#6b7280">{{ __('all rooms availability') }}</span><br>
-                <a href="{{ route('planning.posters') }}" style="color:#2563eb">{{ __('Print door posters') }}</a>
+                <a href="{{ route('planning.poster') }}" target="_blank" rel="noopener" style="color:#2563eb">⬇ {{ __('Printable PDF') }}</a>
+                · <a href="{{ route('planning.posters') }}" style="color:#2563eb">{{ __('All posters') }}</a>
             </div>
         </div>
     </div>

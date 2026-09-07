@@ -21,16 +21,20 @@
         <div class="poster" style="border-color:#C8861F">
             <div class="poster-kicker">{{ __('Entrance') }}</div>
             <div class="poster-title">{{ __('All rooms') }}</div>
-            <div class="poster-qr" data-url="{{ route('planning.index') }}"></div>
+            <a class="poster-qr" href="{{ route('planning.poster') }}" target="_blank" rel="noopener"
+               data-url="{{ route('planning.index') }}" title="{{ __('Open printable PDF') }}"></a>
             <div class="poster-hint">{{ __('Scan to see live availability and book') }}</div>
+            <a class="poster-pdf no-print" href="{{ route('planning.poster') }}" target="_blank" rel="noopener">⬇ {{ __('Printable PDF') }}</a>
         </div>
 
         @foreach($rooms as $room)
             <div class="poster">
                 <div class="poster-kicker">{{ __('La Pépite') }}</div>
                 <div class="poster-title">{{ $room->name }}</div>
-                <div class="poster-qr" data-url="{{ route('rooms.show', $room) }}"></div>
+                <a class="poster-qr" href="{{ route('rooms.poster', $room) }}" target="_blank" rel="noopener"
+                   data-url="{{ route('rooms.planning', $room) }}" title="{{ __('Open printable PDF') }}"></a>
                 <div class="poster-hint">{{ __('Scan to see availability and book this room') }}</div>
+                <a class="poster-pdf no-print" href="{{ route('rooms.poster', $room) }}" target="_blank" rel="noopener">⬇ {{ __('Printable PDF') }}</a>
             </div>
         @endforeach
     </div>
@@ -45,9 +49,11 @@
     }
     .poster-kicker { font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; color:#9ca3af; }
     .poster-title { font-size:1.4rem; font-weight:700; }
-    .poster-qr { margin:.5rem 0; }
+    .poster-qr { margin:.5rem 0; display:block; cursor:pointer; }
     .poster-qr svg { width:180px; height:180px; }
     .poster-hint { font-size:.85rem; color:#6b7280; max-width:220px; }
+    .poster-pdf { font-size:.85rem; color:#2563eb; text-decoration:none; font-weight:600; margin-top:.25rem; }
+    .poster-pdf:hover { text-decoration:underline; }
     @media print {
         .no-print, nav, header, footer { display:none !important; }
         .posters-grid { grid-template-columns:repeat(2,1fr); gap:1.5rem; }

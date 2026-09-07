@@ -123,12 +123,18 @@
                 }
             }
             const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
+                initialView: '{{ $initialView ?? 'dayGridMonth' }}',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    right: 'timeGridDay,timeGridWeek,dayGridMonth'
                 },
+                slotMinTime: '08:00:00',
+                slotMaxTime: '22:00:00',
+                allDaySlot: false,
+                nowIndicator: true,
+                expandRows: true,
+                height: 'auto',
                 buttonText: {
                     today:    "{!! __('today') !!}",
                     month:    '{{ __('month') }}',
