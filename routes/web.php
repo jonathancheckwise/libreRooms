@@ -143,6 +143,14 @@ Route::controller(RoomController::class)->group(function () {
     Route::get('/rooms/{room:slug}/available', 'available')->name('rooms.available');
 });
 
+// Planning public (La Pépite) : vue d'ensemble des salles, sans connexion,
+// destination des QR codes affichés dans le lieu.
+Route::controller(\App\Http\Controllers\PlanningController::class)->group(function () {
+    Route::get('/planning', 'index')->name('planning.index');
+    Route::get('/planning/events', 'events')->name('planning.events');
+    Route::get('/planning/affiches', 'posters')->name('planning.posters');
+});
+
 Route::controller(RoomUserController::class)->middleware(['auth', 'verified'])->group(function () {
     Route::get('/rooms/{room:slug}/users', 'index')->name('rooms.users.index');
     Route::post('/rooms/{room:slug}/users', 'store')->name('rooms.users.store');
