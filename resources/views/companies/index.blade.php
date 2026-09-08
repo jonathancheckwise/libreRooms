@@ -31,6 +31,7 @@
                         <td class="px-4 py-3">{{ $company->users_count }}</td>
                         <td class="px-4 py-3">{{ $company->rooms_count }}</td>
                         <td class="px-4 py-3">
+                            <a href="{{ route('companies.reservations', $company) }}" class="link-primary" title="{{ __('Reservations') }}">📅 {{ __('Reservations') }}</a>
                             <a href="{{ route('companies.edit', $company) }}" class="link-primary">{{ __('Edit') }}</a>
                             <form action="{{ route('companies.destroy', $company) }}" method="POST" class="inline"
                                   onsubmit="return confirm('{{ __('Delete this company?') }}');">

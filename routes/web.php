@@ -227,6 +227,7 @@ Route::controller(UserController::class)->middleware(['auth', 'recently_authenti
 // Entreprises / organisations (La Pépite) — admin global uniquement
 Route::controller(\App\Http\Controllers\CompanyController::class)->middleware(['auth', 'verified', 'global_admin'])->group(function () {
     Route::get('/companies', 'index')->name('companies.index');
+    Route::get('/companies/{company}/reservations', 'reservations')->name('companies.reservations');
     Route::get('/companies/create', 'create')->name('companies.create');
     Route::post('/companies', 'store')->name('companies.store');
     Route::get('/companies/{company}/edit', 'edit')->name('companies.edit');
