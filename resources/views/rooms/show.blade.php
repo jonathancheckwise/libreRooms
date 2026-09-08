@@ -270,23 +270,43 @@
                     </span>
                     <h4 class="text-sm font-medium text-gray-900 mb-2 mt-4">{{ __('Recommended rate:') }}</h4>
                 @endif
-                <div class="space-y-3">
-                    @if($room->price_hourly)
+                {{-- Bi-tarif La Pépite : non lucratif (np) et lucratif, affichés côte à côte. --}}
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs text-gray-500 font-semibold">
+                        <span></span>
+                        <span class="flex gap-3">
+                            <span class="w-24 text-right">{{ __('Non-profit') }}</span>
+                            <span class="w-24 text-right">{{ __('For-profit') }}</span>
+                        </span>
+                    </div>
+                    @if($room->price_np_hourly || $room->price_hourly)
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600">{{ __('Hourly booking') }}</span>
-                            <span class="text-gray-900 font-medium">{{ currency($room->price_hourly, $room->owner) }} / h</span>
+                            <span class="flex gap-3">
+                                <span class="w-24 text-right text-gray-900 font-medium">{{ $room->price_np_hourly ? currency($room->price_np_hourly, $room->owner).' / h' : '—' }}</span>
+                                <span class="w-24 text-right text-gray-900 font-medium">{{ $room->price_hourly ? currency($room->price_hourly, $room->owner).' / h' : '—' }}</span>
+                            </span>
                         </div>
                     @endif
-                    @if($room->price_half_day)
+                    @if($room->price_np_half_day || $room->price_half_day)
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600">{{ __('Half day') }}</span>
-                            <span class="text-gray-900 font-medium">{{ currency($room->price_half_day, $room->owner) }}</span>
+                            <span class="flex gap-3">
+                                <span class="w-24 text-right text-gray-900 font-medium">{{ $room->price_np_half_day ? currency($room->price_np_half_day, $room->owner) : '—' }}</span>
+                                <span class="w-24 text-right text-gray-900 font-medium">{{ $room->price_half_day ? currency($room->price_half_day, $room->owner) : '—' }}</span>
+                            </span>
                         </div>
                     @endif
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600">{{ __('Full day') }}</span>
-                        <span class="text-gray-900 font-medium">{{ currency($room->price_full_day, $room->owner) }}</span>
-                    </div>
+                    @if($room->price_np_full_day || $room->price_full_day)
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">{{ __('Full day') }}</span>
+                            <span class="flex gap-3">
+                                <span class="w-24 text-right text-gray-900 font-medium">{{ $room->price_np_full_day ? currency($room->price_np_full_day, $room->owner) : '—' }}</span>
+                                <span class="w-24 text-right text-gray-900 font-medium">{{ $room->price_full_day ? currency($room->price_full_day, $room->owner) : '—' }}</span>
+                            </span>
+                        </div>
+                    @endif
+                    <p class="text-xs text-gray-500 pt-1">{{ __('Members: −10% on these rates.') }}</p>
                 </div>
 
                 @if($room->discounts->where('active', true)->count() > 0)
