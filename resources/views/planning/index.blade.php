@@ -145,7 +145,10 @@
         ];
     })->values();
 @endphp
-<script>window.PlanningRooms = @json($roomsData);</script>
+<script>
+window.PlanningRooms = @json($roomsData);
+window.PlanningSlots = @json($slots ?? null);
+</script>
 
 @once
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -209,6 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
         height: 'auto',
         selectable: false,
         selectMirror: true,
+        selectOverlap: false,   // interdit de sélectionner par-dessus un créneau occupé
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
@@ -232,11 +236,15 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         select: function (info) {
             if (!focusName) { calendar.unselect(); return; }
+            var startHM = info.allDay ? ((roomByName[focusName] || {}).dayStart || '09:00') : fmtHM(info.start);
+            var endHM = info.allDay ? ((roomByName[focusName] || {}).dayEnd || '17:00') : fmtHM(info.end);
             var durH = info.allDay ? 1 : Math.max(1, Math.round((info.end - info.start) / 3600000));
             selectedSlot = {
                 date: fmtDate(info.start),
-                startHM: info.allDay ? (roomByName[focusName] || {}).dayStart || '09:00' : fmtHM(info.start),
+                startHM: startHM,
+                endHM: endHM,
                 durationH: durH,
+                mode: matchMode(startHM, endHM), // forfait si la sélection = une fenêtre
             };
             updateBookBar();
         },
@@ -246,12 +254,30 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.render();
 
     // --- Réservation depuis le focus ---
+    var SLOTS = window.PlanningSlots || {};
+    var MODE_LABELS = {
+        hourly: @js(__('Hourly')), morning: @js(__('Morning half-day')),
+        afternoon: @js(__('Afternoon half-day')), evening: @js(__('Evening half-day')),
+        full: @js(__('Full day')),
+    };
+    // Si la sélection colle exactement à une fenêtre globale, on prend le forfait.
+    function matchMode(startHM, endHM) {
+        var eq = function (w) { return w && startHM === w[0] && endHM === w[1]; };
+        if (eq(SLOTS.full)) return 'full';
+        if (eq(SLOTS.morning)) return 'morning';
+        if (eq(SLOTS.afternoon)) return 'afternoon';
+        if (eq(SLOTS.evening)) return 'evening';
+        return 'hourly';
+    }
     function bookUrlWith(r, slot) {
+        var mode = slot.mode || 'hourly';
         var u = new URL(r.bookUrl, window.location.origin);
-        u.searchParams.set('mode', 'hourly');
+        u.searchParams.set('mode', mode);
         u.searchParams.set('date', slot.date);
-        u.searchParams.set('start', slot.startHM);
-        u.searchParams.set('duration', slot.durationH || 1);
+        if (mode === 'hourly') {
+            u.searchParams.set('start', slot.startHM);
+            u.searchParams.set('duration', slot.durationH || 1);
+        }
         return u.toString();
     }
     function nextFreeHour(r) {
@@ -280,7 +306,10 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         if (selectedSlot) {
-            bookLabel.textContent = @js(__('Selected slot:')) + ' ' + selectedSlot.date + ' ' + selectedSlot.startHM + ' · ' + selectedSlot.durationH + 'h';
+            var desc = (selectedSlot.mode && selectedSlot.mode !== 'hourly')
+                ? MODE_LABELS[selectedSlot.mode]
+                : (selectedSlot.startHM + ' · ' + selectedSlot.durationH + 'h');
+            bookLabel.textContent = @js(__('Selected slot:')) + ' ' + selectedSlot.date + ' · ' + desc;
             bookBtn.textContent = @js(__('Book this slot'));
             bookBtn.href = bookUrlWith(r, selectedSlot);
         } else {
@@ -307,6 +336,8 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleAllBtn.hidden = true;
         bookBar.hidden = false;
         calendar.setOption('selectable', true);
+        var rr = roomByName[name];
+        calendar.setOption('selectConstraint', { startTime: rr.dayStart || '08:00', endTime: rr.dayEnd || '22:00' });
         calendar.changeView('timeGridDay');
         calendar.today();
         calendar.refetchEvents();
@@ -323,6 +354,7 @@ document.addEventListener('DOMContentLoaded', function () {
         bookBar.hidden = true;
         calendar.unselect();
         calendar.setOption('selectable', false);
+        calendar.setOption('selectConstraint', null);
         calendar.changeView('timeGridWeek');
         calendar.refetchEvents();
     }

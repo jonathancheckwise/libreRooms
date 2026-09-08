@@ -46,7 +46,23 @@ class PlanningController extends Controller
             'cards' => $cards,
             'rooms' => $rooms,
             'palette' => self::PALETTE,
+            'slots' => $this->slotWindows(),
         ]);
+    }
+
+    /** Fenêtres horaires globales (pour mapper une sélection au bon forfait). */
+    private function slotWindows(): array
+    {
+        $s = app(\App\Models\SystemSettings::class);
+        $hm = fn ($v) => substr((string) $v, 0, 5);
+
+        return [
+            'hourly_max' => (int) $s->hourly_max_hours,
+            'morning' => [$hm($s->half_day_morning_start), $hm($s->half_day_morning_end)],
+            'afternoon' => [$hm($s->half_day_afternoon_start), $hm($s->half_day_afternoon_end)],
+            'evening' => [$hm($s->half_day_evening_start), $hm($s->half_day_evening_end)],
+            'full' => [$hm($s->full_day_start), $hm($s->full_day_end)],
+        ];
     }
 
     /**
@@ -101,6 +117,7 @@ class PlanningController extends Controller
             'palette' => $palette,
             'demo' => true,
             'demoEvents' => $events,
+            'slots' => $this->slotWindows(),
         ]);
     }
 
