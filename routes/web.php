@@ -215,6 +215,8 @@ Route::controller(UserController::class)->middleware(['auth', 'verified', 'globa
     Route::get('/users', 'index')->name('users.index');
     Route::get('/users/create', 'create')->name('users.create');
     Route::post('/users', 'store')->name('users.store');
+    // Historique et total des réservations d'un utilisateur (sur une période).
+    Route::get('/users/{user}/reservations', 'reservations')->name('users.reservations');
 });
 Route::controller(UserController::class)->middleware(['auth', 'recently_authenticated', 'verified', 'global_admin'])->group(function () {
     Route::get('/users/{user}/edit', 'edit')->name('users.edit');

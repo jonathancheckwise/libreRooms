@@ -141,6 +141,44 @@ class UserController extends Controller
     /**
      * Display a listing of users (global admin only)
      */
+    /**
+     * Historique des réservations d'un utilisateur (via ses contacts) + total,
+     * sur une période choisie. Sert au suivi / à la facturation (bexio à venir).
+     */
+    public function reservations(User $user, Request $request): View
+    {
+        $from = $request->date('from');
+        $to = $request->date('to');
+        $contactIds = $user->contacts()->pluck('contacts.id');
+
+        $query = \App\Models\Reservation::with(['room', 'events', 'tenant'])
+            ->whereIn('tenant_id', $contactIds);
+        if ($from) {
+            $query->whereHas('events', fn ($e) => $e->whereDate('start', '>=', $from));
+        }
+        if ($to) {
+            $query->whereHas('events', fn ($e) => $e->whereDate('start', '<=', $to));
+        }
+
+        $reservations = $query->get()
+            ->sortByDesc(fn ($r) => optional($r->events->first())->start)
+            ->values();
+
+        // Total facturable = réservations non annulées.
+        $total = $reservations
+            ->where('status', '!=', \App\Enums\ReservationStatus::CANCELLED)
+            ->sum(fn ($r) => $r->finalPrice());
+
+        return view('users.reservations', [
+            'user' => $user,
+            'reservations' => $reservations,
+            'total' => $total,
+            'from' => $request->input('from'),
+            'to' => $request->input('to'),
+            'currency' => app(\App\Models\SystemSettings::class)->currency ?? 'CHF',
+        ]);
+    }
+
     public function index(Request $request): View
     {
         $query = User::with(['contacts', 'owners']);
