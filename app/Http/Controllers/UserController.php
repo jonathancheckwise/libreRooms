@@ -65,8 +65,11 @@ class UserController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            // Determine redirect URL
-            $redirectUrl = $intendedUrl ?: route('rooms.index');
+            // Determine redirect URL. L'équipe La Pépite (admins) arrive sur le
+            // planning ; les autres gardent la liste des salles.
+            $redirectUrl = $intendedUrl ?: (Auth::user()->is_global_admin
+                ? route('planning.index')
+                : route('rooms.index'));
 
             // Use query parameter for flash message (survives session regeneration)
             return redirect($redirectUrl.(str_contains($redirectUrl, '?') ? '&' : '?').'login_success=1');
