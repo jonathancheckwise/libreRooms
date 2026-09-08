@@ -1245,5 +1245,16 @@
     "Open printable PDF": "Ouvrir l'affiche PDF à imprimer",
     "Printable PDF": "Affiche PDF",
     "All posters": "Toutes les affiches",
-    "Today's schedule. Pick a free slot to book.": "Le planning du jour. Choisissez un créneau libre pour réserver."
+    "Today's schedule. Pick a free slot to book.": "Le planning du jour. Choisissez un créneau libre pour réserver.",
+    "See all": "Voir tout",
+    "See all rooms": "Voir toutes les salles",
+    "Deselect all": "Tout désélectionner",
+    "Select all": "Tout sélectionner",
+    "Book the next slot": "Réserver le prochain créneau",
+    "Book this slot": "Réserver ce créneau",
+    "Selected slot:": "Créneau sélectionné :",
+    "Next available:": "Prochaine dispo :",
+    "Pick a slot in the calendar to book it.": "Sélectionnez un créneau dans le calendrier pour le réserver.",
+    "This room is on request (quote).": "Cette salle est sur demande (devis).",
+    "Make a request": "Faire une demande"
 }

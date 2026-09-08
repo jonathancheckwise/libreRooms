@@ -534,12 +534,40 @@
                 d.value = String(s.value).slice(0, 10);
             }
 
+            // Pré-remplissage depuis l'URL (arrivée depuis le planning :
+            // ?mode=hourly&date=AAAA-MM-JJ&start=HH:MM&duration=n). Pré-sélectionne
+            // le créneau pour que la personne n'ait qu'à valider.
+            function pepPrefillFromUrl(){
+                const p = new URLSearchParams(window.location.search);
+                const wanted = ['mode','date','start','duration'];
+                if (!wanted.some(k => p.has(k))) return;
+                const mode = p.get('mode') || 'hourly';
+                const radio = document.querySelector('input[name="pep_mode"][value="'+mode+'"]');
+                if (radio && !radio.checked) { radio.checked = true; radio.dispatchEvent(new Event('change', {bubbles:true})); }
+                const date = p.get('date');
+                if (date && date >= (document.getElementById('pep-date')?.min || '')) {
+                    const d = dateEl();
+                    if (d) { d.value = date; d.dispatchEvent(new Event('change', {bubbles:true})); }
+                }
+                if (mode === 'hourly') {
+                    const ss = document.getElementById('pep-hour-start');
+                    const ds = document.getElementById('pep-hour-duration');
+                    const start = p.get('start'), dur = p.get('duration');
+                    if (ss && start) ss.value = start;
+                    if (ds && dur) ds.value = String(dur);
+                }
+                apply();
+                const grp = document.getElementById('pep-mode-group');
+                if (grp) grp.scrollIntoView({behavior:'smooth', block:'center'});
+            }
+
             document.addEventListener('DOMContentLoaded', function(){
                 pepPrefillDate();
                 initHourly();
                 pepCalInit();
                 document.querySelectorAll('input[name="pep_mode"]').forEach(r=>r.addEventListener('change', apply));
                 const d = dateEl(); if (d) d.addEventListener('change', apply);
+                pepPrefillFromUrl();
             });
         })();
         </script>
