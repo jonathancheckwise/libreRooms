@@ -598,6 +598,18 @@
             ])
         @endif
 
+        {{-- 8bis. Réservation interne gratuite (La Pépite) — responsables uniquement --}}
+        @if($isAdmin)
+            <div class="form-group" id="pep-free-group">
+                <label class="flex items-center gap-2">
+                    <input type="hidden" name="is_free" value="0">
+                    <input type="checkbox" name="is_free" value="1" id="pep_is_free" @checked(old('is_free', $reservation?->is_free))>
+                    <span>{{ __('Internal booking (free)') }}</span>
+                </label>
+                <small class="text-gray-600 block">{{ __('Team use: no charge. Forces the total to 0.') }}</small>
+            </div>
+        @endif
+
         {{-- 9. Price summary --}}
         @include('reservations.partials.price-summary', [
             'discounts' => $room->discounts->where('active', true),

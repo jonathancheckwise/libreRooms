@@ -1266,5 +1266,7 @@
     "bexio / Stripe billing reconciliation coming soon.": "Réconciliation de facturation bexio / Stripe à venir.",
     "Members: −10% on these rates.": "Membres : −10 % sur ces tarifs.",
     "Registered user": "Utilisateur inscrit",
-    "External (no account)": "Externe (sans compte)"
+    "External (no account)": "Externe (sans compte)",
+    "Internal booking (free)": "Réservation interne (gratuite)",
+    "Team use: no charge. Forces the total to 0.": "Usage équipe : sans facturation. Force le total à 0."
 }

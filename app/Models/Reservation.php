@@ -30,6 +30,7 @@ class Reservation extends Model
         'discounts',
         'special_discount',
         'donation',
+        'is_free',
         'custom_message',
         'confirmed_at',
         'confirmed_by',
@@ -69,6 +70,7 @@ class Reservation extends Model
         'sum_discounts' => 'decimal:2',
         'special_discount' => 'decimal:2',
         'donation' => 'decimal:2',
+        'is_free' => 'boolean',
         'confirmed_at' => 'datetime',
         'cancelled_at' => 'datetime',
             'terms_accepted_at' => 'datetime',
@@ -141,6 +143,11 @@ class Reservation extends Model
 
     public function finalPrice(): float
     {
+        // Réservation interne gratuite (poussée par un responsable) : 0.
+        if ($this->is_free) {
+            return 0.0;
+        }
+
         if ($this->room->price_mode === \App\Enums\PriceModes::FREE) {
             return (float) $this->donation;
         }
