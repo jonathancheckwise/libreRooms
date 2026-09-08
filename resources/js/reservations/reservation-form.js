@@ -531,7 +531,14 @@ function updateTotalCost() {
         if (member_note) hideDOM(member_note);
     }
 
-    const final_cost = initPrice - sumDiscounts - freeAmount - memberDiscount - (special_discount || 0) + (donation || 0);
+    let final_cost = initPrice - sumDiscounts - freeAmount - memberDiscount - (special_discount || 0) + (donation || 0);
+
+    // Réservation interne gratuite (responsable) : le total est forcé à 0.
+    const internalFreeCb = document.getElementById('pep_is_free');
+    if (internalFreeCb && internalFreeCb.checked) {
+        final_cost = 0;
+    }
+
     document.getElementById("final-cost").textContent = currency(final_cost);
 }
 
@@ -626,6 +633,13 @@ function initUpdateSpecial() {
     const specialDiscountInput = document.getElementById("special_discount");
     if (specialDiscountInput) {
         specialDiscountInput.addEventListener('input', () => {
+            updateTotalCost();
+        });
+    }
+    // Réservation interne gratuite (responsable) : recalcule à la coche.
+    const freeCb = document.getElementById("pep_is_free");
+    if (freeCb) {
+        freeCb.addEventListener('change', () => {
             updateTotalCost();
         });
     }

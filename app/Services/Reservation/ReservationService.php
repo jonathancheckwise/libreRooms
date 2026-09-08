@@ -85,11 +85,15 @@ class ReservationService
             $discountsData[] = $memberDiscount;
         }
 
+        // Réservation interne gratuite (La Pépite) : réservée aux responsables
+        // (usage équipe, sans facturation). Le serveur fait autorité.
+        $isFree = $canConfirm && $request->boolean('is_free');
+
         // Use transaction for DB + CalDAV operations
         $reservation = DB::transaction(function () use (
             $room, $contact, $status, $isConfirmed, $user, $request,
             $eventsWithPrices, $fullPrice, $sumDiscounts, $discountsData,
-            $orgType, $isMember, $freeMinutes
+            $orgType, $isMember, $freeMinutes, $isFree
         ) {
             // Create Reservation
             $reservation = Reservation::create([
@@ -108,6 +112,7 @@ class ReservationService
                 'discounts' => $discountsData,
                 'special_discount' => $request->input('special_discount'),
                 'donation' => $request->input('donation'),
+                'is_free' => $isFree,
                 'custom_message' => $request->input('custom_message'),
                 'confirmed_at' => $isConfirmed ? now() : null,
                 'confirmed_by' => $isConfirmed ? $user?->id : null,
@@ -409,9 +414,12 @@ class ReservationService
             $discountsData[] = $memberDiscount;
         }
 
+        // Réservation interne gratuite : réservée aux responsables.
+        $isFree = (bool) auth()->user()?->can('manageReservations', $room) && $request->boolean('is_free');
+
         DB::transaction(function () use (
             $reservation, $contact, $room, $request,
-            $eventsWithPrices, $fullPrice, $sumDiscounts, $discountsData, $wasCancelled, $confirm, $freeMinutes
+            $eventsWithPrices, $fullPrice, $sumDiscounts, $discountsData, $wasCancelled, $confirm, $freeMinutes, $isFree
         ) {
             // Update Reservation
             $reservation->update([
@@ -425,6 +433,7 @@ class ReservationService
                 'free_minutes_applied' => $freeMinutes,
                 'special_discount' => $request->input('special_discount'),
                 'donation' => $request->input('donation'),
+                'is_free' => $isFree,
                 'custom_message' => $request->input('custom_message'),
             ]);
 
