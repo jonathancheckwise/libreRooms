@@ -128,7 +128,7 @@
                                 $linkedView = $view === 'all' ? 'admin' : 'mine';
                             @endphp
                             <div class="action-group">
-                                <a href="{{ route('reservations.index', ['view' => $linkedView, 'tenant_id' => $contact->id]) }}" class="link-primary" title="{{ __('Reservations') }}">
+                                <a href="{{ route('contacts.reservations', $contact) }}" class="link-primary" title="{{ __('Reservations') }}">
                                     <x-action-icon action="reservations" />
                                 </a>
                                 <a href="{{ route('invoices.index', ['view' => $linkedView, 'tenant_id' => $contact->id]) }}" class="link-primary" title="{{ __('Invoices') }}">

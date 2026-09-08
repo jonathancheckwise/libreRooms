@@ -114,6 +114,46 @@ class ContactController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
+    /**
+     * Historique des réservations d'un contact (résa → tenant direct) + total,
+     * sur une période. Même vue que par utilisateur / entreprise ; utile pour
+     * les externes one-shot qui n'ont pas de compte.
+     */
+    public function reservations(Contact $contact, Request $request): View
+    {
+        if (! auth()->user()->canAccessContact($contact)) {
+            abort(403, __('You do not have access to this contact.'));
+        }
+
+        $from = $request->date('from');
+        $to = $request->date('to');
+
+        $query = $contact->reservations()->with(['room', 'events']);
+        if ($from) {
+            $query->whereHas('events', fn ($e) => $e->whereDate('start', '>=', $from));
+        }
+        if ($to) {
+            $query->whereHas('events', fn ($e) => $e->whereDate('start', '<=', $to));
+        }
+
+        $reservations = $query->get()
+            ->sortByDesc(fn ($r) => optional($r->events->first())->start)
+            ->values();
+
+        $total = $reservations
+            ->where('status', '!=', \App\Enums\ReservationStatus::CANCELLED)
+            ->sum(fn ($r) => $r->finalPrice());
+
+        return view('contacts.reservations', [
+            'contact' => $contact,
+            'reservations' => $reservations,
+            'total' => $total,
+            'from' => $request->input('from'),
+            'to' => $request->input('to'),
+            'currency' => app(\App\Models\SystemSettings::class)->currency ?? 'CHF',
+        ]);
+    }
+
     public function edit(Contact $contact): View
     {
         $user = auth()->user();

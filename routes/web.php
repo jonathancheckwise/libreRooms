@@ -202,6 +202,7 @@ Route::controller(OwnerUserController::class)->middleware(['auth', 'verified'])-
 
 Route::controller(ContactController::class)->middleware(['auth', 'verified'])->group(function () {
     Route::get('/contacts', 'index')->name('contacts.index');
+    Route::get('/contacts/{contact}/reservations', 'reservations')->name('contacts.reservations');
     Route::get('/contacts/create', 'create')->name('contacts.create');
     Route::post('/contacts', 'store')->name('contacts.store');
     Route::get('/contacts/{contact}/edit', 'edit')->name('contacts.edit');

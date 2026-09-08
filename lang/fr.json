@@ -1264,5 +1264,7 @@
     "No reservation for this period.": "Aucune réservation sur cette période.",
     ":count reservation|:count reservations": ":count réservation|:count réservations",
     "bexio / Stripe billing reconciliation coming soon.": "Réconciliation de facturation bexio / Stripe à venir.",
-    "Members: −10% on these rates.": "Membres : −10 % sur ces tarifs."
+    "Members: −10% on these rates.": "Membres : −10 % sur ces tarifs.",
+    "Registered user": "Utilisateur inscrit",
+    "External (no account)": "Externe (sans compte)"
 }
