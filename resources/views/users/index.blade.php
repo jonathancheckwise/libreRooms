@@ -127,6 +127,7 @@
                         </td>
                         <td class="px-4 py-3 text-right text-sm font-medium">
                             <div class="action-group">
+                                <a href="{{ route('users.reservations', $user) }}" class="link-primary" title="{{ __('Reservations') }}">📅</a>
                                 <a href="{{ route('users.edit', [$user] + redirect_back_params()) }}" class="link-primary" title="{{ __('Edit') }}">
                                     <x-action-icon action="edit" />
                                 </a>

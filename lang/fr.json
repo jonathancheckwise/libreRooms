@@ -1257,5 +1257,11 @@
     "Pick a slot in the calendar to book it.": "Sélectionnez un créneau dans le calendrier pour le réserver.",
     "This room is on request (quote).": "Cette salle est sur demande (devis).",
     "Make a request": "Faire une demande",
-    "Requests to review": "Demandes à valider"
+    "Requests to review": "Demandes à valider",
+    "From": "Du",
+    "To": "Au",
+    "Subject": "Objet",
+    "No reservation for this period.": "Aucune réservation sur cette période.",
+    ":count reservation|:count reservations": ":count réservation|:count réservations",
+    "bexio / Stripe billing reconciliation coming soon.": "Réconciliation de facturation bexio / Stripe à venir."
 }
