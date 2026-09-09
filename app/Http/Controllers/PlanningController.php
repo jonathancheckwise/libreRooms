@@ -32,8 +32,7 @@ class PlanningController extends Controller
         $rooms = Room::where('active', true)
             ->where('is_public', true)
             ->with(['availabilityWindows', 'unavailabilities'])
-            ->orderByRaw('CASE WHEN bookable = 0 THEN 2 WHEN members_only = 1 THEN 1 ELSE 0 END')
-            ->orderBy('name')
+            ->pepiteOrder()
             ->get();
 
         $cards = $rooms->values()->map(function (Room $room, int $i) use ($service) {
@@ -142,8 +141,7 @@ class PlanningController extends Controller
     {
         $rooms = Room::where('active', true)
             ->where('is_public', true)
-            ->orderByRaw('CASE WHEN bookable = 0 THEN 2 WHEN members_only = 1 THEN 1 ELSE 0 END')
-            ->orderBy('name')
+            ->pepiteOrder()
             ->get();
 
         return view('planning.posters', ['rooms' => $rooms]);
@@ -214,8 +212,7 @@ class PlanningController extends Controller
         $rooms = Room::where('active', true)
             ->where('is_public', true)
             ->with(['unavailabilities'])
-            ->orderByRaw('CASE WHEN bookable = 0 THEN 2 WHEN members_only = 1 THEN 1 ELSE 0 END')
-            ->orderBy('name')
+            ->pepiteOrder()
             ->get();
 
         $from = now('UTC')->copy()->subDay();
