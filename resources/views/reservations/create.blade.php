@@ -672,7 +672,7 @@
             $pepTermsUrl = $pepTerms->terms_url;
             $pepTermsVersion = $pepTerms->terms_version;
         @endphp
-        <div class="form-group" id="pep-terms-group" @if($pepTermsUrl) data-terms-url="{{ $pepTermsUrl }}" @endif>
+        <div class="form-group" id="pep-terms-group" @if($pepTermsUrl) data-terms-url="{{ $pepTermsUrl }}" data-terms-version="{{ $pepTermsVersion }}" @endif>
             <label class="flex items-start gap-2" style="cursor:pointer">
                 <input type="checkbox" name="accept_terms" id="pep-accept-terms" value="1" required @checked(old('accept_terms')) style="margin-top:.25rem">
                 <span>
@@ -703,7 +703,15 @@
             var caseCG = document.getElementById('pep-accept-terms');
             var lien = document.getElementById('pep-terms-link');
             var indice = document.getElementById('pep-terms-hint');
-            var ouvertes = caseCG.checked;          // retour d'erreur : déjà consultées
+
+            // Mémoire navigateur : si la personne a déjà ouvert CETTE version des
+            // CG, on ne l'oblige plus à les rouvrir (localStorage par version).
+            var cle = 'pep_terms_opened_' + (groupe.dataset.termsVersion || 'na');
+            function memoriser() { try { localStorage.setItem(cle, '1'); } catch (e) {} }
+            var dejaVues = false;
+            try { dejaVues = localStorage.getItem(cle) === '1'; } catch (e) {}
+
+            var ouvertes = caseCG.checked || dejaVues;   // erreur passée OU déjà consultées
 
             function dire(texte) {
                 indice.textContent = texte;
@@ -712,6 +720,7 @@
             if (lien) {
                 lien.addEventListener('click', function () {
                     ouvertes = true;
+                    memoriser();
                     dire('');
                 });
             }
@@ -723,6 +732,7 @@
                 e.preventDefault();                 // la case ne se coche pas encore
                 window.open(url, '_blank', 'noopener');
                 ouvertes = true;
+                memoriser();
                 dire(@json(__('The general terms have just opened in a new tab. Read them, then tick the box.')));
             });
         })();

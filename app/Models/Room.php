@@ -20,6 +20,19 @@ class Room extends Model
     /** @use HasFactory<\Database\Factories\RoomFactory> */
     use HasFactory;
 
+    /**
+     * Ordre d'affichage La Pépite : d'abord les salles réservables par des
+     * externes, puis celles réservées aux membres, puis les non réservables ;
+     * à l'intérieur, par nom — mais L'Atelier et La Focus sont placées juste
+     * après La Petite Sérieuse (demande de l'équipe).
+     */
+    public function scopePepiteOrder($query)
+    {
+        return $query
+            ->orderByRaw('CASE WHEN bookable = 0 THEN 2 WHEN members_only = 1 THEN 1 ELSE 0 END')
+            ->orderByRaw("CASE slug WHEN 'latelier' THEN 'La Petite Sérieuse~1' WHEN 'la-focus' THEN 'La Petite Sérieuse~2' ELSE name END");
+    }
+
     protected $fillable = [
         'owner_id',
         'name',
