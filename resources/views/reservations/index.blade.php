@@ -167,6 +167,10 @@
                                 @if($canEdit)
                                     <a href="{{ route('reservations.edit', [$reservation] + redirect_back_params()) }}" class="link-primary" title="{{ __('Edit') }}"><x-action-icon action="edit" /></a>
                                 @endif
+                                <form method="POST" action="{{ route('reservations.duplicate', $reservation) }}" class="inline" onclick="event.stopPropagation()">
+                                    @csrf
+                                    <button type="submit" class="link-primary" title="{{ __('Duplicate') }}" style="background:none;border:none;cursor:pointer;font-size:1.1rem;line-height:1">⧉</button>
+                                </form>
 
                                 @if($canCancel)
                                     <button type="button"
