@@ -43,12 +43,16 @@ class ReservationService
         $isConfirmed = $action === 'confirm' && $canConfirm;
         $status = $isConfirmed ? ReservationStatus::CONFIRMED : ReservationStatus::PENDING;
 
-        // Snapshot du statut du réservant (fige le tarif appliqué).
-        $orgType = $user?->org_type;
-        $isMember = (bool) $user?->is_pepite_member;
+        // Snapshot du statut du réservant (fige le tarif appliqué). Quand un
+        // responsable pousse une résa pour quelqu'un, le tarif (dont la remise
+        // membre −10 %) reflète la CIBLE — le contact — et NON l'admin.
+        $isAdminBooking = $user && $user->can('manageReservations', $room);
+        $targetUser = $isAdminBooking ? $contact->users()->first() : $user;
+        $orgType = $targetUser?->org_type;
+        $isMember = (bool) $targetUser?->is_pepite_member;
 
-        // Heure offerte : membre OU responsable (admin), même s'il n'est pas coché « membre ».
-        $canFreeHour = $isMember || (bool) $user?->can('manageReservations', $room);
+        // Heure offerte = bénéfice membre → basé sur la cible (pas sur l'admin).
+        $canFreeHour = $isMember;
 
         // Calculate prices first (we need full_price before creating reservation)
         [$eventsWithPrices, $fullPrice, $hourlyMinutes, $totalMinutes] = $this->getEventsWithPrices($request->input('events'), $room, $orgType);
@@ -68,7 +72,7 @@ class ReservationService
         $freeAmount = 0.0;
         if ($canFreeHour && $request->boolean('use_free_hour') && $totalMinutes > 0 && ! empty($eventsWithPrices)) {
             $monthAnchor = $eventsWithPrices[0]['start']->copy();
-            $available = $this->pricing->memberFreeMinutesRemaining($user?->id, $monthAnchor);
+            $available = $this->pricing->memberFreeMinutesRemaining($targetUser?->id, $monthAnchor);
             [$freeMinutes, $freeLine] = $this->pricing->memberFreeHour(
                 $canFreeHour, $this->pricing->hourlyRate($room, $orgType), $totalMinutes, $available, $fullPrice
             );
@@ -88,12 +92,16 @@ class ReservationService
         // Réservation interne gratuite (La Pépite) : réservée aux responsables
         // (usage équipe, sans facturation). Le serveur fait autorité.
         $isFree = $canConfirm && $request->boolean('is_free');
+        // Montant personnalisé fixé par un responsable (override du calcul).
+        $adminPrice = ($canConfirm && $request->filled('admin_price'))
+            ? $request->input('admin_price')
+            : null;
 
         // Use transaction for DB + CalDAV operations
         $reservation = DB::transaction(function () use (
             $room, $contact, $status, $isConfirmed, $user, $request,
             $eventsWithPrices, $fullPrice, $sumDiscounts, $discountsData,
-            $orgType, $isMember, $freeMinutes, $isFree
+            $orgType, $isMember, $freeMinutes, $isFree, $adminPrice
         ) {
             // Create Reservation
             $reservation = Reservation::create([
@@ -113,6 +121,7 @@ class ReservationService
                 'special_discount' => $request->input('special_discount'),
                 'donation' => $request->input('donation'),
                 'is_free' => $isFree,
+                'admin_price' => $adminPrice,
                 'custom_message' => $request->input('custom_message'),
                 'confirmed_at' => $isConfirmed ? now() : null,
                 'confirmed_by' => $isConfirmed ? $user?->id : null,
@@ -160,10 +169,8 @@ class ReservationService
                 CustomFieldValue::fromReservationAndField($reservation, $customField, $value);
             }
 
-            // Create invoice if confirmed
-            if ($isConfirmed) {
-                $this->createInvoice($reservation);
-            }
+            // La Pépite : facturation déléguée à bexio → on ne génère PAS de
+            // facture à la confirmation (createInvoice volontairement omis).
 
             return $reservation;
         });
@@ -176,18 +183,23 @@ class ReservationService
             'invoice',
         ]);
 
+        // La Pépite : quand un responsable pousse une résa confirmée, l'email de
+        // confirmation au client est optionnel (case cochée par défaut).
+        $notifyClient = ! $request->has('send_confirmation_email')
+            || $request->boolean('send_confirmation_email');
+
         // WebDAV uploads and emails (deferred, after response)
-        defer(function () use ($room, $reservation, $isConfirmed) {
+        defer(function () use ($room, $reservation, $isConfirmed, $notifyClient) {
             if ($room->usesWebdav()) {
                 $this->uploadPrebookPdf($reservation);
                 if ($isConfirmed && $reservation->invoice) {
                     $this->uploadInvoicePdf($reservation->invoice);
                 }
             }
-            // Send appropriate email
-            if ($isConfirmed && ! $room->disable_mailer) {
+            // Send appropriate email.
+            if ($isConfirmed && ! $room->disable_mailer && $notifyClient) {
                 $this->mail->sendConfirmation($reservation);
-            } elseif (! $room->disable_mailer) {
+            } elseif (! $isConfirmed && ! $room->disable_mailer) {
                 $this->mail->sendNewReservation($reservation);
             }
         });
@@ -231,8 +243,7 @@ class ReservationService
 
             // Caldav Events already synced in updateReservationData
 
-            // Create invoice
-            $this->createInvoice($reservation);
+            // La Pépite : pas de facture à la confirmation (facturation bexio).
         });
 
         // Reload with invoice
@@ -414,12 +425,14 @@ class ReservationService
             $discountsData[] = $memberDiscount;
         }
 
-        // Réservation interne gratuite : réservée aux responsables.
-        $isFree = (bool) auth()->user()?->can('manageReservations', $room) && $request->boolean('is_free');
+        // Réservation interne gratuite + montant personnalisé : responsables.
+        $canManageNow = (bool) auth()->user()?->can('manageReservations', $room);
+        $isFree = $canManageNow && $request->boolean('is_free');
+        $adminPrice = ($canManageNow && $request->filled('admin_price')) ? $request->input('admin_price') : null;
 
         DB::transaction(function () use (
             $reservation, $contact, $room, $request,
-            $eventsWithPrices, $fullPrice, $sumDiscounts, $discountsData, $wasCancelled, $confirm, $freeMinutes, $isFree
+            $eventsWithPrices, $fullPrice, $sumDiscounts, $discountsData, $wasCancelled, $confirm, $freeMinutes, $isFree, $adminPrice
         ) {
             // Update Reservation
             $reservation->update([
@@ -434,6 +447,7 @@ class ReservationService
                 'special_discount' => $request->input('special_discount'),
                 'donation' => $request->input('donation'),
                 'is_free' => $isFree,
+                'admin_price' => $adminPrice,
                 'custom_message' => $request->input('custom_message'),
             ]);
 

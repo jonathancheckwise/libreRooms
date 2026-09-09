@@ -197,7 +197,9 @@ class ReservationController extends Controller
 
         // Salle « sur demande » (La Pépite) : pas de réservation directe, on
         // redirige vers le formulaire de demande spéciale / devis.
-        if ($room->on_request) {
+        // Salle « sur demande » : le public passe par le devis, mais un
+        // responsable peut réserver directement un créneau (il fixe le montant).
+        if ($room->on_request && ! auth()->user()?->can('manageReservations', $room)) {
             return redirect()->route('special-requests.create', ['room' => $room->id]);
         }
 

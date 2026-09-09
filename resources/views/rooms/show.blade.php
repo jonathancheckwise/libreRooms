@@ -30,8 +30,9 @@
             @if($room->active)
                 <!-- There is a bypass for global_admins in can directives, we need to check that the room is active -->
                 @can('reserve', $room)
-                    @if($room->on_request)
-                        {{-- Salle « sur demande » (La Pépite) : pas de réservation directe, on passe par le devis --}}
+                    @if($room->on_request && ! auth()->user()?->can('manageReservations', $room))
+                        {{-- Salle « sur demande » (La Pépite) : le public passe par le devis ;
+                             un responsable réserve directement (voir le @else). --}}
                         <a href="{{ route('special-requests.create', ['room' => $room->id]) }}" class="page-submenu-item page-submenu-action">
                             {{ __('Special request') }}
                         </a>

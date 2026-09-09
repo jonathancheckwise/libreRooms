@@ -132,7 +132,9 @@
     $roomsData = ($cards ?? collect())->map(function ($card) use ($demo) {
         $r = $card['room'];
         $isDemo = $demo ?? false;
-        $onRequest = ! $isDemo && (bool) data_get($r, 'on_request');
+        // Un responsable peut réserver directement une salle « sur demande ».
+        $canManage = ! $isDemo && (bool) auth()->user()?->can('manageReservations', $r);
+        $onRequest = ! $isDemo && (bool) data_get($r, 'on_request') && ! $canManage;
         return [
             'name' => data_get($r, 'name'),
             'slug' => data_get($r, 'slug'),

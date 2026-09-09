@@ -607,6 +607,14 @@
                     <span>{{ __('Internal booking (free)') }}</span>
                 </label>
                 <small class="text-gray-600 block">{{ __('Team use: no charge. Forces the total to 0.') }}</small>
+
+                <div class="form-element mt-3">
+                    <label for="admin_price" class="form-element-title">{{ __('Custom amount (CHF)') }}</label>
+                    <input type="number" step="0.05" min="0" name="admin_price" id="admin_price"
+                           value="{{ old('admin_price', $reservation?->admin_price !== null ? number_format((float) $reservation->admin_price, 2, '.', '') : '') }}"
+                           placeholder="{{ __('Leave empty for the calculated rate') }}">
+                    <small class="text-gray-600 block">{{ __('Sets the total freely (e.g. on-request rooms). Leave empty to keep the calculated price.') }}</small>
+                </div>
             </div>
         @endif
 
@@ -737,6 +745,18 @@
             });
         })();
         </script>
+        @endif
+
+        {{-- Responsable : envoyer (ou non) l'email de confirmation au client --}}
+        @if($isAdmin && $isCreate)
+            <div class="form-group" id="pep-send-email-group">
+                <label class="flex items-center gap-2">
+                    <input type="hidden" name="send_confirmation_email" value="0">
+                    <input type="checkbox" name="send_confirmation_email" value="1" id="pep_send_email" checked>
+                    <span>{{ __('Send the confirmation email to the client') }}</span>
+                </label>
+                <small class="text-gray-600 block">{{ __('Uncheck if it was already arranged directly (no email will be sent).') }}</small>
+            </div>
         @endif
 
         <div class="btn-group">
