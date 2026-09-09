@@ -79,7 +79,10 @@ class RoomController extends Controller
             $query->where('owner_id', $request->input('owner_id'));
         }
 
-        $query->orderBy('name', 'asc');
+        // Ordre La Pépite : d'abord les salles réservables par des externes,
+        // puis celles réservées aux membres, puis les non réservables. Puis nom.
+        $query->orderByRaw('CASE WHEN bookable = 0 THEN 2 WHEN members_only = 1 THEN 1 ELSE 0 END')
+            ->orderBy('name', 'asc');
         $rooms = $query->paginate(15)->appends($request->except('page'));
 
         return view('rooms.index', [
