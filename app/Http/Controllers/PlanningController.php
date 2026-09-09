@@ -32,6 +32,7 @@ class PlanningController extends Controller
         $rooms = Room::where('active', true)
             ->where('is_public', true)
             ->with(['availabilityWindows', 'unavailabilities'])
+            ->orderByRaw('CASE WHEN bookable = 0 THEN 2 WHEN members_only = 1 THEN 1 ELSE 0 END')
             ->orderBy('name')
             ->get();
 
@@ -141,6 +142,7 @@ class PlanningController extends Controller
     {
         $rooms = Room::where('active', true)
             ->where('is_public', true)
+            ->orderByRaw('CASE WHEN bookable = 0 THEN 2 WHEN members_only = 1 THEN 1 ELSE 0 END')
             ->orderBy('name')
             ->get();
 
@@ -212,6 +214,7 @@ class PlanningController extends Controller
         $rooms = Room::where('active', true)
             ->where('is_public', true)
             ->with(['unavailabilities'])
+            ->orderByRaw('CASE WHEN bookable = 0 THEN 2 WHEN members_only = 1 THEN 1 ELSE 0 END')
             ->orderBy('name')
             ->get();
 
