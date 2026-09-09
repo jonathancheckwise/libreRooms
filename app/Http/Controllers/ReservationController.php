@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ReservationController extends Controller
@@ -231,6 +232,40 @@ class ReservationController extends Controller
         }
 
         return $this->reservationForm($reservation->room, $reservation);
+    }
+
+    /**
+     * Duplique une réservation (avec ses créneaux) en une nouvelle demande
+     * PENDING, puis ouvre son formulaire d'édition pour ajuster la date etc.
+     * Accessible aux responsables (toute résa) et au réservant (les siennes).
+     */
+    public function duplicate(Reservation $reservation): RedirectResponse
+    {
+        $user = auth()->user();
+        if (! $user->can('manageReservations', $reservation->room)
+            && ! $user->canAccessContact($reservation->tenant)) {
+            abort(403);
+        }
+
+        $copy = $reservation->replicate([
+            'hash', 'confirmed_at', 'confirmed_by', 'cancelled_at',
+            'terms_accepted_at', 'terms_version', 'free_minutes_applied',
+        ]);
+        $copy->status = ReservationStatus::PENDING;
+        $copy->hash = Str::random(32);
+        $copy->booked_by_user_id = $user->id;
+        $copy->free_minutes_applied = 0;
+        $copy->save();
+
+        foreach ($reservation->events as $ev) {
+            $newEv = $ev->replicate();
+            $newEv->reservation_id = $copy->id;
+            $newEv->uid = (string) Str::uuid();
+            $newEv->save();
+        }
+
+        return redirect()->route('reservations.edit', $copy)
+            ->with('success', __('Reservation duplicated. Adjust the date if needed, then save.'));
     }
 
     /**

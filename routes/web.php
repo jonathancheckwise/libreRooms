@@ -175,6 +175,7 @@ Route::controller(ReservationController::class)->middleware(['auth', 'verified']
     Route::get('/reservations/{reservation}', 'show')->name('reservations.show');
     Route::get('/reservations/{reservation}/edit', 'edit')->name('reservations.edit');
     Route::put('/reservations/{reservation}', 'update')->name('reservations.update');
+    Route::post('/reservations/{reservation}/duplicate', 'duplicate')->name('reservations.duplicate');
     Route::post('/reservations/{reservation}/confirm', 'directConfirm')->name('reservations.confirm');
     Route::post('/reservations/{reservation}/cancel', 'cancel')->name('reservations.cancel');
 });

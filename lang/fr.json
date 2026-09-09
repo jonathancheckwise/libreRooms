@@ -1273,5 +1273,7 @@
     "Uncheck if it was already arranged directly (no email will be sent).": "Décochez si c'était déjà convenu directement (aucun email ne sera envoyé).",
     "Custom amount (CHF)": "Montant personnalisé (CHF)",
     "Leave empty for the calculated rate": "Vide = tarif calculé",
-    "Sets the total freely (e.g. on-request rooms). Leave empty to keep the calculated price.": "Fixe le total librement (ex. salles sur demande). Vide = prix calculé."
+    "Sets the total freely (e.g. on-request rooms). Leave empty to keep the calculated price.": "Fixe le total librement (ex. salles sur demande). Vide = prix calculé.",
+    "Duplicate": "Dupliquer",
+    "Reservation duplicated. Adjust the date if needed, then save.": "Réservation dupliquée. Ajustez la date si besoin, puis validez."
 }
