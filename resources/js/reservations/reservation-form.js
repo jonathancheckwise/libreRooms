@@ -533,7 +533,13 @@ function updateTotalCost() {
 
     let final_cost = initPrice - sumDiscounts - freeAmount - memberDiscount - (special_discount || 0) + (donation || 0);
 
-    // Réservation interne gratuite (responsable) : le total est forcé à 0.
+    // Montant personnalisé fixé par un responsable : override du calcul.
+    const adminPriceEl = document.getElementById('admin_price');
+    if (adminPriceEl && adminPriceEl.value !== '' && !isNaN(parseFloat(adminPriceEl.value))) {
+        final_cost = parseFloat(adminPriceEl.value);
+    }
+
+    // Réservation interne gratuite (responsable) : le total est forcé à 0 (prime).
     const internalFreeCb = document.getElementById('pep_is_free');
     if (internalFreeCb && internalFreeCb.checked) {
         final_cost = 0;
@@ -640,6 +646,13 @@ function initUpdateSpecial() {
     const freeCb = document.getElementById("pep_is_free");
     if (freeCb) {
         freeCb.addEventListener('change', () => {
+            updateTotalCost();
+        });
+    }
+    // Montant personnalisé (responsable) : recalcule à la saisie.
+    const adminPriceInput = document.getElementById("admin_price");
+    if (adminPriceInput) {
+        adminPriceInput.addEventListener('input', () => {
             updateTotalCost();
         });
     }

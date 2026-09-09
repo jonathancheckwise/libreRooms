@@ -68,6 +68,9 @@
         </p>
     @endif
 
+    {{-- La Pépite : la facturation passe par bexio, aucune facture n'est
+         générée à la confirmation. Bloc affiché seulement s'il existe une facture. --}}
+    @if ($invoice)
     <h2>{{ __('Invoice') }}</h2>
     <div class="highlight-box">
         <p style="margin: 0;">
@@ -84,6 +87,7 @@
     <p>
         <a href="{{ route('reservations.invoice.pdf', $reservation->hash) }}" class="btn">{{ __('Download the invoice') }}</a>
     </p>
+    @endif
 
     {{-- Art. 1.5 des CG : la confirmation rappelle, à titre informatif, la
          version acceptée lors de la demande. Le lien vise le fichier daté, pas

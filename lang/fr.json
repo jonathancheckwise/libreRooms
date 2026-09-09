@@ -1268,5 +1268,10 @@
     "Registered user": "Utilisateur inscrit",
     "External (no account)": "Externe (sans compte)",
     "Internal booking (free)": "Réservation interne (gratuite)",
-    "Team use: no charge. Forces the total to 0.": "Usage équipe : sans facturation. Force le total à 0."
+    "Team use: no charge. Forces the total to 0.": "Usage équipe : sans facturation. Force le total à 0.",
+    "Send the confirmation email to the client": "Envoyer l'email de confirmation au client",
+    "Uncheck if it was already arranged directly (no email will be sent).": "Décochez si c'était déjà convenu directement (aucun email ne sera envoyé).",
+    "Custom amount (CHF)": "Montant personnalisé (CHF)",
+    "Leave empty for the calculated rate": "Vide = tarif calculé",
+    "Sets the total freely (e.g. on-request rooms). Leave empty to keep the calculated price.": "Fixe le total librement (ex. salles sur demande). Vide = prix calculé."
 }

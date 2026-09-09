@@ -68,6 +68,7 @@ class ReservationRules
         $rules['special_discount'] = ['nullable', 'numeric', 'min:0'];
         $rules['custom_message'] = ['nullable', 'string', 'max:1000'];
         $rules['is_free'] = ['boolean'];
+        $rules['admin_price'] = ['nullable', 'numeric', 'min:0'];
         $rules['action'] = ['required', Rule::in(['prepare', 'confirm'])];
         return $rules;
     }
