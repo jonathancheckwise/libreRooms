@@ -38,9 +38,11 @@ class StoreReservationRequest extends FormRequest
     {
         ContactRules::prepare($this);
 
-        // La Pépite : le menu « Je suis » d'un invité pilote le tarif et le statut
-        // membre. On fixe côté serveur (autorité) plutôt que de faire confiance au JS.
-        if (! $this->user()) {
+        // La Pépite : le menu « Je suis / Le client est » pilote le tarif et le
+        // statut membre. Appliqué côté serveur (autorité) pour un invité ET pour
+        // un responsable qui pousse une résa (il déclare le statut du client).
+        $isAdmin = (bool) $this->user()?->can('manageReservations', $this->route('room'));
+        if (! $this->user() || $isAdmin) {
             $structure = $this->input('pep_structure');
             if ($structure === 'coworker') {
                 // Coworkeur·se = membre ; sa grille (NP/lucratif) est le tarif choisi.
@@ -88,6 +90,13 @@ class StoreReservationRequest extends FormRequest
             $rules['org_type'] = ['required', 'in:non_profit,for_profit'];
             $rules['is_pepite_member'] = ['boolean'];
             $rules['password'] = ['required', 'confirmed', Password::min(12)];
+        } elseif ($this->user()->can('manageReservations', $room)) {
+            // Responsable : déclare le statut du client (facultatif — s'il fixe un
+            // montant personnalisé, le tarif n'importe pas).
+            $rules['pep_structure'] = ['nullable', 'in:np,fp,coworker'];
+            $rules['coworker_tarif'] = ['nullable', 'in:non_profit,for_profit'];
+            $rules['org_type'] = ['nullable', 'in:non_profit,for_profit'];
+            $rules['is_pepite_member'] = ['boolean'];
         }
 
         // La Pépite : validation obligatoire des CGU du lieu avant de réserver

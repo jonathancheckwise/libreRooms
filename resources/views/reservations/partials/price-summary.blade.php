@@ -8,6 +8,10 @@
     <p id="pep-member-note" class="hidden" style="color:#059669;font-weight:600;margin:0 0 .5rem">
         ✓ {{ __('Pépite member rate applied: :pct% off, already deducted below.', ['pct' => (int) app(\App\Models\SystemSettings::class)->member_discount_percent]) }}
     </p>
+    {{-- Note affichée par le JS quand un montant est fixé à la main (override). --}}
+    <p id="pep-override-note" class="hidden" style="color:#9a3412;font-weight:600;margin:0 0 .5rem"
+       data-manual="{{ __('Amount set manually — it overrides the calculation below.') }}"
+       data-free="{{ __('Free internal booking — no charge.') }}"></p>
     <div class="form-element">
         <div class="form-field">
             <p id="total-cost-p" class="cost">

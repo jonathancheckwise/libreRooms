@@ -1275,5 +1275,11 @@
     "Leave empty for the calculated rate": "Vide = tarif calculé",
     "Sets the total freely (e.g. on-request rooms). Leave empty to keep the calculated price.": "Fixe le total librement (ex. salles sur demande). Vide = prix calculé.",
     "Duplicate": "Dupliquer",
-    "Reservation duplicated. Adjust the date if needed, then save.": "Réservation dupliquée. Ajustez la date si besoin, puis validez."
+    "Reservation duplicated. Adjust the date if needed, then save.": "Réservation dupliquée. Ajustez la date si besoin, puis poussez-la.",
+    "Client status (sets the rate)": "Statut du client (détermine le tarif)",
+    "The client is": "Le client est",
+    "The client is a member of La Pépite": "Le client est membre de la Pépite",
+    "Amount set manually — it overrides the calculation below.": "Montant fixé à la main — il écrase le calcul ci-dessous.",
+    "Free internal booking — no charge.": "Réservation interne gratuite — sans facturation.",
+    "Push directly (confirm)": "Pousser directement (confirmer)"
 }

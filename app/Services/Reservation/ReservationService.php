@@ -44,14 +44,22 @@ class ReservationService
         $status = $isConfirmed ? ReservationStatus::CONFIRMED : ReservationStatus::PENDING;
 
         // Snapshot du statut du réservant (fige le tarif appliqué). Quand un
-        // responsable pousse une résa pour quelqu'un, le tarif (dont la remise
-        // membre −10 %) reflète la CIBLE — le contact — et NON l'admin.
+        // responsable pousse une résa, il DÉCLARE le statut du client dans le
+        // formulaire (org_type + membre) → le tarif s'y adapte, et NON au statut
+        // de l'admin. Sinon (résa normale) : statut du compte du réservant.
         $isAdminBooking = $user && $user->can('manageReservations', $room);
-        $targetUser = $isAdminBooking ? $contact->users()->first() : $user;
-        $orgType = $targetUser?->org_type;
-        $isMember = (bool) $targetUser?->is_pepite_member;
+        if ($isAdminBooking) {
+            $orgType = $request->input('org_type');
+            $isMember = $request->boolean('is_pepite_member');
+            // Heure offerte éventuelle : sur le quota de l'utilisateur lié au contact.
+            $freeHourUserId = $contact->users()->first()?->id;
+        } else {
+            $orgType = $user?->org_type;
+            $isMember = (bool) $user?->is_pepite_member;
+            $freeHourUserId = $user?->id;
+        }
 
-        // Heure offerte = bénéfice membre → basé sur la cible (pas sur l'admin).
+        // Heure offerte = bénéfice membre → basé sur le statut déclaré.
         $canFreeHour = $isMember;
 
         // Calculate prices first (we need full_price before creating reservation)
@@ -72,7 +80,7 @@ class ReservationService
         $freeAmount = 0.0;
         if ($canFreeHour && $request->boolean('use_free_hour') && $totalMinutes > 0 && ! empty($eventsWithPrices)) {
             $monthAnchor = $eventsWithPrices[0]['start']->copy();
-            $available = $this->pricing->memberFreeMinutesRemaining($targetUser?->id, $monthAnchor);
+            $available = $this->pricing->memberFreeMinutesRemaining($freeHourUserId, $monthAnchor);
             [$freeMinutes, $freeLine] = $this->pricing->memberFreeHour(
                 $canFreeHour, $this->pricing->hourlyRate($room, $orgType), $totalMinutes, $available, $fullPrice
             );
@@ -218,7 +226,11 @@ class ReservationService
             // Already set status confirmed in updateReservationData to avoid doing caldav updates twice
             $this->updateReservationData($request, $reservation, $user, confirm: true);
 
-            return $this->confirm($reservation, $user);
+            // Case « Envoyer l'email de confirmation » (cochée par défaut).
+            $notifyClient = ! $request->has('send_confirmation_email')
+                || $request->boolean('send_confirmation_email');
+
+            return $this->confirm($reservation, $user, $notifyClient);
         }
 
         // Regular update (prepare action)
@@ -229,7 +241,7 @@ class ReservationService
      * Confirm a pending reservation.
      * Creates invoice and syncs CalDAV events.
      */
-    public function confirm(Reservation $reservation, User $user): Reservation
+    public function confirm(Reservation $reservation, User $user, bool $notifyClient = true): Reservation
     {
         $room = $reservation->room;
 
@@ -254,11 +266,11 @@ class ReservationService
             'invoice',
         ]);
 
-        defer(function () use ($room, $reservation) {
+        defer(function () use ($room, $reservation, $notifyClient) {
             if ($room->usesWebdav() && $reservation->invoice) {
                 $this->uploadInvoicePdf($reservation->invoice);
             }
-            if (! $room->disable_mailer) {
+            if (! $room->disable_mailer && $notifyClient) {
                 $this->mail->sendConfirmation($reservation);
             }
         });

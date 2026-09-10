@@ -78,13 +78,14 @@
         {{-- 1. Contact --}}
         @include('reservations.partials.contact',['contacts'=>$contacts,'tenant'=>$reservation?->tenant])
 
-        {{-- 1bis. Déclaration de statut (La Pépite, invités) : détermine le tarif, MàJ en direct --}}
-        @guest
+        {{-- 1bis. Déclaration de statut : invités (leur statut) ET responsables
+             (statut du CLIENT pour qui ils poussent la résa). Détermine le tarif. --}}
+        @if(auth()->guest() || $isAdmin)
         <div class="form-group" id="pep-status-group">
-            <h3 class="form-group-title">{{ __('Your status (sets your rate)') }}</h3>
+            <h3 class="form-group-title">{{ $isAdmin ? __('Client status (sets the rate)') : __('Your status (sets your rate)') }}</h3>
             <div class="form-element">
-                <label class="form-element-title" for="pep-structure">{{ __('I am') }} *</label>
-                <select name="pep_structure" id="pep-structure" class="form-select" required>
+                <label class="form-element-title" for="pep-structure">{{ $isAdmin ? __('The client is') : __('I am') }} {{ $isAdmin ? '' : '*' }}</label>
+                <select name="pep_structure" id="pep-structure" class="form-select" @guest required @endguest>
                     <option value="" @selected(! in_array(old('pep_structure'), ['np', 'fp', 'coworker'], true))>{{ __('— Select —') }}</option>
                     <option value="np" @selected(old('pep_structure')==='np')>{{ __('A non-profit organization') }}</option>
                     <option value="fp" @selected(old('pep_structure')==='fp')>{{ __('A for-profit organization') }}</option>
@@ -111,12 +112,14 @@
                 <label class="flex items-center gap-2">
                     <input type="hidden" name="is_pepite_member" value="0">
                     <input type="checkbox" name="is_pepite_member" value="1" id="pep_is_member" @checked(old('is_pepite_member'))>
-                    <span>{{ __('I am a member of La Pépite') }}<sup>*</sup> <span class="text-gray-600">({{ __('−10% rule') }})</span></span>
+                    <span>{{ $isAdmin ? __('The client is a member of La Pépite') : __('I am a member of La Pépite') }}<sup>*</sup> <span class="text-gray-600">({{ __('−10% rule') }})</span></span>
                 </label>
                 <small class="text-gray-600 block">{{ __('Members: 1 free hour per month and −10% (verified by the team).') }}</small>
+                @unless($isAdmin)
                 <a href="{{ asset('adhesion-pepite.pdf') }}" target="_blank" rel="noopener" class="text-sm" style="color:#2563eb;text-decoration:underline">
                     <sup>*</sup> {{ __('I want to become a member — see the membership programme') }}
                 </a>
+                @endunless
             </div>
 
             {{-- Note affichée pour un·e coworkeur·se : membre automatique --}}
@@ -124,7 +127,7 @@
                 ✓ {{ __('La Pépite coworker = member: the −10% member rate is applied automatically. Your monthly free hour is then available from your member account.') }}
             </p>
         </div>
-        @endguest
+        @endif
 
         {{-- 2. Discounts --}}
         @include('reservations.partials.discounts',[
@@ -747,8 +750,9 @@
         </script>
         @endif
 
-        {{-- Responsable : envoyer (ou non) l'email de confirmation au client --}}
-        @if($isAdmin && $isCreate)
+        {{-- Responsable : envoyer (ou non) l'email de confirmation au client
+             (à la création ET quand on pousse/confirme depuis l'édition, ex. duplication). --}}
+        @if($isAdmin)
             <div class="form-group" id="pep-send-email-group">
                 <label class="flex items-center gap-2">
                     <input type="hidden" name="send_confirmation_email" value="0">
@@ -766,15 +770,11 @@
         @elseif ($isEdit)
             <button type="submit" class="btn btn-primary" name="action" value="prepare">{{ __('Update request') }}</button>
         @endif
-        @if ($isAdmin && $isCreate)
-            <button type="submit" class="btn btn-confirm" name="action" value="confirm">{{ __('Confirm request directly') }}</button>
-        @endif
-        {{-- On ne valide plus depuis ce formulaire : « Valider » y enregistrait
-             aussi tous les champs, si bien qu'un jour modifié par mégarde partait
-             dans la confirmation. La validation se fait depuis la fiche, qui est
-             en lecture seule et ne touche pas aux données. --}}
-        @if ($isAdmin && $isEdit)
-            <a class="btn btn-secondary" href="{{ route('reservations.show', $reservation) }}">{{ __('Back to the request to confirm it') }}</a>
+        {{-- Responsable : pousser/confirmer directement, à la création comme en
+             édition (ex. après duplication). La fiche reste lecture seule ; ici
+             le responsable assume la modification (ajuste la date, puis pousse). --}}
+        @if ($isAdmin)
+            <button type="submit" class="btn btn-confirm" name="action" value="confirm">{{ $isCreate ? __('Confirm request directly') : __('Push directly (confirm)') }}</button>
         @endif
         @if($isEdit && $reservation->status !== App\Enums\ReservationStatus::CANCELLED)
             <button type="button" onclick="openCancelModal()" class="btn btn-delete">

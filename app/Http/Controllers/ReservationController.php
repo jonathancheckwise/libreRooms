@@ -66,6 +66,9 @@ class ReservationController extends Controller
                 'price_half_day' => $tier('half_day'),
                 // Contexte tarifaire : invité vs connecté
                 'is_guest' => ! $authUser,
+                // Responsable qui pousse une résa : il déclare le statut du CLIENT
+                // dans le formulaire (comme un invité), le tarif s'y adapte.
+                'is_admin_booking' => (bool) $authUser?->can('manageReservations', $room),
                 'fixed_org_type' => $authUser?->org_type,
                 'fixed_is_member' => (bool) $authUser?->is_pepite_member,
                 // Les deux grilles pour la MàJ en direct côté invité
