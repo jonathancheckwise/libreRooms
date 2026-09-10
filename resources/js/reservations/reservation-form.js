@@ -322,7 +322,9 @@ function pepTimeToHours(str) {
 // figé (compte) ; pour un invité il est piloté par sa déclaration dans le form.
 function pepContext() {
     const s = window.RoomConfig.settings;
-    if (!s.is_guest) {
+    // Invité OU responsable qui pousse une résa : le statut vient du formulaire
+    // (celui du client). Un membre connecté classique : statut figé du compte.
+    if (!s.is_guest && !s.is_admin_booking) {
         return { orgType: s.fixed_org_type, isMember: !!s.fixed_is_member };
     }
     const org = document.getElementById('pep-org-type')?.value || 'for_profit';
@@ -535,14 +537,36 @@ function updateTotalCost() {
 
     // Montant personnalisé fixé par un responsable : override du calcul.
     const adminPriceEl = document.getElementById('admin_price');
-    if (adminPriceEl && adminPriceEl.value !== '' && !isNaN(parseFloat(adminPriceEl.value))) {
+    const hasAdminPrice = adminPriceEl && adminPriceEl.value !== '' && !isNaN(parseFloat(adminPriceEl.value));
+    if (hasAdminPrice) {
         final_cost = parseFloat(adminPriceEl.value);
     }
 
     // Réservation interne gratuite (responsable) : le total est forcé à 0 (prime).
     const internalFreeCb = document.getElementById('pep_is_free');
-    if (internalFreeCb && internalFreeCb.checked) {
+    const isFreeChecked = !!(internalFreeCb && internalFreeCb.checked);
+    if (isFreeChecked) {
         final_cost = 0;
+    }
+
+    // Un montant fixé à la main ÉCRASE le détail : on masque les lignes calculées
+    // et on n'affiche que le Total, avec une note explicite.
+    const overrideActive = hasAdminPrice || isFreeChecked;
+    const overrideNote = document.getElementById('pep-override-note');
+    const memberNoteEl = document.getElementById('pep-member-note');
+    if (overrideActive) {
+        document.querySelectorAll('#donation-form-group .cost').forEach((el) => {
+            if (el.id !== 'final-cost-p') el.classList.add('hidden');
+        });
+        if (memberNoteEl) hideDOM(memberNoteEl);
+        if (overrideNote) {
+            overrideNote.textContent = isFreeChecked
+                ? (overrideNote.dataset.free || '')
+                : (overrideNote.dataset.manual || '');
+            showDOM(overrideNote);
+        }
+    } else if (overrideNote) {
+        hideDOM(overrideNote);
     }
 
     document.getElementById("final-cost").textContent = currency(final_cost);
