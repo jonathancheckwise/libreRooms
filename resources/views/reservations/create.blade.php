@@ -563,6 +563,41 @@
                 durSel.addEventListener('change', apply);
             }
 
+            // Ne proposer que les créneaux fixes qui tiennent DANS les horaires
+            // d'ouverture de la salle. Sans ça, une salle qui ferme à 17:00 montre
+            // quand même « Demi-journée soir (17:00–21:00) » → toujours « Non
+            // réservable ». On masque ces options (le mode « à l'heure » est déjà
+            // borné par initHourly).
+            function pepFilterModesByHours() {
+                const st = window.RoomConfig.settings;
+                const toMin = (s) => { const [h, m] = String(s).split(':').map(Number); return h * 60 + (m || 0); };
+                const dayStart = st.day_start_time ? toMin(st.day_start_time) : null;
+                const dayEnd = st.day_end_time ? toMin(st.day_end_time) : null;
+                if (dayStart === null && dayEnd === null) return; // salle sans bornes : tout ouvert
+                const ranges = {
+                    morning: [W.morning_start, W.morning_end],
+                    afternoon: [W.afternoon_start, W.afternoon_end],
+                    evening: [W.evening_start, W.evening_end],
+                    full: [W.full_start, W.full_end],
+                };
+                Object.entries(ranges).forEach(([mode, [s, e]]) => {
+                    const radio = document.querySelector('input[name="pep_mode"][value="' + mode + '"]');
+                    if (!radio || !s || !e) return;
+                    const fits = (dayStart === null || toMin(s) >= dayStart) && (dayEnd === null || toMin(e) <= dayEnd);
+                    if (!fits) {
+                        const label = radio.closest('label');
+                        if (label) label.style.display = 'none';
+                        radio.disabled = true;
+                        if (radio.checked) {
+                            radio.checked = false;
+                            const firstVisible = [...document.querySelectorAll('input[name="pep_mode"]')]
+                                .find(r => !r.disabled);
+                            if (firstVisible) { firstVisible.checked = true; firstVisible.dispatchEvent(new Event('change', { bubbles: true })); }
+                        }
+                    }
+                });
+            }
+
             // En modification, le champ date part vide alors que la réservation a
             // déjà un créneau : toucher un mode effacerait les heures existantes.
             // On le pré-remplit depuis l'événement en place.
@@ -602,6 +637,7 @@
             document.addEventListener('DOMContentLoaded', function(){
                 pepPrefillDate();
                 initHourly();
+                pepFilterModesByHours();
                 pepCalInit();
                 document.querySelectorAll('input[name="pep_mode"]').forEach(r=>r.addEventListener('change', apply));
                 const d = dateEl(); if (d) d.addEventListener('change', apply);
