@@ -81,7 +81,7 @@ class ConfigureRooms extends Command
                 $room->name = $name;
                 $room->slug = $this->uniqueSlug($name);
                 // Champs obligatoires : adresse La Pépite (Lausanne) + enums par défaut.
-                $room->street = 'Avenue de la Gare 10';
+                $room->street = 'Pl. de la Gare 10';
                 $room->postal_code = '1003';
                 $room->city = 'Lausanne';
                 $room->country = 'Suisse';

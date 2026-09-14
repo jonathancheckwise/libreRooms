@@ -149,8 +149,8 @@
     <div class="email-wrapper">
         <div class="email-container">
             <div class="email-header">
-                @php $pepBase = rtrim(config('app.url') ?: 'https://reservations.pepite-lausanne.ch', '/'); @endphp
-                <img src="{{ $pepBase }}/images/logo-text.png" alt="{{ $owner->contact->display_name() }}">
+                {{-- Logo Pépite transparent, servi depuis le site public (fiable en email). --}}
+                <img src="https://pepite-lausanne.ch/assets/logo-email.png" alt="{{ $owner->contact->display_name() }}">
             </div>
 
             <div class="email-body">

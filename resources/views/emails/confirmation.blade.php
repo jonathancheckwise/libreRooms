@@ -56,15 +56,6 @@
         </div>
     @endif
 
-    @if ($room->secret_message)
-        <h2>{{ __('Access codes') }}</h2>
-        <p>
-            {{ __('You will need access codes. As this information may change, we invite you to check it shortly before your event:') }}
-        </p>
-        <p>
-            <a href="{{ route('reservations.codes', $reservation->hash) }}" class="btn btn-secondary">{{ __('View access codes') }}</a>
-        </p>
-    @endif
 
     {{-- La Pépite : facturation via bexio (pas de facture ici). On rappelle
          seulement le montant FINAL (celui qui sera facturé), sans le prix initial. --}}
