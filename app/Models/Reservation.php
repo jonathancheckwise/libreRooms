@@ -25,6 +25,7 @@ class Reservation extends Model
         'free_minutes_applied',
         'title',
         'description',
+        'event_type',
         'full_price',
         'sum_discounts',
         'discounts',
@@ -66,6 +67,7 @@ class Reservation extends Model
 
     protected $casts = [
         'status' => ReservationStatus::class,
+        'event_type' => \App\Enums\ReservationType::class,
         'reservant_is_member' => 'boolean',
         'discounts' => 'array',
         'sum_discounts' => 'decimal:2',
