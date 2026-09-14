@@ -849,19 +849,14 @@ function initPepDeclaration() {
         if (!sel || !orgHidden) return;
         const v = sel.value;
         if (v === 'coworker') {
+            // Un·e coworkeur·se n'est PAS forcément membre : on demande sa grille
+            // (NP/lucratif) et on laisse la case « membre » visible, NON cochée.
             if (coworkerTarif) coworkerTarif.hidden = false;
-            if (coworkerNote) coworkerNote.hidden = false;
-            if (memberField) memberField.hidden = true;
-            if (memberCb) memberCb.checked = true; // coworkeur·se = membre
+            if (memberField) memberField.hidden = false;
             orgHidden.value = document.querySelector('input[name="coworker_tarif"]:checked')?.value || '';
         } else {
             if (coworkerTarif) coworkerTarif.hidden = true;
-            if (coworkerNote) coworkerNote.hidden = true;
             if (memberField) memberField.hidden = false;
-            // En quittant « coworkeur » pour une organisation, on retire la coche
-            // membre forcée (évite un −10 % accidentel). Pas à l'init : on préserve
-            // le choix de la personne après une erreur de validation (old()).
-            if (!isInit && prevStructure === 'coworker' && memberCb) memberCb.checked = false;
             orgHidden.value = v === 'np' ? 'non_profit' : (v === 'fp' ? 'for_profit' : '');
         }
         prevStructure = v;

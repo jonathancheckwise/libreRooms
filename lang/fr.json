@@ -1281,5 +1281,12 @@
     "The client is a member of La Pépite": "Le client est membre de la Pépite",
     "Amount set manually — it overrides the calculation below.": "Montant fixé à la main — il écrase le calcul ci-dessous.",
     "Free internal booking — no charge.": "Réservation interne gratuite — sans facturation.",
-    "Push directly (confirm)": "Pousser directement (confirmer)"
+    "Push directly (confirm)": "Pousser directement (confirmer)",
+    "Your status": "Votre statut",
+    "Member of La Pépite — the −10% rate is applied.": "Membre de la Pépite — le tarif −10 % est appliqué.",
+    "Not a member of La Pépite.": "Pas encore membre de la Pépite.",
+    "Become a member": "Devenir membre",
+    "Thank you for your reservation at La Pépite!": "Merci pour votre réservation à la Pépite !",
+    "La Pépite is a non-profit association project: hosting gatherings in our premises keeps the place alive and supports our social activities.": "La Pépite est un projet associatif à but non lucratif : l'accueil de rencontres dans nos locaux fait vivre le lieu et soutient nos activités sociales.",
+    "Final amount:": "Montant final :"
 }
