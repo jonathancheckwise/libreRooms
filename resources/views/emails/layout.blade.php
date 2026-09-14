@@ -8,7 +8,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: #374151;
             line-height: 1.6;
-            background-color: #f3f4f6;
+            background-color: #EDE3CC;
             margin: 0;
             padding: 0;
         }
@@ -24,22 +24,27 @@
             overflow: hidden;
         }
         .email-header {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            color: #ffffff;
-            padding: 24px;
+            background: #FAF5E9;
+            color: #2D2318;
+            padding: 28px 24px;
             text-align: center;
+            border-bottom: 4px solid #C8861F;
+        }
+        .email-header img {
+            max-height: 46px;
+            width: auto;
         }
         .email-header h1 {
-            color: white;
+            color: #2D2318;
             margin: 0;
-            font-size: 20px;
-            font-weight: 600;
+            font-size: 22px;
+            font-weight: 700;
         }
         .email-body {
             padding: 24px;
         }
         h1 {
-            color: #1e40af;
+            color: #2D2318;
             font-size: 20px;
             font-weight: 600;
             margin: 0 0 16px 0;
@@ -69,7 +74,7 @@
             margin-bottom: 0;
         }
         a {
-            color: #2563eb;
+            color: #C8861F;
             text-decoration: none;
         }
         a:hover {
@@ -77,7 +82,7 @@
         }
         .btn {
             display: inline-block;
-            background: #2563eb;
+            background: #C8861F;
             color: #ffffff !important;
             padding: 12px 24px;
             border-radius: 6px;
@@ -86,7 +91,7 @@
             margin: 8px 0;
         }
         .btn:hover {
-            background: #1d4ed8;
+            background: #a86f19;
             text-decoration: none;
         }
         .btn-secondary {
@@ -96,8 +101,8 @@
             background: #4b5563;
         }
         .highlight-box {
-            background: #eff6ff;
-            border-left: 4px solid #2563eb;
+            background: #FAF5E9;
+            border-left: 4px solid #C8861F;
             padding: 16px;
             border-radius: 0 6px 6px 0;
             margin: 16px 0;
@@ -144,7 +149,8 @@
     <div class="email-wrapper">
         <div class="email-container">
             <div class="email-header">
-                <h1>{{ $owner->contact->display_name() }}</h1>
+                @php $pepBase = rtrim(config('app.url') ?: 'https://reservations.pepite-lausanne.ch', '/'); @endphp
+                <img src="{{ $pepBase }}/images/logo-text.png" alt="{{ $owner->contact->display_name() }}">
             </div>
 
             <div class="email-body">

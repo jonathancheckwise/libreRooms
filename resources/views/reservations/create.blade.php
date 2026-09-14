@@ -123,9 +123,25 @@
             </div>
 
             {{-- Note affichée pour un·e coworkeur·se : membre automatique --}}
-            <p id="pep-coworker-note" class="text-sm mt-2" style="color:#059669;font-weight:600" hidden>
-                ✓ {{ __('La Pépite coworker = member: the −10% member rate is applied automatically. Your monthly free hour is then available from your member account.') }}
+            <p id="pep-coworker-note" class="text-sm mt-2" style="color:#059669;font-weight:600" hidden></p>
+        </div>
+        @else
+        {{-- Utilisateur connecté (non-responsable) : statut informatif, issu du
+             compte (vérifié par l'équipe). Il voit qu'il est bien reconnu membre. --}}
+        @php $pepU = auth()->user(); @endphp
+        <div class="form-group" id="pep-status-info">
+            <h3 class="form-group-title">{{ __('Your status') }}</h3>
+            <p class="text-sm text-gray-700" style="margin:0 0 .35rem">
+                {{ $pepU?->org_type === 'non_profit' ? __('Non-profit organization') : ($pepU?->org_type === 'for_profit' ? __('For-profit organization') : '—') }}
             </p>
+            @if($pepU?->is_pepite_member)
+                <p style="color:#059669;font-weight:600;margin:0">✓ {{ __('Member of La Pépite — the −10% rate is applied.') }}</p>
+            @else
+                <p class="text-sm text-gray-600" style="margin:0">
+                    {{ __('Not a member of La Pépite.') }}
+                    <a href="{{ asset('adhesion-pepite.pdf') }}" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline">{{ __('Become a member') }}</a>
+                </p>
+            @endif
         </div>
         @endif
 
@@ -202,7 +218,8 @@
                     <div class="pep-cal-grid" id="pep-cal-grid"></div>
                     <div class="pep-cal-legend">
                         <span><i class="pep-dot pep-dot-sel"></i>{{ __('Selected date') }}</span>
-                        <span><i class="pep-dot pep-dot-busy"></i>{{ __('Already booked') }}</span>
+                        <span><i class="pep-dot" style="background:#f59e0b"></i>{{ __('Partially booked') }}</span>
+                        <span><i class="pep-dot" style="background:#dc2626"></i>{{ __('Fully booked') }}</span>
                     </div>
                 </div>
                 <p class="pep-warn" id="pep-date-warning">{{ __('Start by choosing a date in the calendar.') }}</p>
@@ -267,7 +284,9 @@
             #pep-cal .pep-day.is-empty { visibility:hidden; }
             #pep-cal .pep-day.is-today { font-weight:700; }
             #pep-cal .pep-day.is-selected { background:#F2A83C; color:#2D2318; font-weight:700; }
-            #pep-cal .pep-day .pep-day-dot { position:absolute; left:50%; transform:translateX(-50%); bottom:.3rem; width:.3rem; height:.3rem; border-radius:50%; background:#C2410C; }
+            #pep-cal .pep-day .pep-day-dot { position:absolute; left:50%; transform:translateX(-50%); bottom:.3rem; width:.3rem; height:.3rem; border-radius:50%; background:#f59e0b; }
+            #pep-cal .pep-day .pep-day-dot.is-full { background:#dc2626; }      /* complet */
+            #pep-cal .pep-day .pep-day-dot.is-partial { background:#f59e0b; }   /* partiel */
             #pep-cal .pep-day.is-selected .pep-day-dot { background:#2D2318; }
             #pep-cal .pep-cal-legend { display:flex; gap:1rem; flex-wrap:wrap; margin-top:.5rem; font-size:.7rem; color:#6b7280; }
             #pep-cal .pep-cal-legend span { display:inline-flex; align-items:center; gap:.3rem; }
@@ -377,7 +396,12 @@
                 if (!box || !grid || !input) return;
 
                 const today = box.dataset.today;                 // AAAA-MM-JJ
-                const busy = new Set();                          // jours déjà réservés
+                const busyMin = {};                              // jour -> minutes réservées
+                // Fenêtre réservable du jour (pour juger « complet » vs « partiel »).
+                const _st = (window.RoomConfig?.settings?.day_start_time || '09:00').split(':');
+                const _en = (window.RoomConfig?.settings?.day_end_time || '21:00').split(':');
+                const windowMin = Math.max(60,
+                    (parseInt(_en[0], 10) * 60 + parseInt(_en[1], 10)) - (parseInt(_st[0], 10) * 60 + parseInt(_st[1], 10)));
                 let view = new Date((input.value || today) + 'T12:00:00');
                 view.setDate(1);
 
@@ -407,7 +431,9 @@
                         if (key === input.value) cls.push('is-selected');
                         html += '<button type="button" class="' + cls.join(' ') + '" data-date="' + key + '"'
                               + (past ? ' disabled' : '') + '>' + d
-                              + (busy.has(key) ? '<span class="pep-day-dot"></span>' : '')
+                              + ((busyMin[key] || 0) > 0
+                                    ? '<span class="pep-day-dot ' + (busyMin[key] >= windowMin - 30 ? 'is-full' : 'is-partial') + '"></span>'
+                                    : '')
                               + '</button>';
                     }
                     grid.innerHTML = html;
@@ -440,11 +466,20 @@
                     fetch(route).then(r => r.json()).then(function (data) {
                         const events = (data && data.events) || data || [];
                         events.forEach(function (ev) {
-                            if (!ev || !ev.start) return;
-                            const from = new Date(ev.start), to = new Date(ev.end || ev.start);
-                            for (let c = new Date(from); c <= to; c.setDate(c.getDate() + 1)) {
-                                busy.add(iso(c));
-                                if (c.getTime() === to.getTime()) break;
+                            if (!ev || !ev.start || !ev.end) return;
+                            const s = new Date(ev.start), e = new Date(ev.end);
+                            // Cumule les minutes réservées, par jour couvert.
+                            let cur = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+                            let guard = 0;
+                            while (cur <= e && guard++ < 60) {
+                                const dayStart = new Date(cur);
+                                const nextDay = new Date(cur); nextDay.setDate(nextDay.getDate() + 1);
+                                const segStart = s > dayStart ? s : dayStart;
+                                const segEnd = e < nextDay ? e : nextDay;
+                                const mins = Math.max(0, (segEnd - segStart) / 60000);
+                                const key = iso(cur);
+                                busyMin[key] = (busyMin[key] || 0) + mins;
+                                cur = nextDay;
                             }
                         });
                         render();

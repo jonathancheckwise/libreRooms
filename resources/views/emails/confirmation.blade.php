@@ -1,13 +1,11 @@
 @extends('emails.layout')
 
 @section('content')
-    <h1>{{ __('Confirmation of your reservation') }}</h1>
+    <h1>{{ __('Thank you for your reservation at La Pépite!') }}</h1>
 
-    <p>{{ __('Hello') }},</p>
+    <p>{{ __('Your reservation of the room :room has been confirmed.', ['room' => $room->name]) }}</p>
 
-    <p>
-        {{ __('Your reservation of the room :room has been confirmed.', ['room' => $room->name]) }}
-    </p>
+    <p>{{ __('La Pépite is a non-profit association project: hosting gatherings in our premises keeps the place alive and supports our social activities.') }}</p>
 
     {{-- Une demande validée telle quelle et une demande retouchée avant validation
          ne se lisent pas pareil : on le dit d'entrée, avec le détail. --}}
@@ -68,26 +66,16 @@
         </p>
     @endif
 
-    {{-- La Pépite : la facturation passe par bexio, aucune facture n'est
-         générée à la confirmation. Bloc affiché seulement s'il existe une facture. --}}
-    @if ($invoice)
-    <h2>{{ __('Invoice') }}</h2>
+    {{-- La Pépite : facturation via bexio (pas de facture ici). On rappelle
+         seulement le montant FINAL (celui qui sera facturé), sans le prix initial. --}}
+    @unless($room->price_mode->value === 'free' && $reservation->finalPrice() == 0)
+    <h2>{{ __('Amount') }}</h2>
     <div class="highlight-box">
         <p style="margin: 0;">
-            <strong>{{ __('Amount due:') }}</strong> {{ currency($invoice->amount, $room->owner) }}
-            @if ($reservation->special_discount > 0)
-                <br><span style="color: #059669;">{{ __('A discount of :amount has been applied.', ['amount' => currency($reservation->special_discount, $room->owner)]) }}</span>
-            @endif
-        </p>
-        <p style="margin: 8px 0 0 0; font-size: 14px; color: #6b7280;">
-            {{ __('Due date:') }} {{ $invoice->due_at->format('d.m.Y') }}
-            <small>({{ $owner->invoice_due_mode->label($owner->invoice_due_days) }})</small>
+            <strong>{{ __('Final amount:') }}</strong> {{ currency($reservation->finalPrice(), $room->owner) }}
         </p>
     </div>
-    <p>
-        <a href="{{ route('reservations.invoice.pdf', $reservation->hash) }}" class="btn">{{ __('Download the invoice') }}</a>
-    </p>
-    @endif
+    @endunless
 
     {{-- Art. 1.5 des CG : la confirmation rappelle, à titre informatif, la
          version acceptée lors de la demande. Le lien vise le fichier daté, pas
