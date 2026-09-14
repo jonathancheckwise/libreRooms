@@ -1288,5 +1288,11 @@
     "Become a member": "Devenir membre",
     "Thank you for your reservation at La Pépite!": "Merci pour votre réservation à la Pépite !",
     "La Pépite is a non-profit association project: hosting gatherings in our premises keeps the place alive and supports our social activities.": "La Pépite est un projet associatif à but non lucratif : l'accueil de rencontres dans nos locaux fait vivre le lieu et soutient nos activités sociales.",
-    "Final amount:": "Montant final :"
+    "Final amount:": "Montant final :",
+    "Type of activity": "Type d'activité",
+    "Meeting": "Réunion",
+    "Workshop / training": "Atelier / formation",
+    "Coworking": "Coworking",
+    "Event": "Événement",
+    "Other": "Autre"
 }

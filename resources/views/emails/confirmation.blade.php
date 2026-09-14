@@ -30,6 +30,9 @@
 
     <div class="highlight-box">
         <strong>{{ $reservation->title }}</strong>
+        @if($reservation->event_type)
+            <br><span style="color: #6b7280; font-size: 13px;">{{ $reservation->event_type->label() }}</span>
+        @endif
         @if($reservation->description)
             <br><span style="color: #6b7280;">{{ $reservation->description }}</span>
         @endif

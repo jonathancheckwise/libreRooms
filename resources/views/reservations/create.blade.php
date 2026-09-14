@@ -157,6 +157,7 @@
         @include('reservations.partials.event-info',[
             'title' => $reservation?->title,
             'description' => $reservation?->description,
+            'eventType' => $reservation?->event_type,
             ])
 
         {{-- 4. Custom fields --}}
