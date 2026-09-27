@@ -88,6 +88,11 @@ Route::middleware('guest')->group(function () {
 // OIDC callback - outside guest middleware to support both login and reauthentication
 Route::get('/auth/{provider:slug}/callback', [OidcController::class, 'callback'])->name('auth.oidc.callback');
 
+// Panneau d'administration du site (admin.pepite-lausanne.ch)
+Route::get('/pepite-sso/authorize', [\App\Http\Controllers\PepiteSsoController::class, 'authorizeAdmin'])->middleware('auth')->name('pepite-sso.authorize');
+Route::get('/pepite-sso/enter', [\App\Http\Controllers\PepiteSsoController::class, 'enter'])->middleware('throttle:30,1')->name('pepite-sso.enter');
+Route::post('/pepite-sso/notify', [\App\Http\Controllers\PepiteSsoController::class, 'notify'])->middleware('throttle:30,1')->name('pepite-sso.notify');
+
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth')->name('logout');
 
 // Email verification routes
