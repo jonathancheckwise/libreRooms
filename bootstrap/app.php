@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'recently_authenticated' => \App\Http\Middleware\EnsureRecentlyAuthenticated::class,
         ]);
         // Jeton signé, envoyé de serveur à serveur par le site (pas de session).
-        $middleware->validateCsrfTokens(except: ['pepite-sso/notify']);
+        $middleware->validateCsrfTokens(except: ['pepite-sso/notify', 'pepite-sso/login']);
         // Ensure setup is complete before accessing any routes
         $middleware->web(append: [
             \App\Http\Middleware\EnsureSetupComplete::class,

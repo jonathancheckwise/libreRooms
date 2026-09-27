@@ -14,6 +14,7 @@ Côté site : `api/_lib/sso.php` (même format de jeton, à garder synchronisé)
 |---|---|---|
 | `GET /pepite-sso/authorize` | site → LibreRooms → site | Connexion au panneau. Si l'admin n'est pas connecté, LibreRooms montre SON formulaire, puis renvoie un jeton signé (id, nom, e-mail, `state`) à l'adresse de retour. Non-admin : retour avec `error=forbidden`. |
 | `GET /pepite-sso/enter?token=` | site → LibreRooms | Bouton « Réservations » du panneau : ouvre la session sans redemander le mot de passe, puis va au planning. Jeton valable 60 s, **à usage unique** (nonce en cache). |
+| `POST /pepite-sso/login` | serveur du site → LibreRooms | **Chemin utilisé depuis sept. 2026** : le formulaire est affiché sur admin.pepite-lausanne.ch, le site envoie e-mail + mot de passe (dans un jeton signé, usage unique) et reçoit l'identité. 5 essais/minute par e-mail. `authorize` reste disponible mais n'est plus utilisé. |
 | `POST /pepite-sso/notify` | serveur du site → LibreRooms | Envoi d'un e-mail (nouvelle demande de modification) par le compte d'envoi déjà configuré ici. Exclue du CSRF (jeton signé à la place). |
 
 Jeton : `base64url(json) . "." . base64url(hmac_sha256(base64url(json), PEPITE_SSO_SECRET))`,
