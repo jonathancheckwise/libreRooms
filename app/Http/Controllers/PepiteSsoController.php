@@ -8,6 +8,8 @@ use App\Support\PepiteSso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -21,6 +23,9 @@ use Illuminate\Support\Str;
  *  enter     : chemin inverse — le bouton « Réservations » du panneau
  *              arrive ici avec un jeton signé et ouvre la session sans
  *              redemander le mot de passe.
+ *  login     : le formulaire de connexion affiché SUR le panneau envoie
+ *              (de serveur à serveur) e-mail + mot de passe à vérifier ici :
+ *              l'équipe ne quitte pas admin.pepite-lausanne.ch.
  *  notify    : le panneau fait envoyer un e-mail (nouvelle demande de
  *              modification) par le compte d'envoi déjà configuré ici.
  */
@@ -107,5 +112,37 @@ class PepiteSsoController extends Controller
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    public function login(Request $request)
+    {
+        abort_unless(PepiteSso::enabled(), 404);
+
+        $p = PepiteSso::verify((string) $request->input('token'), 'login');
+        if (! $p || ! isset($p['nonce']) || ! Cache::add('pepite_sso_nonce_'.$p['nonce'], 1, 300)) {
+            return response()->json(['ok' => false, 'error' => 'invalid token'], 403);
+        }
+
+        // Toutes les tentatives arrivent de l'IP du site : on limite par
+        // adresse e-mail, pas par IP.
+        $email = mb_strtolower(trim((string) ($p['email'] ?? '')));
+        $key = 'pepite-sso-login:'.sha1($email);
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return response()->json(['ok' => false, 'error' => 'throttled', 'retry' => RateLimiter::availableIn($key)]);
+        }
+
+        $user = User::whereRaw('lower(email) = ?', [$email])->first();
+        if (! $user || ! $user->password || ! Hash::check((string) ($p['password'] ?? ''), $user->password)) {
+            RateLimiter::hit($key, 60);
+
+            return response()->json(['ok' => false, 'error' => 'credentials']);
+        }
+        RateLimiter::clear($key);
+
+        if (! $user->is_global_admin) {
+            return response()->json(['ok' => false, 'error' => 'forbidden']);
+        }
+
+        return response()->json(['ok' => true, 'uid' => $user->id, 'name' => $user->name, 'email' => $user->email]);
     }
 }
