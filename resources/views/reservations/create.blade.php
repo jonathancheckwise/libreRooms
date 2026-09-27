@@ -288,7 +288,10 @@
             #pep-mode-right { flex:1 1 340px; min-width:300px; }
             #pep-day-planning { border:1px solid #e5e7eb; border-radius:.6rem; background:#fff; padding:.4rem; }
             #pep-day-planning .fc { font-size:.82rem; }
-            #pep-day-planning .fc .fc-toolbar-title { font-size:1rem; }
+            /* Titre du planning sur UNE seule ligne (colonne étroite) */
+            #pep-day-planning .fc-toolbar-title { font-size:.95rem !important; font-family:inherit !important; font-weight:600 !important; white-space:nowrap !important; line-height:1.2 !important; }
+            #pep-day-planning .fc-header-toolbar { margin-bottom:.5rem !important; gap:.4rem; flex-wrap:nowrap; }
+            #pep-day-planning .fc-button { padding:.16rem .45rem; font-size:.8rem; }
             @media (max-width: 720px){ #pep-mode-right { flex-basis:100%; } }
             /* Mini-calendrier de choix du jour (La Pépite). Toujours déplié.
                Sélecteurs d'identifiant : la feuille de style de l'application
@@ -710,6 +713,7 @@
                     initialDate: dateEl()?.value || '{{ $pepToday }}',
                     locale: @js(str_replace('_', '-', app()->getLocale())),
                     headerToolbar: { left: 'prev,next', center: 'title', right: '' },
+                    titleFormat: { day: 'numeric', month: 'short', year: 'numeric' },
                     allDaySlot: false,
                     slotMinTime: '08:00:00',
                     slotMaxTime: '22:00:00',
