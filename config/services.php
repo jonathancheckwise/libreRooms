@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // Panneau d'administration du site (admin.pepite-lausanne.ch) — voir
+    // app/Http/Controllers/PepiteSsoController.php
+    'pepite_sso' => [
+        'secret' => env('PEPITE_SSO_SECRET', ''),
+        'redirects' => explode(',', env('PEPITE_SSO_REDIRECTS', 'https://admin.pepite-lausanne.ch/')),
+    ],
+
 ];
