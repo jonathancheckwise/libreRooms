@@ -1290,5 +1290,11 @@
     "La Pépite is a non-profit association project: hosting gatherings in our premises keeps the place alive and supports our social activities.": "La Pépite est un projet associatif à but non lucratif : l'accueil de rencontres dans nos locaux fait vivre le lieu et soutient nos activités sociales.",
     "Final amount:": "Montant final :",
     "Selected day's schedule": "Planning du jour choisi",
-    "Pick a date, then drag over a free time range to book it.": "Choisissez une date, puis glissez sur une plage libre pour la réserver."
+    "Pick a date, then drag over a free time range to book it.": "Choisissez une date, puis glissez sur une plage libre pour la réserver.",
+    "Type of activity": "Type d'activité",
+    "Meeting": "Réunion",
+    "Workshop / training": "Atelier / formation",
+    "Coworking": "Coworking",
+    "Event": "Événement",
+    "Other": "Autre"
 }

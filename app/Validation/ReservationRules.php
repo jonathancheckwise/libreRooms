@@ -19,6 +19,7 @@ class ReservationRules
         $rules = [
             'res_title'             => ['required','string','max:100'],
             'res_description'       => ['nullable','string','max:1000'],
+            'event_type'            => ['nullable', Rule::enum(\App\Enums\ReservationType::class)],
             'events'                => ['required', 'array', 'min:1'],
 
             // Dates
