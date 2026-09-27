@@ -181,7 +181,11 @@ Route::controller(ReservationController::class)->middleware(['auth', 'verified']
 });
 
 // Demandes spéciales (La Pépite) : salles sur demande, catering, hors horaires.
-Route::controller(\App\Http\Controllers\SpecialRequestController::class)->middleware(['auth', 'verified'])->group(function () {
+// Accessible AUX INVITÉS : les salles « sur demande » (Big Room, Place du
+// Village, Atelier) n'ont pas de réservation directe ; le public doit pouvoir
+// envoyer sa demande de devis sans compte. Le contrôleur et la vue gèrent déjà
+// le cas invité (user_id nullable, champs nom/email dans le formulaire).
+Route::controller(\App\Http\Controllers\SpecialRequestController::class)->group(function () {
     Route::get('/demande-speciale', 'create')->name('special-requests.create');
     Route::post('/demande-speciale', 'store')->name('special-requests.store');
 });

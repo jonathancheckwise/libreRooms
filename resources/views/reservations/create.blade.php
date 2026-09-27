@@ -202,8 +202,13 @@
             $pepToday = \Carbon\Carbon::now($room->timezone ?? config('app.timezone'))->toDateString();
             $pepDows = [__('Mon'), __('Tue'), __('Wed'), __('Thu'), __('Fri'), __('Sat'), __('Sun')];
         @endphp
+        @once
+            <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+        @endonce
         <div class="form-group" id="pep-mode-group" data-windowed="{{ $isWindowed ? '1' : '0' }}">
             <h3 class="form-group-title">{{ __('Booking mode') }}</h3>
+            <div id="pep-mode-cols">
+            <div id="pep-mode-left">
             <div class="form-element">
                 <label for="pep-date" class="form-element-title">{{ __('Date') }} *</label>
                 <input type="date" id="pep-date" min="{{ $pepToday }}">
@@ -266,8 +271,25 @@
                 @endif
             @endauth
             <p id="pep-mode-hint" class="text-sm text-gray-600 mt-1"></p>
+            </div>{{-- /pep-mode-left --}}
+
+            {{-- Colonne droite : planning du jour choisi. Glisser sur une plage
+                 LIBRE met à jour le créneau (3h=demi-journée, etc.). --}}
+            <div id="pep-mode-right">
+                <label class="form-element-title" style="display:block;margin-bottom:.4rem">{{ __("Selected day's schedule") }}</label>
+                <p id="pep-day-hint" class="text-sm text-gray-600" style="margin:0 0 .5rem">{{ __('Pick a date, then drag over a free time range to book it.') }}</p>
+                <div id="pep-day-planning" data-avail="{{ route('rooms.availability', $room) }}"></div>
+            </div>
+            </div>{{-- /pep-mode-cols --}}
         </div>
         <style>
+            #pep-mode-cols { display:flex; gap:1.5rem; flex-wrap:wrap; align-items:flex-start; }
+            #pep-mode-left { flex:1 1 300px; min-width:280px; }
+            #pep-mode-right { flex:1 1 340px; min-width:300px; }
+            #pep-day-planning { border:1px solid #e5e7eb; border-radius:.6rem; background:#fff; padding:.4rem; }
+            #pep-day-planning .fc { font-size:.82rem; }
+            #pep-day-planning .fc .fc-toolbar-title { font-size:1rem; }
+            @media (max-width: 720px){ #pep-mode-right { flex-basis:100%; } }
             /* Mini-calendrier de choix du jour (La Pépite). Toujours déplié.
                Sélecteurs d'identifiant : la feuille de style de l'application
                impose sinon ses propres couleurs et largeurs aux <button>. */
@@ -564,6 +586,41 @@
                 durSel.addEventListener('change', apply);
             }
 
+            // Ne proposer que les créneaux fixes qui tiennent DANS les horaires
+            // d'ouverture de la salle. Sans ça, une salle qui ferme à 17:00 montre
+            // quand même « Demi-journée soir (17:00–21:00) » → toujours « Non
+            // réservable ». On masque ces options (le mode « à l'heure » est déjà
+            // borné par initHourly).
+            function pepFilterModesByHours() {
+                const st = window.RoomConfig.settings;
+                const toMin = (s) => { const [h, m] = String(s).split(':').map(Number); return h * 60 + (m || 0); };
+                const dayStart = st.day_start_time ? toMin(st.day_start_time) : null;
+                const dayEnd = st.day_end_time ? toMin(st.day_end_time) : null;
+                if (dayStart === null && dayEnd === null) return; // salle sans bornes : tout ouvert
+                const ranges = {
+                    morning: [W.morning_start, W.morning_end],
+                    afternoon: [W.afternoon_start, W.afternoon_end],
+                    evening: [W.evening_start, W.evening_end],
+                    full: [W.full_start, W.full_end],
+                };
+                Object.entries(ranges).forEach(([mode, [s, e]]) => {
+                    const radio = document.querySelector('input[name="pep_mode"][value="' + mode + '"]');
+                    if (!radio || !s || !e) return;
+                    const fits = (dayStart === null || toMin(s) >= dayStart) && (dayEnd === null || toMin(e) <= dayEnd);
+                    if (!fits) {
+                        const label = radio.closest('label');
+                        if (label) label.style.display = 'none';
+                        radio.disabled = true;
+                        if (radio.checked) {
+                            radio.checked = false;
+                            const firstVisible = [...document.querySelectorAll('input[name="pep_mode"]')]
+                                .find(r => !r.disabled);
+                            if (firstVisible) { firstVisible.checked = true; firstVisible.dispatchEvent(new Event('change', { bubbles: true })); }
+                        }
+                    }
+                });
+            }
+
             // En modification, le champ date part vide alors que la réservation a
             // déjà un créneau : toucher un mode effacerait les heures existantes.
             // On le pré-remplit depuis l'événement en place.
@@ -600,13 +657,99 @@
                 if (grp) grp.scrollIntoView({behavior:'smooth', block:'center'});
             }
 
+            // ---- Planning du jour (colonne droite) : glisser sur une plage LIBRE
+            //      met à jour le mode/créneau (3h forfait si ça colle à une fenêtre, sinon horaire). ----
+            let pepDayCal = null;
+            function pepToMin(v){ const p=(v||'').split(':'); return (parseInt(p[0]||0,10)*60)+parseInt(p[1]||0,10); }
+            function pepFmtHM(x){ return String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0'); }
+            function pepFmtDate(x){ return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); }
+            function pepNear(a,b){ return Math.abs(pepToMin(a)-pepToMin(b)) <= 15; }
+            function pepMatchMode(a,b){
+                // Tolérance 15 min : une plage qui couvre à peu près une fenêtre = forfait.
+                if (pepNear(a,W.full_start) && pepNear(b,W.full_end)) return 'full';
+                if (pepNear(a,W.morning_start) && pepNear(b,W.morning_end)) return 'morning';
+                if (pepNear(a,W.afternoon_start) && pepNear(b,W.afternoon_end)) return 'afternoon';
+                if (pepNear(a,W.evening_start) && pepNear(b,W.evening_end)) return 'evening';
+                return 'hourly';
+            }
+            // Fenêtre (forfait) qui contient une heure donnée (matin/aprem/soir).
+            function pepWindowContaining(hm){
+                const m = pepToMin(hm);
+                if (m >= pepToMin(W.morning_start) && m < pepToMin(W.morning_end)) return 'morning';
+                if (m >= pepToMin(W.afternoon_start) && m < pepToMin(W.afternoon_end)) return 'afternoon';
+                if (m >= pepToMin(W.evening_start) && m < pepToMin(W.evening_end)) return 'evening';
+                return 'full';
+            }
+            function pepSetSlotFromRange(dateStr, startHM, endHM){
+                const d = dateEl();
+                if (d && dateStr){ d.value = dateStr; d.dispatchEvent(new Event('change', {bubbles:true})); }
+                let mode = pepMatchMode(startHM, endHM);
+                const durH = Math.max(1, Math.round((pepToMin(endHM)-pepToMin(startHM))/60));
+                const maxH = parseInt(W.hourly_max, 10) || durH;
+                // Trop long pour l'horaire → forfait le plus adapté (fenêtre du début).
+                if (mode === 'hourly' && durH > maxH) mode = pepWindowContaining(startHM);
+                if (mode === 'hourly'){
+                    const radio = document.querySelector('input[name="pep_mode"][value="hourly"]');
+                    if (radio) radio.checked = true;
+                    const hs = document.getElementById('pep-hour-start'), hd = document.getElementById('pep-hour-duration');
+                    if (hs) hs.value = startHM;
+                    if (hd) hd.value = String(Math.min(durH, maxH));
+                } else {
+                    const radio = document.querySelector('input[name="pep_mode"][value="'+mode+'"]');
+                    if (radio) radio.checked = true;
+                }
+                apply();
+            }
+            function pepDayPlanningInit(){
+                const el = document.getElementById('pep-day-planning');
+                if (!el || !window.FullCalendar) return;
+                const s = window.RoomConfig?.settings || {};
+                const st = (s.day_start_time || '09:00').slice(0,5), en = (s.day_end_time || '21:00').slice(0,5);
+                pepDayCal = new FullCalendar.Calendar(el, {
+                    initialView: 'timeGridDay',
+                    initialDate: dateEl()?.value || '{{ $pepToday }}',
+                    locale: @js(str_replace('_', '-', app()->getLocale())),
+                    headerToolbar: { left: 'prev,next', center: 'title', right: '' },
+                    allDaySlot: false,
+                    slotMinTime: '08:00:00',
+                    slotMaxTime: '22:00:00',
+                    nowIndicator: true,
+                    height: 'auto',
+                    expandRows: true,
+                    selectable: true,
+                    selectMirror: true,
+                    selectOverlap: false,
+                    selectConstraint: { startTime: st, endTime: en },
+                    businessHours: { startTime: st, endTime: en },
+                    events: function(info, success, failure){
+                        fetch(el.dataset.avail).then(r=>r.json()).then(function(data){
+                            const busy = (data.events || []).map(function(ev){
+                                return { start: ev.start, end: ev.end, display: 'block', color: '#9ca3af', title: @js(__('Occupied')) };
+                            });
+                            const closed = (data.unavailabilities || []).map(function(ev){
+                                return { start: ev.start, end: ev.end, display: 'block', color: '#fea2a2', title: ev.title || @js(__('Unavailable')) };
+                            });
+                            success(busy.concat(closed));
+                        }).catch(failure);
+                    },
+                    select: function(info){
+                        pepSetSlotFromRange(pepFmtDate(info.start), pepFmtHM(info.start), pepFmtHM(info.end));
+                    },
+                });
+                pepDayCal.render();
+                const d = dateEl();
+                if (d) d.addEventListener('change', function(){ if (pepDayCal && d.value) pepDayCal.gotoDate(d.value); });
+            }
+
             document.addEventListener('DOMContentLoaded', function(){
                 pepPrefillDate();
                 initHourly();
+                pepFilterModesByHours();
                 pepCalInit();
                 document.querySelectorAll('input[name="pep_mode"]').forEach(r=>r.addEventListener('change', apply));
                 const d = dateEl(); if (d) d.addEventListener('change', apply);
                 pepPrefillFromUrl();
+                pepDayPlanningInit();
             });
         })();
         </script>
