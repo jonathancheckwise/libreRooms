@@ -231,7 +231,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (focusName) updateBookBar();
             };
             if (DEMO_EVENTS) { done(DEMO_EVENTS); return; }
-            fetch('{{ route('planning.events') }}')
+            // Transmet la plage affichée pour charger les réservations du mois visité.
+            var url = '{{ route('planning.events') }}'
+                + '?start=' + encodeURIComponent(info.startStr)
+                + '&end=' + encodeURIComponent(info.endStr);
+            fetch(url)
                 .then(function (r) { return r.json(); })
                 .then(function (data) { done(data.events || []); })
                 .catch(failure);

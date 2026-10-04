@@ -215,8 +215,11 @@ class PlanningController extends Controller
             ->pepiteOrder()
             ->get();
 
-        $from = now('UTC')->copy()->subDay();
-        $to = now('UTC')->copy()->addWeeks(4);
+        // Fenêtre demandée par FullCalendar (start/end de la vue affichée) afin
+        // que la navigation vers n'importe quel mois charge bien ses réservations.
+        // Repli large si l'appel ne précise pas de bornes (ex. accès direct).
+        $from = $this->parseBound(request('start')) ?? now('UTC')->copy()->subMonth();
+        $to = $this->parseBound(request('end')) ?? now('UTC')->copy()->addYear();
 
         $events = [];
         foreach ($rooms->values() as $i => $room) {
@@ -235,6 +238,20 @@ class PlanningController extends Controller
         }
 
         return response()->json(['events' => $events]);
+    }
+
+    /** Parse une borne ISO envoyée par FullCalendar en Carbon UTC, ou null si absente/invalide. */
+    private function parseBound(?string $value): ?Carbon
+    {
+        if (! $value) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->utc();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
