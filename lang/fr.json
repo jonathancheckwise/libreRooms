@@ -1296,5 +1296,8 @@
     "Workshop / training": "Atelier / formation",
     "Coworking": "Coworking",
     "Event": "Événement",
-    "Other": "Autre"
+    "Other": "Autre",
+    "Custom slot": "Créneau personnalisé",
+    "any time range — admin": "plage horaire libre — responsable",
+    "Custom slot: pick any start and end time. Price defaults to hourly (adapted for typical cases) and stays adjustable below.": "Créneau personnalisé : choisissez l'heure de début et de fin. Le tarif est à l'heure par défaut (adapté aux cas typiques) et reste ajustable plus bas."
 }

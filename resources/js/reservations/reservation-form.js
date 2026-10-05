@@ -340,6 +340,38 @@ function pepPrices() {
     return { hourly: pick('hourly'), half_day: pick('half_day'), full_day: pick('full_day') };
 }
 
+// Tarif d'une plage « libre » (miroir de PricingService::priceFreeRange) : la
+// décomposition la moins chère entre « tout à l'heure » et « un forfait contenu
+// dans la plage + le reste à l'heure » (ex. demi-journée + 1 h).
+function pepPriceFreeRange(s, e, hourly, half, full, w, L) {
+    const duration = e - s;
+    const eps = 0.02;
+    const r2 = (x) => Math.round(x * 100) / 100;
+    const cands = [];
+    if (hourly != null) {
+        const h = r2(duration);
+        cands.push({ price: hourly * h, label: L.hourly + ' (' + h + 'h)', hourlyMinutes: duration * 60 });
+    }
+    const windows = [
+        { price: full, start: w.fS, end: w.fE, label: L.full },
+        { price: half, start: w.mS, end: w.mE, label: L.morning },
+        { price: half, start: w.aS, end: w.aE, label: L.afternoon },
+        { price: half, start: w.eS, end: w.eE, label: L.evening },
+    ];
+    windows.forEach((win) => {
+        if (win.price == null || !win.start || !win.end) return;
+        if (win.start < s - eps || win.end > e + eps) return;
+        const remainder = duration - (win.end - win.start);
+        if (remainder < eps) { cands.push({ price: win.price, label: win.label, hourlyMinutes: 0 }); return; }
+        if (hourly == null) return;
+        const remH = r2(remainder);
+        cands.push({ price: win.price + hourly * remH, label: win.label + ' + ' + remH + 'h', hourlyMinutes: remainder * 60 });
+    });
+    if (!cands.length) return { price: (full != null ? full : 0), label: L.full, hourlyMinutes: 0 };
+    cands.sort((x, y) => x.price - y.price);
+    return cands[0];
+}
+
 // La Pépite : aperçu de prix par CRÉNEAU (miroir du moteur serveur PricingService).
 // Chaque segment est classé selon les fenêtres globales, facturé au prix de la salle.
 function getEventPrice(start, end) {
@@ -384,8 +416,11 @@ function getEventPrice(start, end) {
         } else if (priceHourly != null && dur <= hourlyMax + 0.001) {
             const h = Math.round(dur * 100) / 100;
             price += priceHourly * h; hourlyMinutes += dur * 60; totalMinutes += dur * 60; parts.push(L.hourly + ' (' + h + 'h)');
-        } else if (priceFull != null) {
-            price += priceFull; totalMinutes += dur * 60; parts.push(L.full);
+        } else {
+            // Plage « libre » (hors forfait, > max horaire) : décomposition la moins
+            // chère — à l'heure par défaut, ou forfait contenu + reste à l'heure.
+            const free = pepPriceFreeRange(a, b, priceHourly, priceHalf, priceFull, { mS, mE, aS, aE, eS, eE, fS, fE }, L);
+            price += free.price; hourlyMinutes += free.hourlyMinutes; totalMinutes += dur * 60; parts.push(free.label);
         }
     });
 

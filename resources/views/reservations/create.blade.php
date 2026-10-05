@@ -244,6 +244,9 @@
                     <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="afternoon"> {{ __('Afternoon half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['afternoon_start'] }}–{{ $pepWindows['afternoon_end'] }})</span></label>
                     <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="evening"> {{ __('Evening half-day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['evening_start'] }}–{{ $pepWindows['evening_end'] }})</span></label>
                     <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="full"> {{ __('Full day') }} <span class="text-gray-500 text-sm">({{ $pepWindows['full_start'] }}–{{ $pepWindows['full_end'] }})</span></label>
+                    @if($isAdmin)
+                        <label class="flex items-center gap-2"><input type="radio" name="pep_mode" value="free"> {{ __('Custom slot') }} <span class="text-gray-500 text-sm">({{ __('any time range — admin') }})</span></label>
+                    @endif
                 </div>
                 {{-- Mode « à l'heure » : heure de début + durée en heures (pas d'édition à la minute) --}}
                 <div class="form-element" id="pep-hourly-panel" style="display:none;flex-direction:row;gap:1rem;flex-wrap:wrap;align-items:flex-end">
@@ -256,6 +259,21 @@
                         <select id="pep-hour-duration"></select>
                     </div>
                 </div>
+                @if($isAdmin)
+                    {{-- Mode « libre » (responsables) : n'importe quelle plage horaire, en
+                         saisissant début/fin ou en glissant sur le planning. Tarif à l'heure
+                         par défaut (adapté aux cas typiques), ajustable plus bas. --}}
+                    <div class="form-element" id="pep-free-panel" style="display:none;flex-direction:row;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+                        <div class="form-field">
+                            <label for="pep-free-start" class="form-element-title">{{ __('Start time') }}</label>
+                            <input type="time" id="pep-free-start" step="900">
+                        </div>
+                        <div class="form-field">
+                            <label for="pep-free-end" class="form-element-title">{{ __('End time') }}</label>
+                            <input type="time" id="pep-free-end" step="900">
+                        </div>
+                    </div>
+                @endif
             @endif
             {{-- Heure offerte : membre OU responsable, disponible pour TOUS les modes (à l'heure et forfaits). --}}
             @auth
@@ -331,6 +349,7 @@
                 afternoon: @json(__('Times are locked to the afternoon window.')),
                 evening: @json(__('Times are locked to the evening window.')),
                 full: @json(__('Times are locked to the full-day window.')),
+                free: @json(__('Custom slot: pick any start and end time. Price defaults to hourly (adapted for typical cases) and stays adjustable below.')),
             };
             function hm(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
             function toDT(d,t){ return d + 'T' + t; }
@@ -525,6 +544,8 @@
                 const s = firstStart(), e = firstEnd();
                 const hp = document.getElementById('pep-hourly-panel');
                 if (hp) hp.style.display = (mode === 'hourly') ? 'flex' : 'none';
+                const fp = document.getElementById('pep-free-panel');
+                if (fp) fp.style.display = (mode === 'free') ? 'flex' : 'none';
                 pepUpdateDateWarning();
                 if (!date) {
                     // Sans date, aucun créneau ni prix ne peut être calculé : on le dit,
@@ -540,6 +561,13 @@
                 else if (mode==='afternoon'){ start=W.afternoon_start; end=W.afternoon_end; }
                 else if (mode==='evening'){ start=W.evening_start; end=W.evening_end; }
                 else if (mode==='full'){ start=W.full_start; end=W.full_end; }
+                else if (mode==='free'){ // libre (responsables) : heure début → heure fin exactes
+                    const fs = document.getElementById('pep-free-start');
+                    const fe = document.getElementById('pep-free-end');
+                    start = (fs && fs.value) ? fs.value : W.full_start;
+                    end = (fe && fe.value) ? fe.value : addMinutes(start, 60);
+                    if (hm(end) <= hm(start)) end = addMinutes(start, 60); // garde-fou : fin > début
+                }
                 else { // à l'heure : heure de début + durée (en heures)
                     const hs = document.getElementById('pep-hour-start');
                     const hd = document.getElementById('pep-hour-duration');
@@ -686,6 +714,19 @@
             function pepSetSlotFromRange(dateStr, startHM, endHM){
                 const d = dateEl();
                 if (d && dateStr){ d.value = dateStr; d.dispatchEvent(new Event('change', {bubbles:true})); }
+@if($isAdmin)
+                // Responsable : glisser = créneau LIBRE exact (aucun « collage » sur un
+                // forfait). La plage dessinée est conservée telle quelle.
+                const freeRadio = document.querySelector('input[name="pep_mode"][value="free"]');
+                if (freeRadio){
+                    freeRadio.checked = true;
+                    const fs = document.getElementById('pep-free-start'), fe = document.getElementById('pep-free-end');
+                    if (fs) fs.value = startHM;
+                    if (fe) fe.value = endHM;
+                    apply();
+                    return;
+                }
+@endif
                 let mode = pepMatchMode(startHM, endHM);
                 const durH = Math.max(1, Math.round((pepToMin(endHM)-pepToMin(startHM))/60));
                 const maxH = parseInt(W.hourly_max, 10) || durH;
@@ -751,6 +792,7 @@
                 pepFilterModesByHours();
                 pepCalInit();
                 document.querySelectorAll('input[name="pep_mode"]').forEach(r=>r.addEventListener('change', apply));
+                ['pep-free-start','pep-free-end'].forEach(function(id){ const el=document.getElementById(id); if(el) el.addEventListener('change', apply); });
                 const d = dateEl(); if (d) d.addEventListener('change', apply);
                 pepPrefillFromUrl();
                 pepDayPlanningInit();

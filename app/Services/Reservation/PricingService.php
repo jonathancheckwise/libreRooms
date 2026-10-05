@@ -126,11 +126,19 @@ class PricingService
                 $hourlyMinutes += $duration * 60;
                 $totalMinutes += $duration * 60;
                 $parts[] = __('Hourly booking').' ('.$this->formatHours($hours).'h)';
-            } elseif ($priceFullDay !== null) {
-                // Repli : créneau non reconnu -> tarif journée
-                $price += $priceFullDay;
+            } else {
+                // Plage « libre » (hors forfait, au-delà du max horaire) : on prend la
+                // décomposition la plus avantageuse — à l'heure par défaut, ou un forfait
+                // contenu dans la plage + le reste à l'heure (ex. demi-journée + 1 h).
+                // Sert surtout aux réservations personnalisées des responsables.
+                [$segPrice, $segLabel, $segHourlyMin] = $this->priceFreeRange(
+                    $s, $e, $priceHourly, $priceHalfDay, $priceFullDay,
+                    compact('morningStart', 'morningEnd', 'afternoonStart', 'afternoonEnd', 'eveningStart', 'eveningEnd', 'fullStart', 'fullEnd')
+                );
+                $price += $segPrice;
+                $hourlyMinutes += $segHourlyMin;
                 $totalMinutes += $duration * 60;
-                $parts[] = __('Full day booking');
+                $parts[] = $segLabel;
             }
         }
 
@@ -147,6 +155,72 @@ class PricingService
             'hourly_minutes' => $hourlyMinutes,
             'total_minutes' => $totalMinutes,
         ];
+    }
+
+    /**
+     * Tarif d'une plage « libre » (hors forfait, au-delà du max horaire) : on
+     * retient la décomposition la MOINS chère parmi « tout à l'heure » et « un
+     * forfait contenu dans la plage + le reste à l'heure » (ex. demi-journée +
+     * 1 h). Repli final : tarif journée (ancien comportement) si rien d'autre.
+     *
+     * @param  array<string,float>  $w  Bornes des fenêtres (en heures décimales).
+     * @return array{0: float, 1: string, 2: float}  [prix, libellé, minutes horaires]
+     */
+    protected function priceFreeRange(float $s, float $e, ?int $hourly, ?int $half, ?int $full, array $w): array
+    {
+        $duration = $e - $s;
+        $eps = 0.02;
+        $candidates = [];
+
+        // 1) Tout à l'heure.
+        if ($hourly !== null) {
+            $h = round($duration, 2);
+            $candidates[] = [
+                'price' => $hourly * $h,
+                'label' => __('Hourly booking').' ('.$this->formatHours($h).'h)',
+                'hourly_minutes' => $duration * 60,
+            ];
+        }
+
+        // 2) Un forfait entièrement contenu dans la plage + le reste à l'heure.
+        $windows = [
+            ['price' => $full, 'start' => $w['fullStart'], 'end' => $w['fullEnd'], 'label' => __('Full day booking')],
+            ['price' => $half, 'start' => $w['morningStart'], 'end' => $w['morningEnd'], 'label' => __('Morning half-day')],
+            ['price' => $half, 'start' => $w['afternoonStart'], 'end' => $w['afternoonEnd'], 'label' => __('Afternoon half-day')],
+            ['price' => $half, 'start' => $w['eveningStart'], 'end' => $w['eveningEnd'], 'label' => __('Evening half-day')],
+        ];
+        foreach ($windows as $win) {
+            if ($win['price'] === null || ! $win['start'] || ! $win['end']) {
+                continue;
+            }
+            if ($win['start'] < $s - $eps || $win['end'] > $e + $eps) {
+                continue; // fenêtre pas entièrement dans la plage
+            }
+            $remainder = $duration - ($win['end'] - $win['start']);
+            if ($remainder < $eps) {
+                $candidates[] = ['price' => $win['price'], 'label' => $win['label'], 'hourly_minutes' => 0];
+
+                continue;
+            }
+            if ($hourly === null) {
+                continue; // reste non facturable à l'heure
+            }
+            $remH = round($remainder, 2);
+            $candidates[] = [
+                'price' => $win['price'] + $hourly * $remH,
+                'label' => $win['label'].' + '.$this->formatHours($remH).'h',
+                'hourly_minutes' => $remainder * 60,
+            ];
+        }
+
+        if (empty($candidates)) {
+            return [$full ?? 0, __('Full day booking'), 0];
+        }
+
+        usort($candidates, fn ($a, $b) => $a['price'] <=> $b['price']);
+        $best = $candidates[0];
+
+        return [$best['price'], $best['label'], $best['hourly_minutes']];
     }
 
     /**
