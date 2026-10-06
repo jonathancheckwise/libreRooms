@@ -178,6 +178,8 @@ Route::controller(ReservationController::class)->group(function () {
 });
 Route::controller(ReservationController::class)->middleware(['auth', 'verified'])->group(function () {
     Route::get('/reservations', 'index')->name('reservations.index');
+    // Avant la route {reservation} : sinon « export » serait pris pour un id.
+    Route::get('/reservations/export', 'export')->name('reservations.export');
     Route::get('/reservations/{reservation}', 'show')->name('reservations.show');
     Route::get('/reservations/{reservation}/edit', 'edit')->name('reservations.edit');
     Route::put('/reservations/{reservation}', 'update')->name('reservations.update');

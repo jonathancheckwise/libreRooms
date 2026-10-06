@@ -288,17 +288,6 @@ class ReservationController extends Controller
             // Get all room IDs where user has moderator or admin rights (global admins see all via model method)
             $roomIds = $user->getAccessibleRoomIds(UserRole::MODERATOR);
 
-            // Build query with filters
-            $query = Reservation::with([
-                'room.owner',
-                'tenant',
-                'events',
-                'invoice',
-                'customFieldValues',
-            ])
-                ->whereIn('room_id', $roomIds)
-                ->orderBy('created_at', 'desc');
-
             // Get available rooms and contacts for filters
             $rooms = Room::whereIn('id', $roomIds)->get();
 
@@ -312,17 +301,6 @@ class ReservationController extends Controller
             // Get all contact IDs for the logged-in user
             $contactIds = $user->contacts()->pluck('contacts.id');
 
-            // Build query with filters
-            $query = Reservation::with([
-                'room.owner',
-                'tenant',
-                'events',
-                'invoice',
-                'customFieldValues',
-            ])
-                ->whereIn('tenant_id', $contactIds)
-                ->orderBy('created_at', 'desc');
-
             // Get available rooms and contacts for filters
             $rooms = Room::whereHas('reservations', function ($q) use ($contactIds) {
                 $q->whereIn('tenant_id', $contactIds);
@@ -331,20 +309,9 @@ class ReservationController extends Controller
             $contacts = $user->contacts->sortBy(fn ($c) => $c->display_name())->values();
         }
 
-        // Apply filters
-        if ($request->filled('room_id')) {
-            $query->where('room_id', $request->input('room_id'));
-        }
-
-        if ($request->filled('tenant_id')) {
-            $query->where('tenant_id', $request->input('tenant_id'));
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        $reservations = $query->paginate(15)->appends($request->except('page'));
+        $reservations = $this->buildReservationQuery($request, $user, $view)
+            ->paginate(15)
+            ->appends($request->except('page'));
 
         return view('reservations.index', [
             'reservations' => $reservations,
@@ -353,6 +320,105 @@ class ReservationController extends Controller
             'user' => $user,
             'view' => $view,
             'canViewAdmin' => $canViewAdmin,
+        ]);
+    }
+
+    /**
+     * Requête des réservations visibles (périmètre + filtres), partagée par la
+     * liste et l'export pour garantir EXACTEMENT le même résultat.
+     */
+    private function buildReservationQuery(Request $request, User $user, string $view)
+    {
+        $with = ['room.owner', 'tenant', 'events', 'invoice', 'customFieldValues'];
+
+        if ($view === 'admin') {
+            $roomIds = $user->getAccessibleRoomIds(UserRole::MODERATOR);
+            $query = Reservation::with($with)
+                ->whereIn('room_id', $roomIds)
+                ->orderBy('created_at', 'desc');
+        } else {
+            $contactIds = $user->contacts()->pluck('contacts.id');
+            $query = Reservation::with($with)
+                ->whereIn('tenant_id', $contactIds)
+                ->orderBy('created_at', 'desc');
+        }
+
+        if ($request->filled('room_id')) {
+            $query->where('room_id', $request->input('room_id'));
+        }
+        if ($request->filled('tenant_id')) {
+            $query->where('tenant_id', $request->input('tenant_id'));
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        return $query;
+    }
+
+    /**
+     * Export CSV (ouvrable dans Excel) de l'historique des réservations, avec
+     * les MÊMES filtres et le MÊME périmètre que la liste. UTF-8 + BOM et
+     * séparateur « ; » pour des colonnes et accents corrects dans Excel.
+     */
+    public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $user = auth()->user();
+
+        $canViewAdmin = $user->can('viewAdmin', Room::class);
+        $view = $canViewAdmin ? $request->input('view', 'admin') : 'mine';
+
+        $reservations = $this->buildReservationQuery($request, $user, $view)->get();
+
+        $settings = app(\App\Services\Settings\SettingsService::class);
+        $nf = fn (float $v): string => number_format($v, 2, ',', ''); // décimale FR
+
+        $headers = [
+            __('No.'),
+            __('Room'),
+            __('Tenant'),
+            __('Email'),
+            __('Title'),
+            __('Reservation slots'),
+            __('Amount'),
+            __('Currency'),
+            __('Status'),
+            __('Created on'),
+        ];
+
+        $filename = 'reservations-'.now()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($reservations, $headers, $settings, $nf) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 (Excel détecte l'encodage)
+            // Enclosure " + escape "" (vide) : CSV RFC propre et pas de dépréciation PHP 8.4.
+            fputcsv($out, $headers, ';', '"', '');
+
+            foreach ($reservations as $r) {
+                $tz = $r->room->getTimezone();
+                $slots = $r->events
+                    ->sortBy('start')
+                    ->map(fn ($e) => $e->start->copy()->setTimezone($tz)->format('d.m.Y H:i')
+                        .'–'.$e->end->copy()->setTimezone($tz)->format('H:i'))
+                    ->implode(' / ');
+
+                fputcsv($out, [
+                    '#'.$r->id,
+                    $r->room?->name,
+                    $r->tenant?->display_name(),
+                    $r->tenant?->email,
+                    $r->title,
+                    $slots,
+                    $nf((float) $r->finalPrice()),
+                    $settings->currency($r->room?->owner),
+                    $r->status->label(),
+                    $r->created_at->format('d.m.Y'),
+                ], ';', '"', '');
+            }
+
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
 

@@ -54,7 +54,7 @@
                 </select>
             </div>
 
-            <div class="flex items-end gap-2">
+            <div class="flex items-end gap-2 flex-wrap">
                 <button type="submit" class="btn btn-primary flex-1">
                     {{ __('Filter') }}
                 </button>
@@ -63,6 +63,11 @@
                         {{ __('Reset') }}
                     </a>
                 @endif
+                {{-- Export : réutilise le même formulaire (donc les mêmes filtres) via formaction. --}}
+                <button type="submit" formaction="{{ route('reservations.export') }}"
+                        class="btn btn-secondary" title="{{ __('Export the filtered list to Excel') }}">
+                    ⬇ {{ __('Export (Excel)') }}
+                </button>
             </div>
         </form>
     </div>
