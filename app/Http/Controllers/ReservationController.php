@@ -357,11 +357,12 @@ class ReservationController extends Controller
     }
 
     /**
-     * Export CSV (ouvrable dans Excel) de l'historique des réservations, avec
-     * les MÊMES filtres et le MÊME périmètre que la liste. UTF-8 + BOM et
-     * séparateur « ; » pour des colonnes et accents corrects dans Excel.
+     * Export .xlsx (vrai fichier Excel) de l'historique des réservations, avec
+     * les MÊMES filtres et le MÊME périmètre que la liste. Généré nativement
+     * (ZipArchive, sans dépendance) → chaque valeur dans sa propre colonne,
+     * quel que soit le réglage de séparateur d'Excel ; montants en vrais nombres.
      */
-    public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function export(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $user = auth()->user();
 
@@ -371,7 +372,6 @@ class ReservationController extends Controller
         $reservations = $this->buildReservationQuery($request, $user, $view)->get();
 
         $settings = app(\App\Services\Settings\SettingsService::class);
-        $nf = fn (float $v): string => number_format($v, 2, ',', ''); // décimale FR
 
         $headers = [
             __('No.'),
@@ -386,40 +386,130 @@ class ReservationController extends Controller
             __('Created on'),
         ];
 
-        $filename = 'reservations-'.now()->format('Y-m-d').'.csv';
+        $rows = [];
+        foreach ($reservations as $r) {
+            $tz = $r->room?->getTimezone() ?? config('app.timezone', 'UTC');
+            $slots = $r->events
+                ->sortBy('start')
+                ->map(fn ($e) => $e->start->copy()->setTimezone($tz)->format('d.m.Y H:i')
+                    .'–'.$e->end->copy()->setTimezone($tz)->format('H:i'))
+                ->implode(' / ');
 
-        return response()->streamDownload(function () use ($reservations, $headers, $settings, $nf) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF"); // BOM UTF-8 (Excel détecte l'encodage)
-            // Enclosure " + escape "" (vide) : CSV RFC propre et pas de dépréciation PHP 8.4.
-            fputcsv($out, $headers, ';', '"', '');
+            $rows[] = [
+                ['s', '#'.$r->id],
+                ['s', (string) ($r->room?->name ?? '')],
+                ['s', (string) ($r->tenant?->display_name() ?? '')],
+                ['s', (string) ($r->tenant?->email ?? '')],
+                ['s', (string) $r->title],
+                ['s', $slots],
+                ['n', round((float) $r->finalPrice(), 2)],
+                ['s', (string) $settings->currency($r->room?->owner)],
+                ['s', (string) $r->status->label()],
+                ['s', $r->created_at->format('d.m.Y')],
+            ];
+        }
 
-            foreach ($reservations as $r) {
-                $tz = $r->room->getTimezone();
-                $slots = $r->events
-                    ->sortBy('start')
-                    ->map(fn ($e) => $e->start->copy()->setTimezone($tz)->format('d.m.Y H:i')
-                        .'–'.$e->end->copy()->setTimezone($tz)->format('H:i'))
-                    ->implode(' / ');
+        return $this->xlsxDownload(
+            __('Reservations'),
+            $headers,
+            $rows,
+            'reservations-'.now()->format('Y-m-d').'.xlsx',
+        );
+    }
 
-                fputcsv($out, [
-                    '#'.$r->id,
-                    $r->room?->name,
-                    $r->tenant?->display_name(),
-                    $r->tenant?->email,
-                    $r->title,
-                    $slots,
-                    $nf((float) $r->finalPrice()),
-                    $settings->currency($r->room?->owner),
-                    $r->status->label(),
-                    $r->created_at->format('d.m.Y'),
-                ], ';', '"', '');
+    /**
+     * Génère un vrai fichier .xlsx (sans dépendance externe, via ZipArchive) et
+     * le renvoie en téléchargement. Une cellule = une colonne, toujours.
+     *
+     * @param  array<int, string>  $headers
+     * @param  array<int, array<int, array{0: string, 1: mixed}>>  $rows  cellules ['s'|'n', valeur]
+     */
+    private function xlsxDownload(string $sheetName, array $headers, array $rows, string $filename): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            .'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
+
+        $rowNum = 1;
+        $sheet .= '<row r="'.$rowNum.'">';
+        foreach ($headers as $i => $h) {
+            $ref = $this->xlsxColLetter($i + 1).$rowNum;
+            $sheet .= '<c r="'.$ref.'" t="inlineStr"><is><t xml:space="preserve">'.$this->xlsxEscape((string) $h).'</t></is></c>';
+        }
+        $sheet .= '</row>';
+
+        foreach ($rows as $row) {
+            $rowNum++;
+            $sheet .= '<row r="'.$rowNum.'">';
+            foreach ($row as $i => $cell) {
+                [$type, $value] = $cell;
+                $ref = $this->xlsxColLetter($i + 1).$rowNum;
+                if ($type === 'n' && is_numeric($value)) {
+                    $sheet .= '<c r="'.$ref.'"><v>'.number_format((float) $value, 2, '.', '').'</v></c>';
+                } else {
+                    $sheet .= '<c r="'.$ref.'" t="inlineStr"><is><t xml:space="preserve">'.$this->xlsxEscape((string) $value).'</t></is></c>';
+                }
             }
+            $sheet .= '</row>';
+        }
+        $sheet .= '</sheetData></worksheet>';
 
-            fclose($out);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+        $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            .'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            .'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            .'<Default Extension="xml" ContentType="application/xml"/>'
+            .'<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            .'<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            .'</Types>';
+
+        $rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            .'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            .'</Relationships>';
+
+        $workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            .'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            .'<sheets><sheet name="'.$this->xlsxEscape(mb_substr($sheetName, 0, 31)).'" sheetId="1" r:id="rId1"/></sheets>'
+            .'</workbook>';
+
+        $workbookRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            .'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            .'</Relationships>';
+
+        $tmp = tempnam(sys_get_temp_dir(), 'xlsx');
+        $zip = new \ZipArchive();
+        $zip->open($tmp, \ZipArchive::OVERWRITE);
+        $zip->addFromString('[Content_Types].xml', $contentTypes);
+        $zip->addFromString('_rels/.rels', $rels);
+        $zip->addFromString('xl/workbook.xml', $workbook);
+        $zip->addFromString('xl/_rels/workbook.xml.rels', $workbookRels);
+        $zip->addFromString('xl/worksheets/sheet1.xml', $sheet);
+        $zip->close();
+
+        return response()->download($tmp, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /** Numéro de colonne (1-indexé) → lettre(s) Excel (1=A, 27=AA…). */
+    private function xlsxColLetter(int $n): string
+    {
+        $s = '';
+        while ($n > 0) {
+            $m = ($n - 1) % 26;
+            $s = chr(65 + $m).$s;
+            $n = intdiv($n - 1, 26);
+        }
+
+        return $s;
+    }
+
+    /** Échappe une valeur pour XML et retire les caractères de contrôle invalides. */
+    private function xlsxEscape(string $v): string
+    {
+        $v = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/u', '', $v) ?? $v;
+
+        return htmlspecialchars($v, ENT_QUOTES | ENT_XML1, 'UTF-8');
     }
 
     /**
