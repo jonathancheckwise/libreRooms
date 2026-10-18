@@ -15,15 +15,18 @@ class BexioMonthlyDraft extends Model
     protected $fillable = [
         'contact_id',
         'period',
+        'status',
         'bexio_invoice_id',
         'bexio_document_nr',
         'has_special',
         'finalized_at',
+        'cleared_at',
     ];
 
     protected $casts = [
         'has_special' => 'boolean',
         'finalized_at' => 'datetime',
+        'cleared_at' => 'datetime',
     ];
 
     public function contact(): BelongsTo

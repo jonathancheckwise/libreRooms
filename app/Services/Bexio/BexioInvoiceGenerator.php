@@ -29,13 +29,25 @@ use Illuminate\Support\Collection;
  */
 class BexioInvoiceGenerator
 {
+    /** Marqueurs de titre (version « emojis ») selon l'état du brouillon. */
+    private const P_ENCOURS = '⏳ EN COURS · ';
+
+    private const P_AVALIDER = '✅ À VALIDER · ';
+
+    /** kb_item_status_id d'un brouillon bexio (tout autre = émise/en suspens/…). */
+    private const STATUS_DRAFT = 7;
+
     public function __construct(private BexioClient $bexio, private BexioContactSync $contacts) {}
 
     /**
-     * Passe incrémentale : ajoute aux brouillons mensuels toutes les
-     * réservations devenues facturables depuis le dernier passage.
+     * Passe incrémentale complète, idempotente (planifiée toutes les heures) :
+     *   1) ACCUMULATION : ajoute les réservations passées aux brouillons « en cours » ;
+     *   2) CLÔTURE : les brouillons d'un mois écoulé passent en « à valider »
+     *      (titre ✅, note « ne pas envoyer » retirée) ;
+     *   3) NETTOYAGE : un brouillon « à valider » qui a été émis/envoyé dans bexio
+     *      voit son titre nettoyé (préfixe/emoji retiré).
      *
-     * @return array<int, array<string,mixed>>  un résumé par (entité, mois) touché
+     * @return array<int, array<string,mixed>>
      */
     public function accrue(bool $dryRun = false): array
     {
@@ -43,6 +55,7 @@ class BexioInvoiceGenerator
         $cutover = Carbon::parse(config('services.bexio.billing_start'), $tz)->startOfDay();
         $taxId = (int) config('services.bexio.tax_id');
         $accountId = (int) config('services.bexio.account_id');
+        $currentPeriod = Carbon::now($tz)->format('Y-m');
 
         $reservations = Reservation::query()
             ->whereIn('status', [ReservationStatus::CONFIRMED, ReservationStatus::FINISHED])
@@ -61,6 +74,8 @@ class BexioInvoiceGenerator
         );
 
         $results = [];
+
+        // 1) ACCUMULATION
         foreach ($groups as $key => $group) {
             [$rootId, $period] = explode('|', (string) $key);
             if (! $rootId) {
@@ -68,6 +83,41 @@ class BexioInvoiceGenerator
             }
             $results[] = $this->accrueGroup($group->first()->tenant->root(), $period, $group, $taxId, $accountId, $tz, $dryRun);
         }
+
+        if ($dryRun) {
+            return $results; // on ne touche à rien en aperçu
+        }
+
+        // 2) CLÔTURE des brouillons d'un mois désormais écoulé → « à valider »
+        BexioMonthlyDraft::where('status', 'en_cours')
+            ->where('period', '<', $currentPeriod)
+            ->get()
+            ->each(function (BexioMonthlyDraft $d) use ($tz, &$results) {
+                try {
+                    $this->renameInvoice($d->bexio_invoice_id, self::P_AVALIDER.$this->baseTitle($d->period, $tz));
+                    $this->removeDoNotSendNote($d->bexio_invoice_id);
+                    $d->update(['status' => 'a_valider', 'finalized_at' => now()]);
+                    $results[] = ['event' => 'clôture → à valider', 'entity' => optional($d->contact)->display_name(), 'period' => $d->period, 'document_nr' => $d->bexio_document_nr];
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            });
+
+        // 3) NETTOYAGE du titre quand la facture a été émise/envoyée dans bexio
+        BexioMonthlyDraft::where('status', 'a_valider')
+            ->get()
+            ->each(function (BexioMonthlyDraft $d) use ($tz, &$results) {
+                try {
+                    $inv = $this->bexio->get('2.0/kb_invoice/'.$d->bexio_invoice_id);
+                    if ((int) ($inv['kb_item_status_id'] ?? self::STATUS_DRAFT) !== self::STATUS_DRAFT) {
+                        $this->renameInvoice($d->bexio_invoice_id, $this->baseTitle($d->period, $tz));
+                        $d->update(['status' => 'envoyee', 'cleared_at' => now()]);
+                        $results[] = ['event' => 'titre nettoyé (émise)', 'entity' => optional($d->contact)->display_name(), 'period' => $d->period, 'document_nr' => $d->bexio_document_nr];
+                    }
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            });
 
         return $results;
     }
@@ -96,21 +146,26 @@ class BexioInvoiceGenerator
 
         $draft = BexioMonthlyDraft::where('contact_id', $entity->id)->where('period', $period)->first();
 
-        // Brouillon déjà validé dans bexio → on n'y touche plus ; les résas
-        // restent non facturées et ressortiront dans un aperçu (dry-run).
-        if ($draft && $draft->finalized_at) {
-            return $summary + ['skipped' => 'facture déjà finalisée dans bexio'];
+        // Mois déjà clôturé (à valider / envoyée) → on n'ajoute plus rien : la
+        // facture est figée. Les éventuels retardataires restent non facturés et
+        // ressortent dans un aperçu (dry-run) pour traitement manuel.
+        if ($draft && $draft->status !== 'en_cours') {
+            return $summary + ['skipped' => 'mois clôturé ('.$draft->status.')'];
         }
 
         $toAppend = $sorted;
 
         if (! $draft) {
-            // Création du brouillon avec la 1re ligne en ligne (jamais vide).
+            // Création du brouillon « ⏳ EN COURS » : note « ne pas envoyer » en
+            // tête + la 1re ligne de réservation (jamais vide).
             $first = $sorted->first();
             $contactId = $this->contacts->sync($entity);
-            $payload = $this->headerPayload($entity, $period, $tz) + [
+            $payload = $this->headerPayload($entity, $period, $tz, self::P_ENCOURS) + [
                 'contact_id' => $contactId,
-                'positions' => [$this->inlinePosition($this->positionFor($first, $taxId, $accountId, $tz))],
+                'positions' => [
+                    $this->inlinePosition($this->doNotSendNote($taxId, $accountId)),
+                    $this->inlinePosition($this->positionFor($first, $taxId, $accountId, $tz)),
+                ],
             ];
             $created = $this->bexio->post('2.0/kb_invoice', $payload);
             $invoiceId = (int) ($created['id'] ?? 0);
@@ -118,6 +173,7 @@ class BexioInvoiceGenerator
             $draft = BexioMonthlyDraft::create([
                 'contact_id' => $entity->id,
                 'period' => $period,
+                'status' => 'en_cours',
                 'bexio_invoice_id' => $invoiceId,
                 'bexio_document_nr' => $created['document_nr'] ?? null,
                 'has_special' => false,
@@ -236,15 +292,63 @@ class BexioInvoiceGenerator
         return $r->events->min('start')->copy()->setTimezone($tz)->format('Y-m');
     }
 
-    /** En-tête de facture (sans contact_id ni positions). */
-    private function headerPayload(Contact $entity, string $period, string $tz): array
+    /**
+     * Renomme une facture bexio. L'API impose de renvoyer tout l'en-tête : on
+     * relit l'objet, on garde les champs modifiables, on force les champs
+     * techniques que le GET n'expose pas (décimales, vue), on change le titre.
+     * Les positions ne sont PAS renvoyées → elles restent intactes.
+     */
+    private function renameInvoice(int $invoiceId, string $newTitle): void
+    {
+        $full = $this->bexio->get('2.0/kb_invoice/'.$invoiceId);
+
+        $keys = ['contact_id', 'user_id', 'logopaper_id', 'language_id', 'bank_account_id',
+            'currency_id', 'payment_type_id', 'header', 'footer', 'mwst_type', 'mwst_is_net',
+            'is_valid_from', 'is_valid_to'];
+        $payload = [];
+        foreach ($keys as $k) {
+            if (array_key_exists($k, $full) && $full[$k] !== null) {
+                $payload[$k] = $full[$k];
+            }
+        }
+        $payload = array_merge($payload, [
+            'nb_decimals_amount' => 2,
+            'nb_decimals_price' => 2,
+            'is_compact_view' => false,
+            'show_position_taxes' => false,
+            'title' => $newTitle,
+        ]);
+
+        $this->bexio->put('2.0/kb_invoice/'.$invoiceId, $payload);
+    }
+
+    /** Retire la ligne note « NE PAS ENVOYER » d'un brouillon (au passage en « à valider »). */
+    private function removeDoNotSendNote(int $invoiceId): void
+    {
+        $inv = $this->bexio->get('2.0/kb_invoice/'.$invoiceId);
+        foreach (($inv['positions'] ?? []) as $pos) {
+            if (str_contains((string) ($pos['text'] ?? ''), 'NE PAS ENVOYER') && isset($pos['id'])) {
+                $this->bexio->delete('2.0/kb_invoice/'.$invoiceId.'/kb_position_custom/'.$pos['id']);
+            }
+        }
+    }
+
+    /** Titre de base d'une facture mensuelle (sans préfixe d'état). */
+    private function baseTitle(string $period, string $tz): string
     {
         $monthLabel = Carbon::createFromFormat('Y-m', $period, $tz)->locale('fr')->isoFormat('MMMM YYYY');
+
+        return 'Réservations La Pépite — '.$monthLabel;
+    }
+
+    /** En-tête de facture (sans contact_id ni positions). */
+    private function headerPayload(Contact $entity, string $period, string $tz, string $prefix = ''): array
+    {
         $invoiceDate = Carbon::now($tz);
         $term = (int) config('services.bexio.payment_term_days', 30);
 
         return array_filter([
-            'title' => 'Réservations La Pépite — '.$monthLabel,
+            'title' => $prefix.$this->baseTitle($period, $tz),
             'user_id' => (int) config('services.bexio.user_id') ?: null,
             'language_id' => (int) config('services.bexio.language_id') ?: null,
             'bank_account_id' => (int) config('services.bexio.bank_account_id') ?: null,

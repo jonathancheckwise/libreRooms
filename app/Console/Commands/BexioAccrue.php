@@ -40,6 +40,15 @@ class BexioAccrue extends Command
         $grand = 0.0;
         foreach ($results as $r) {
             $this->newLine();
+
+            // Événement de cycle de vie (clôture / nettoyage de titre).
+            if (isset($r['event'])) {
+                $this->line('<fg=cyan>↪ '.$r['event'].'</> : <options=bold>'.$r['entity'].'</> — '.$r['period']
+                    .' · bexio '.($r['document_nr'] ?: '—'));
+
+                continue;
+            }
+
             $tag = isset($r['dry_run']) ? ' (aperçu)'
                 : (isset($r['skipped']) ? ' · <fg=red>IGNORÉ : '.$r['skipped'].'</>'
                     : ' · bexio '.($r['document_nr'] ?: '#'.($r['bexio_invoice_id'] ?? '?')));
@@ -53,7 +62,7 @@ class BexioAccrue extends Command
         }
 
         $this->newLine();
-        $this->info(count($results).' brouillon(s) touché(s), total '.number_format($grand, 2, '.', '\'').' CHF.'
+        $this->info(count($results).' élément(s) traité(s), total des lignes '.number_format($grand, 2, '.', '\'').' CHF.'
             .($dry ? ' — DRY-RUN : rien écrit.' : ''));
 
         return self::SUCCESS;
