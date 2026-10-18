@@ -63,32 +63,53 @@ class BexioSimulate extends Command
             ->filter(fn ($g, $k) => (bool) $k)
             ->take($limit);
 
-        $this->line('Création de '.$byEntity->count().' brouillon(s) de SIMULATION dans bexio…');
+        $this->line('Création de brouillons de SIMULATION dans bexio…');
         $created = 0;
+        $first = true;
         foreach ($byEntity as $group) {
             $entity = $group->first()->tenant->root();
             $byPeriod = $group->groupBy(fn (Reservation $r) => $r->events->min('start')->copy()->setTimezone($tz)->format('Y-m'));
-            $period = $byPeriod->keys()->sort()->last();            // mois le plus récent
-            $slice = $byPeriod->get($period);
+            $periods = $byPeriod->keys()->sort()->values();
+            $latest = $periods->last();
 
-            try {
-                $res = $gen->simulateDraft($entity, $period, $slice);
-                $this->newLine();
-                $this->line('<options=bold>'.$res['entity'].'</> — '.$res['period'].' — '.$res['count'].' résa(s) · '
-                    .number_format($res['total'], 2, '.', '\'').' CHF'
-                    .($res['special'] ? ' · DEMANDE SPÉCIALE' : '')
-                    .' → bexio '.($res['document_nr'] ?: '#'.$res['bexio_invoice_id']));
-                $created++;
-            } catch (\Throwable $e) {
-                $this->error('Échec pour '.$entity->display_name().' : '.$e->getMessage());
+            // Toutes les entités : un brouillon « EN COURS » (mois le plus récent) avec la note.
+            $created += $this->makeDraft($gen, $entity, $latest, $byPeriod->get($latest), 'en_cours');
+
+            // Pour la 1re entité, on montre AUSSI l'état « À VALIDER » (mois précédent
+            // s'il existe, sinon le même mois) pour voir les deux états côte à côte.
+            if ($first) {
+                $valPeriod = $periods->count() > 1 ? $periods->get($periods->count() - 2) : $latest;
+                $created += $this->makeDraft($gen, $entity, $valPeriod, $byPeriod->get($valPeriod), 'a_valider');
+                $first = false;
             }
         }
 
         $this->newLine();
-        $this->info($created.' brouillon(s) de simulation créé(s) dans bexio (titre « SIMULATION (à supprimer) »).');
-        $this->comment('→ Va les voir dans bexio (Ventes › Factures, en brouillon), puis supprime-les avec :');
-        $this->comment('   php artisan pepite:bexio-simulate --cleanup');
+        $this->info($created.' brouillon(s) de simulation créé(s) dans bexio.');
+        $this->comment('→ Va les voir dans bexio (Ventes › Factures, filtre « Brouillons ») :');
+        $this->comment('   ⏳ EN COURS  = mois en cours (avec note « NE PAS ENVOYER »)');
+        $this->comment('   ✅ À VALIDER = mois figé, prêt à revoir/envoyer');
+        $this->comment('→ Puis supprime tout avec : php artisan pepite:bexio-simulate --cleanup');
 
         return self::SUCCESS;
+    }
+
+    private function makeDraft(BexioInvoiceGenerator $gen, $entity, string $period, $slice, string $state): int
+    {
+        try {
+            $res = $gen->simulateDraft($entity, $period, $slice, $state);
+            $tag = $state === 'en_cours' ? '⏳ EN COURS ' : '✅ À VALIDER';
+            $this->newLine();
+            $this->line($tag.' <options=bold>'.$res['entity'].'</> — '.$res['period'].' — '.$res['count'].' résa(s) · '
+                .number_format($res['total'], 2, '.', '\'').' CHF'
+                .($res['special'] ? ' · DEMANDE SPÉCIALE' : '')
+                .' → bexio '.($res['document_nr'] ?: '#'.$res['bexio_invoice_id']));
+
+            return 1;
+        } catch (\Throwable $e) {
+            $this->error('Échec pour '.$entity->display_name().' : '.$e->getMessage());
+
+            return 0;
+        }
     }
 }

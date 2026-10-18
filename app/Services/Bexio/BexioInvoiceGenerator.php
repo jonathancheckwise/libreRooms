@@ -163,7 +163,7 @@ class BexioInvoiceGenerator
      *
      * @return array<string,mixed>
      */
-    public function simulateDraft(Contact $entity, string $period, Collection $group): array
+    public function simulateDraft(Contact $entity, string $period, Collection $group, string $state = 'en_cours'): array
     {
         $tz = config('app.timezone', 'Europe/Zurich');
         $taxId = (int) config('services.bexio.tax_id');
@@ -171,14 +171,23 @@ class BexioInvoiceGenerator
 
         $sorted = $group->sortBy(fn (Reservation $r) => optional($r->events->min('start')))->values();
         $hasSpecial = $sorted->contains(fn (Reservation $r) => (bool) optional($r->room)->on_request);
+        $enCours = $state === 'en_cours';
 
-        $positions = $sorted->map(fn (Reservation $r) => $this->inlinePosition($this->positionFor($r, $taxId, $accountId, $tz)))->values()->all();
+        $positions = [];
+        // Mois en cours : note d'avertissement en tête pour éviter un envoi prématuré.
+        if ($enCours) {
+            $positions[] = $this->inlinePosition($this->doNotSendNote($taxId, $accountId));
+        }
+        foreach ($sorted as $r) {
+            $positions[] = $this->inlinePosition($this->positionFor($r, $taxId, $accountId, $tz));
+        }
         if ($hasSpecial) {
             $positions[] = $this->inlinePosition($this->specialNote($taxId, $accountId));
         }
 
+        $prefix = $enCours ? '⏳ EN COURS · ' : '✅ À VALIDER · ';
         $payload = $this->headerPayload($entity, $period, $tz);
-        $payload['title'] = 'SIMULATION (à supprimer) — '.$payload['title'];
+        $payload['title'] = $prefix.'SIMULATION (à supprimer) · '.$payload['title'];
         $payload['contact_id'] = $this->contacts->sync($entity);
         $payload['positions'] = $positions;
 
@@ -187,6 +196,7 @@ class BexioInvoiceGenerator
         return [
             'entity' => $entity->display_name(),
             'period' => $period,
+            'state' => $state,
             'count' => $sorted->count(),
             'total' => round($sorted->sum(fn (Reservation $r) => round($r->finalPrice(), 2)), 2),
             'special' => $hasSpecial,
@@ -202,7 +212,7 @@ class BexioInvoiceGenerator
         $invoices = $this->bexio->get('2.0/kb_invoice');
         foreach ($invoices as $inv) {
             $title = (string) ($inv['title'] ?? '');
-            if (str_starts_with($title, 'SIMULATION (à supprimer)')) {
+            if (str_contains($title, 'SIMULATION (à supprimer)')) {
                 $id = (int) ($inv['id'] ?? 0);
                 if ($id > 0) {
                     $this->bexio->delete('2.0/kb_invoice/'.$id);
@@ -267,6 +277,18 @@ class BexioInvoiceGenerator
             'tax_id' => $taxId,
             'account_id' => $accountId,
             'text' => '⚠️ À COMPLÉTER : ajouter manuellement les positions catering / services (demande spéciale — non saisies dans l\'app de réservation).',
+        ];
+    }
+
+    /** Note d'en-tête pour un brouillon du mois EN COURS (ne pas envoyer). */
+    private function doNotSendNote(int $taxId, int $accountId): array
+    {
+        return [
+            'amount' => '1',
+            'unit_price' => '0.00',
+            'tax_id' => $taxId,
+            'account_id' => $accountId,
+            'text' => '⚠️ NE PAS ENVOYER AU CLIENT — facture du mois EN COURS de constitution (se complète automatiquement au fil des réservations ; prête à valider le 1er du mois suivant).',
         ];
     }
 
