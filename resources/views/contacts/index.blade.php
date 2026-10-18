@@ -53,6 +53,10 @@
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-900">
                             {{ $contact->entity_name ?: '-' }}
+                            @if(($contact->aliases_count ?? 0) > 0)
+                                <a href="{{ route('contacts.merge.form', $contact) }}" title="{{ __('Merged entities') }}"
+                                   style="display:inline-block;margin-left:.4rem;font-size:.7rem;background:#EDE3CC;color:#7a5c1f;border-radius:999px;padding:.05rem .45rem;text-decoration:none;white-space:nowrap">⚯ {{ $contact->aliases_count }}</a>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-900">
                             {{ $contact->first_name ?: '-' }}<br>
@@ -134,6 +138,9 @@
                                 <a href="{{ route('invoices.index', ['view' => $linkedView, 'tenant_id' => $contact->id]) }}" class="link-primary" title="{{ __('Invoices') }}">
                                     <x-action-icon action="invoices" />
                                 </a>
+                                @if($canViewAll)
+                                    <a href="{{ route('contacts.merge.form', $contact) }}" class="link-primary" title="{{ __('Merge / un-merge') }}" style="font-size:1.05rem;text-decoration:none">🔀</a>
+                                @endif
                                 @if($canManage)
                                     <a href="#" class="link-primary" title="{{ __('Share') }}" onclick="event.preventDefault(); showShareModal({{ $contact->id }}, '{{ addslashes($contact->display_name()) }}')">
                                         <x-action-icon action="share" />

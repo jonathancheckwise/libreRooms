@@ -221,6 +221,10 @@ Route::controller(ContactController::class)->middleware(['auth', 'verified'])->g
     Route::get('/contacts/{contact}/edit', 'edit')->name('contacts.edit');
     Route::put('/contacts/{contact}', 'update')->name('contacts.update');
     Route::post('/contacts/{contact}/share', 'share')->name('contacts.share');
+    // Fusion / défusion d'entités (dédup, responsables uniquement)
+    Route::get('/contacts/{contact}/merge', 'mergeForm')->name('contacts.merge.form');
+    Route::post('/contacts/{contact}/merge', 'merge')->name('contacts.merge');
+    Route::post('/contacts/{contact}/unmerge', 'unmerge')->name('contacts.unmerge');
     Route::delete('/contacts/{contact}', 'destroy')->name('contacts.destroy');
 });
 

@@ -34,6 +34,7 @@ class ContactController extends Controller
             // Tous les responsables voient TOUTES les entités (racines, alias masqués).
             // Évite les doublons créés par le cloisonnement des contacts entre admins.
             $contacts = Contact::with('users')
+                ->withCount('aliases')
                 ->roots()
                 ->orderByRaw("CASE WHEN type = 'organization' THEN entity_name ELSE CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) END ASC")
                 ->paginate(15)
@@ -283,5 +284,67 @@ class ContactController extends Controller
 
         return redirect()->back()
             ->with('success', __('Contact shared with :name.', ['name' => $userToShareWith->name]));
+    }
+
+    /* ===================== Fusion / défusion d'entités (dédup) ================
+     * Réservé aux responsables. Non destructif : la fusion pose merged_into_id,
+     * la défusion le retire. Rien n'est supprimé, aucune réservation déplacée.
+     */
+
+    /** Page de fusion d'une entité (choisir le survivant + défusionner ses alias). */
+    public function mergeForm(Contact $contact): View
+    {
+        abort_unless(auth()->user()->can('viewAdmin', Room::class), 403);
+
+        // Entités « racines » candidates au survivant (toutes sauf celle-ci).
+        $candidates = Contact::roots()
+            ->where('id', '!=', $contact->id)
+            ->orderByRaw("CASE WHEN type = 'organization' THEN entity_name ELSE CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) END ASC")
+            ->get();
+
+        return view('contacts.merge', [
+            'contact' => $contact,
+            'candidates' => $candidates,
+            'aliases' => $contact->aliases()->get(),
+        ]);
+    }
+
+    /** Fusionne cette entité DANS un survivant (elle devient un alias). */
+    public function merge(Request $request, Contact $contact): RedirectResponse
+    {
+        abort_unless(auth()->user()->can('viewAdmin', Room::class), 403);
+
+        $data = $request->validate([
+            'survivor_id' => ['required', 'integer', 'different:'.$contact->id, 'exists:contacts,id'],
+        ]);
+
+        $survivor = Contact::findOrFail($data['survivor_id']);
+        if ($survivor->isMerged()) {
+            return back()->with('error', __('The target entity is itself merged. Pick a root entity.'));
+        }
+        if ($contact->aliases()->exists()) {
+            return back()->with('error', __('This entity already has merged entities. Un-merge them first.'));
+        }
+
+        $contact->merged_into_id = $survivor->id;
+        $contact->save();
+
+        return redirect()->route('contacts.index', ['view' => 'all'])
+            ->with('success', __(':a merged into :b.', ['a' => $contact->display_name(), 'b' => $survivor->display_name()]));
+    }
+
+    /** Défusionne une entité : elle redevient indépendante (réversible). */
+    public function unmerge(Contact $contact): RedirectResponse
+    {
+        abort_unless(auth()->user()->can('viewAdmin', Room::class), 403);
+
+        if (! $contact->isMerged()) {
+            return back()->with('error', __('This entity is not merged.'));
+        }
+
+        $contact->merged_into_id = null;
+        $contact->save();
+
+        return back()->with('success', __(':name un-merged.', ['name' => $contact->display_name()]));
     }
 }
