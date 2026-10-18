@@ -31,7 +31,18 @@ class ContactRules
                                         if ($contact && $value == $contact->id) {
                                             return;
                                         }
-                                        // Otherwise, must be a contact the user has access to
+                                        // Responsable : accès à TOUTES les entités racines
+                                        // (cohérent avec le sélecteur partagé ; alias exclus).
+                                        $user = auth()->user();
+                                        if ($user && $user->can('viewAdmin', \App\Models\Room::class)) {
+                                            $ok = Contact::whereKey($value)->whereNull('merged_into_id')->exists();
+                                            if (! $ok) {
+                                                $fail(__('The selected contact is not valid.'));
+                                            }
+
+                                            return;
+                                        }
+                                        // Sinon : un contact rattaché à l'utilisateur.
                                         $exists = DB::table('contact_user')
                                             ->where('contact_id', $value)
                                             ->where('user_id', $userId)

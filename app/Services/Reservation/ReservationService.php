@@ -756,6 +756,29 @@ class ReservationService
             return $contact;
         }
 
+        // Dédup AUTO : avant de créer, on réutilise une entité existante si la
+        // correspondance est SÛRE — même organisation (entity_name) OU même e-mail
+        // pour une personne. (Un même e-mail peut servir 2 orgas → on ne matche
+        // PAS les orgas sur l'e-mail.) On complète seulement les champs vides de
+        // l'entité existante, sans écraser ceux déjà renseignés.
+        $match = $this->findDuplicateContact($contactData);
+        if ($match) {
+            $fill = [];
+            foreach (['email', 'invoice_email', 'phone', 'street', 'zip', 'city', 'first_name', 'last_name', 'entity_name'] as $f) {
+                if (blank($match->{$f}) && filled($contactData[$f] ?? null)) {
+                    $fill[$f] = $contactData[$f];
+                }
+            }
+            if (! empty($fill)) {
+                $match->update($fill);
+            }
+            if ($user) {
+                $match->users()->syncWithoutDetaching([$user->id]);
+            }
+
+            return $match;
+        }
+
         // Create new contact
         $contact = Contact::create($contactData);
 
@@ -765,5 +788,44 @@ class ReservationService
         }
 
         return $contact;
+    }
+
+    /**
+     * Cherche une entité existante (racine) correspondant SÛREMENT aux données :
+     * organisation = même nom normalisé ; personne = même e-mail. Sinon null.
+     */
+    private function findDuplicateContact(array $data): ?Contact
+    {
+        $type = $data['type'] ?? null;
+
+        if ($type === \App\Enums\ContactTypes::ORGANIZATION->value && filled($data['entity_name'] ?? null)) {
+            $target = $this->normalizeForMatch($data['entity_name']);
+
+            return Contact::roots()
+                ->where('type', \App\Enums\ContactTypes::ORGANIZATION)
+                ->get()
+                ->first(fn (Contact $c) => $this->normalizeForMatch($c->entity_name) === $target);
+        }
+
+        if ($type === \App\Enums\ContactTypes::INDIVIDUAL->value && filled($data['email'] ?? null)) {
+            $target = mb_strtolower(trim($data['email']));
+
+            return Contact::roots()
+                ->where('type', \App\Enums\ContactTypes::INDIVIDUAL)
+                ->whereRaw('LOWER(TRIM(email)) = ?', [$target])
+                ->first();
+        }
+
+        return null;
+    }
+
+    /** Normalise un nom pour comparaison (minuscules, sans accents, espaces simples). */
+    private function normalizeForMatch(?string $s): string
+    {
+        $s = mb_strtolower(trim((string) $s));
+        $s = preg_replace('/\s+/', ' ', $s);
+        $translit = @iconv('UTF-8', 'ASCII//TRANSLIT', $s);
+
+        return $translit !== false ? $translit : $s;
     }
 }
