@@ -37,6 +37,13 @@ class BexioInvoiceGenerator
     /** kb_item_status_id d'un brouillon bexio (tout autre = émise/en suspens/…). */
     private const STATUS_DRAFT = 7;
 
+    /**
+     * Fuseau d'AFFICHAGE des heures sur les factures. L'app stocke tout en UTC
+     * (config app.timezone = UTC) ; les factures doivent montrer l'heure locale
+     * de Lausanne, sinon décalage de 1–2 h.
+     */
+    private const DISPLAY_TZ = 'Europe/Zurich';
+
     public function __construct(private BexioClient $bexio, private BexioContactSync $contacts) {}
 
     /**
@@ -51,7 +58,7 @@ class BexioInvoiceGenerator
      */
     public function accrue(bool $dryRun = false): array
     {
-        $tz = config('app.timezone', 'Europe/Zurich');
+        $tz = self::DISPLAY_TZ;
         $cutover = Carbon::parse(config('services.bexio.billing_start'), $tz)->startOfDay();
         $taxId = (int) config('services.bexio.tax_id');
         $accountId = (int) config('services.bexio.account_id');
@@ -221,7 +228,7 @@ class BexioInvoiceGenerator
      */
     public function simulateDraft(Contact $entity, string $period, Collection $group, string $state = 'en_cours'): array
     {
-        $tz = config('app.timezone', 'Europe/Zurich');
+        $tz = self::DISPLAY_TZ;
         $taxId = (int) config('services.bexio.tax_id');
         $accountId = (int) config('services.bexio.account_id');
 

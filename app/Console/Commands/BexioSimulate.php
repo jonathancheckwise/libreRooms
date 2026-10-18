@@ -37,7 +37,7 @@ class BexioSimulate extends Command
         }
 
         $limit = max(1, (int) $this->option('limit'));
-        $tz = config('app.timezone', 'Europe/Zurich');
+        $tz = config('app.timezone') === 'UTC' ? 'Europe/Zurich' : config('app.timezone', 'Europe/Zurich');
 
         // Vraies réservations déjà passées, payantes (on ignore la bascule et
         // billed_at : c'est une simulation en lecture seule côté facturation).
