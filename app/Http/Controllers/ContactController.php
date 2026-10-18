@@ -32,8 +32,9 @@ class ContactController extends Controller
 
         if ($view === 'all') {
             if ($user->is_global_admin) {
-                // Global admin: show all contacts
+                // Global admin: show all contacts (hors alias fusionnés)
                 $contacts = Contact::with('users')
+                    ->roots()
                     ->orderByRaw("CASE WHEN type = 'organization' THEN entity_name ELSE CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) END ASC")
                     ->paginate(15)
                     ->appends($request->except('page'));
@@ -42,6 +43,7 @@ class ContactController extends Controller
                 $roomIds = $user->getAccessibleRoomIds(UserRole::MODERATOR);
 
                 $contacts = Contact::with('users')
+                    ->roots()
                     ->where(function ($query) use ($user, $roomIds) {
                         $query->whereHas('users', function ($q) use ($user) {
                             $q->where('users.id', $user->id);
@@ -58,8 +60,9 @@ class ContactController extends Controller
                     ->appends($request->except('page'));
             }
         } else {
-            // Regular view: user's contacts only
+            // Regular view: user's contacts only (hors alias fusionnés)
             $contacts = $user->contacts()
+                ->roots()
                 ->with('users')
                 ->orderByRaw("CASE WHEN type = 'organization' THEN entity_name ELSE CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) END ASC")
                 ->paginate(15)

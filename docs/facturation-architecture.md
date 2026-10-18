@@ -16,7 +16,7 @@
 
 ### Décisions verrouillées
 1. **`Company` / « Entreprises » : laissé en friche** (sert juste à l'accès salles, non relié au billing). À revoir plus tard.
-2. **Dédup** : contacts **actuels** = proposés puis **validés manuellement** ; **futurs** = **auto**, avec **pop-up/confirmation en cas de doute**.
+2. **Dédup** : contacts **actuels** = proposés puis **validés manuellement** ; **futurs** = **auto**, avec **pop-up/confirmation en cas de doute**. ⚠️ **Clé = l'ORGANISATION/l'entité, PAS l'e-mail** : un même e-mail peut servir pour 2 orgas → **2 entités de facturation distinctes** (adresses différentes), même si c'est la même personne. **Adresse conservée lors d'une fusion = celle saisie par la personne de l'entité** (priorité sur une adresse entrée « au hasard » par un admin).
 3. **Adresse obligatoire** sur toute réservation (nécessaire à la QR-facture).
 4. **On facture l'entité pour laquelle la résa est faite.** Si 2 personnes d'une même structure → **une seule entité facturée**, mais **chaque résa garde qui a réservé**.
 
@@ -28,7 +28,8 @@ Cause (vérifiée) :
 
 → Magaly crée *Campus Demokratie* (privé). Emmanuelle ne le voit pas → le recrée → **doublon**. (Reproduit sur la base de test : `Association Test` ×2, un par admin.)
 
-Outil de détection livré : `php artisan pepite:contacts-duplicates` (**lecture seule**, groupes par e-mail / nom d'organisation / nom de personne).
+**Fusion / défusion NON destructives** (mécanisme réversible) : un contact absorbé devient un **alias** du survivant via `contacts.merged_into_id`. **Rien n'est supprimé, aucune réservation déplacée.** On ne liste/facture que les **racines** (`merged_into_id = null`, scope `Contact::roots()`). Côté admin (à venir) : boutons **« Fusionner avec… »** / **« Défusionner »** sur l'écran Entités.
+Outils livrés : `pepite:contacts-duplicates` (détection, lecture seule) · `pepite:contacts-merge {survivant} {absorbé*}` · `pepite:contacts-unmerge {absorbé*}`.
 
 ## 3. Cible « Entités »
 
@@ -40,7 +41,7 @@ Outil de détection livré : `php artisan pepite:contacts-duplicates` (**lecture
 ## 4. Facturation (modèle cible — à confirmer en détail)
 
 - Au **1er du mois N+1** : **1 facture globale par entité** = somme des prestations du mois N.
-- **Payable à 30 j**, délai **ajustable au cas par cas** (admin à la création / dans bexio / de vive voix). **Pas de relance automatique** stricte à J+30.
+- **Payable à 30 j pour TOUTES par défaut** (pas de délai perso côté app → simplicité). Ajustement **dans bexio** sur les factures mensuelles si besoin. **Pas de relance automatique** stricte à J+30.
 - **bexio = source de vérité comptable** (même un paiement Stripe y est réécrit « payé »).
 
 ## 5. Paiement (modèle cible — à confirmer en détail)

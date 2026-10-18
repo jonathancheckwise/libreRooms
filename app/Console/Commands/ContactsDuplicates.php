@@ -20,7 +20,9 @@ class ContactsDuplicates extends Command
 
     public function handle(): int
     {
-        $contacts = Contact::with(['users:id,email', 'reservations:id,tenant_id'])->get();
+        // On ne regarde que les entités « racines » : les alias déjà fusionnés
+        // ne doivent plus ressortir comme doublons.
+        $contacts = Contact::roots()->with(['users:id,email', 'reservations:id,tenant_id'])->get();
 
         $norm = function (?string $s): string {
             $s = mb_strtolower(trim((string) $s));
