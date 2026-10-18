@@ -55,6 +55,27 @@ class BexioClient
         return $this->decode($this->http()->put($this->path($path), $payload), 'PUT '.$path);
     }
 
+    /**
+     * Suppression. On N'envoie PAS de corps JSON ici : bexio refuse un DELETE
+     * avec Content-Type application/json et renvoie HTTP 415 (Unsupported Media
+     * Type). On garde juste Accept: application/json.
+     */
+    public function delete(string $path): array
+    {
+        $token = config('services.bexio.token');
+        if (blank($token)) {
+            throw new RuntimeException('bexio : aucun token configuré (BEXIO_TOKEN manquant dans .env).');
+        }
+
+        $response = Http::baseUrl(rtrim((string) config('services.bexio.base_url'), '/'))
+            ->withToken($token)
+            ->acceptJson()
+            ->timeout(20)
+            ->delete($this->path($path));
+
+        return $this->decode($response, 'DELETE '.$path);
+    }
+
     /** Normalise le chemin (ex. "2.0/contact"). */
     protected function path(string $path): string
     {
