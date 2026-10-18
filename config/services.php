@@ -62,4 +62,13 @@ return [
         'billing_start' => env('BEXIO_BILLING_START', '2026-10-19'),
     ],
 
+    'stripe' => [
+        // Clés API Stripe (mode test puis live). Mises dans .env par l'admin,
+        // jamais en dur. La clé publique sert au front, la secrète au back.
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        // Secret de signature du webhook (whsec_…), fourni une fois l'endpoint créé.
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
 ];

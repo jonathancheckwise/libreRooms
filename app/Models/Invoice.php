@@ -28,6 +28,10 @@ class Invoice extends Model
         'paid_at',
         'reminder_count',
         'cancelled_at',
+        'bexio_invoice_id',
+        'payment_method',
+        'stripe_session_id',
+        'stripe_payment_intent_id',
     ];
 
     protected function casts(): array
