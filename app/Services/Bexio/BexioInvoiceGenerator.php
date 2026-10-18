@@ -42,7 +42,12 @@ class BexioInvoiceGenerator
             ->whereHas('events', fn ($q) => $q->whereBetween('start', [$periodStart->copy()->utc(), $monthEnd->copy()->utc()]))
             ->with(['tenant.mergedInto', 'room', 'events.options'])
             ->get()
-            ->filter(fn (Reservation $r) => $r->finalPrice() > 0);
+            // On ne facture qu'une réservation DÉJÀ PASSÉE (tous ses créneaux
+            // terminés) : avant, elle peut encore être modifiée / déplacée /
+            // annulée. Et un prix > 0 (exclut l'interne gratuit comme La Pépite).
+            ->filter(fn (Reservation $r) => $r->finalPrice() > 0
+                && $r->events->isNotEmpty()
+                && $r->events->every(fn ($e) => $e->end->isPast()));
 
         $groups = $reservations->groupBy(fn (Reservation $r) => optional($r->tenant)?->root()?->id);
 
