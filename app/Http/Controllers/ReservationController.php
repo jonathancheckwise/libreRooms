@@ -167,9 +167,17 @@ class ReservationController extends Controller
             ];
         }
 
-        $contacts = auth()->check()
-        ? auth()->user()->contacts
-        : collect();
+        // Sélecteur d'entité : un responsable voit TOUTES les entités (racines)
+        // afin de réutiliser une entité existante au lieu d'en recréer un doublon.
+        // Un client connecté ne voit que ses propres entités ; un invité, aucune.
+        $authUser = auth()->user();
+        if ($authUser && $authUser->can('viewAdmin', Room::class)) {
+            $contacts = Contact::roots()->get();
+        } elseif ($authUser) {
+            $contacts = $authUser->contacts()->roots()->get();
+        } else {
+            $contacts = collect();
+        }
 
         // Ajouter $tenant à $contacts s'il existe et n'est pas déjà dans la collection
         if (isset($reservation) && ! $contacts->contains('id', $reservation->tenant->id)) {

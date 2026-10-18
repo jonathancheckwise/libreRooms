@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ReservationStatus;
-use App\Enums\UserRole;
 use App\Http\Controllers\Concerns\RedirectsBack;
 use App\Models\Contact;
 use App\Models\Room;
@@ -28,37 +27,17 @@ class ContactController extends Controller
     {
         $user = auth()->user();
         $canViewAll = $user->can('viewAdmin', Room::class);
-        $view = $canViewAll ? $request->input('view', 'mine') : 'mine';
+        // Les responsables arrivent sur l'annuaire PARTAGÉ (toutes les entités).
+        $view = $canViewAll ? $request->input('view', 'all') : 'mine';
 
         if ($view === 'all') {
-            if ($user->is_global_admin) {
-                // Global admin: show all contacts (hors alias fusionnés)
-                $contacts = Contact::with('users')
-                    ->roots()
-                    ->orderByRaw("CASE WHEN type = 'organization' THEN entity_name ELSE CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) END ASC")
-                    ->paginate(15)
-                    ->appends($request->except('page'));
-            } else {
-                // Moderator: own contacts + contacts from reservations on accessible rooms
-                $roomIds = $user->getAccessibleRoomIds(UserRole::MODERATOR);
-
-                $contacts = Contact::with('users')
-                    ->roots()
-                    ->where(function ($query) use ($user, $roomIds) {
-                        $query->whereHas('users', function ($q) use ($user) {
-                            $q->where('users.id', $user->id);
-                        })
-                            ->orWhereIn('id', function ($q) use ($roomIds) {
-                                $q->select('tenant_id')
-                                    ->from('reservations')
-                                    ->whereIn('room_id', $roomIds)
-                                    ->distinct();
-                            });
-                    })
-                    ->orderByRaw("CASE WHEN type = 'organization' THEN entity_name ELSE CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) END ASC")
-                    ->paginate(15)
-                    ->appends($request->except('page'));
-            }
+            // Tous les responsables voient TOUTES les entités (racines, alias masqués).
+            // Évite les doublons créés par le cloisonnement des contacts entre admins.
+            $contacts = Contact::with('users')
+                ->roots()
+                ->orderByRaw("CASE WHEN type = 'organization' THEN entity_name ELSE CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) END ASC")
+                ->paginate(15)
+                ->appends($request->except('page'));
         } else {
             // Regular view: user's contacts only (hors alias fusionnés)
             $contacts = $user->contacts()
