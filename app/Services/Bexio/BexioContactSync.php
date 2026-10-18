@@ -54,6 +54,16 @@ class BexioContactSync
             return (int) $c->bexio_contact_id;
         }
 
+        // Anti-doublon : l'entité existe peut-être DÉJÀ dans bexio (créée à la
+        // main par une admin). On la cherche (email, puis nom) et on s'y rattache
+        // au lieu de créer un doublon.
+        if ($existing = $this->findInBexio($c)) {
+            $c->bexio_contact_id = $existing;
+            $c->save();
+
+            return $existing;
+        }
+
         $created = $this->bexio->post('2.0/contact', $this->payload($c));
         $bexioId = (int) ($created['id'] ?? 0);
         if ($bexioId <= 0) {
@@ -64,6 +74,35 @@ class BexioContactSync
         $c->save();
 
         return $bexioId;
+    }
+
+    /**
+     * Cherche un contact bexio existant correspondant à l'entité : par e-mail
+     * d'abord (fort), puis par nom exact (name_1). Retourne l'id bexio ou null.
+     */
+    public function findInBexio(Contact $c): ?int
+    {
+        $email = $c->invoice_email ?: $c->email;
+        $name = $c->type === ContactTypes::ORGANIZATION ? $c->entity_name : $c->last_name;
+
+        foreach ([
+            $email ? [['field' => 'mail', 'value' => $email, 'criteria' => '=']] : null,
+            $name ? [['field' => 'name_1', 'value' => $name, 'criteria' => '=']] : null,
+        ] as $criteria) {
+            if (! $criteria) {
+                continue;
+            }
+            try {
+                $hits = $this->bexio->post('2.0/contact/search', $criteria);
+            } catch (\Throwable $e) {
+                continue;
+            }
+            if (! empty($hits[0]['id'])) {
+                return (int) $hits[0]['id'];
+            }
+        }
+
+        return null;
     }
 
     /**

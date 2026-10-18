@@ -71,6 +71,18 @@ class Contact extends Model
         return $this->merged_into_id !== null;
     }
 
+    /** L'entité racine (suit la chaîne de fusion). Soi-même si déjà racine. */
+    public function root(): Contact
+    {
+        $c = $this;
+        $guard = 0;
+        while ($c->merged_into_id && $guard++ < 10 && $c->mergedInto) {
+            $c = $c->mergedInto;
+        }
+
+        return $c;
+    }
+
     /** Entités « racines » uniquement (ce qu'on liste/facture). */
     public function scopeRoots(Builder $query): Builder
     {

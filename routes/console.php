@@ -16,3 +16,8 @@ Schedule::command('invoices:send-late-reminders')->dailyAt('08:00');
 
 // Schedule the command to merge duplicate contacts
 Schedule::command('contacts:merge-identical --force')->dailyAt('03:00');
+
+// Facturation mensuelle bexio : le 1er de chaque mois, crée les brouillons de
+// factures globales (1 par entité) pour le mois précédent. Les admins valident
+// (brouillons). Ne facture que les résas ≥ date de bascule et non déjà facturées.
+Schedule::command('pepite:bexio-monthly-invoices --write')->monthlyOn(1, '06:00');

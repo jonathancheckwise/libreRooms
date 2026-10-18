@@ -57,6 +57,9 @@ return [
         'language_id' => env('BEXIO_LANGUAGE_ID'),  // français
         'country_id' => env('BEXIO_COUNTRY_ID'),    // Suisse (contacts)
         'payment_term_days' => (int) env('BEXIO_PAYMENT_TERM_DAYS', 30),
+        // Date de bascule : seules les réservations à partir de cette date sont
+        // facturées automatiquement (avant = géré manuellement par les admins).
+        'billing_start' => env('BEXIO_BILLING_START', '2026-10-19'),
     ],
 
 ];

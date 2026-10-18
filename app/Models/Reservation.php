@@ -76,6 +76,7 @@ class Reservation extends Model
         'is_free' => 'boolean',
         'admin_price' => 'decimal:2',
         'confirmed_at' => 'datetime',
+        'billed_at' => 'datetime',
         'cancelled_at' => 'datetime',
             'terms_accepted_at' => 'datetime',
     ];
