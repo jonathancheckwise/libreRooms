@@ -35,6 +35,12 @@ class AvailabilityController
             switch ($viewMode->value) {
                 case 'full':
                     $event['title'] = $slot['title'] ?? __('Untitled');
+                    // Nom du réservant sur l'étiquette du créneau — réservé aux
+                    // personnes qui gèrent les réservations (jamais le public,
+                    // même si une salle est configurée en mode « full »).
+                    if ($canManage && ! empty($slot['tenant'])) {
+                        $event['title'] .= ' · '.$slot['tenant'];
+                    }
                     $descriptionParts = [
                         '<strong>'.($slot['title'] ?? __('Untitled')).'</strong>',
                         __('Start').': '.$slot['start']->format('d.m.Y H:i'),
