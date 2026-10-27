@@ -209,6 +209,8 @@ class PlanningController extends Controller
      */
     public function events(AvailabilityService $service): JsonResponse
     {
+        $user = auth()->user();
+
         $rooms = Room::where('active', true)
             ->where('is_public', true)
             ->with(['unavailabilities'])
@@ -226,13 +228,24 @@ class PlanningController extends Controller
             $color = self::PALETTE[$i % count(self::PALETTE)];
             $tz = $room->getTimezone();
 
+            // Le nom du réservant n'est exposé QU'aux personnes qui gèrent la
+            // salle. Le public ne voit toujours que « salle occupée ».
+            $canManage = $user?->can('manageReservations', $room) ?? false;
+
             foreach ($service->loadBusySlots($room, $tz, $from, $to) as $slot) {
+                $tenant = $canManage ? ($slot['tenant'] ?? null) : null;
+
+                $props = ['room' => $room->name, 'slug' => $room->slug];
+                if (! empty($tenant)) {
+                    $props['tenant'] = $tenant;
+                }
+
                 $events[] = [
-                    'title' => $room->name,
+                    'title' => $room->name.(! empty($tenant) ? ' · '.$tenant : ''),
                     'start' => $slot['start']->format('Y-m-d\TH:i:sP'),
                     'end' => $slot['end']->format('Y-m-d\TH:i:sP'),
                     'color' => $color,
-                    'extendedProps' => ['room' => $room->name, 'slug' => $room->slug],
+                    'extendedProps' => $props,
                 ];
             }
         }

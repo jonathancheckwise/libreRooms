@@ -256,6 +256,13 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         unselect: function () { if (selectedSlot) { selectedSlot = null; updateBookBar(); } },
         eventDisplay: 'block',
+        // Infobulle au survol : nom du réservant (fourni par le serveur aux seuls
+        // gestionnaires ; le public n'a jamais extendedProps.tenant).
+        eventDidMount: function (info) {
+            var p = info.event.extendedProps || {};
+            var tip = p.tenant ? (p.room + ' · ' + p.tenant) : p.room;
+            if (tip) { info.el.setAttribute('title', tip); }
+        },
     });
     calendar.render();
 
